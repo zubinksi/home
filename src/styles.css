@@ -826,9 +826,10 @@ p {
 .gate {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 2rem 1rem;
+  /* sit the card near the top instead of centring it */
+  padding: max(1.5rem, 8vh) 1rem 2rem;
 }
 .gate-card {
   width: 100%;
