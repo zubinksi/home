@@ -45,6 +45,8 @@ html {
 html,
 body {
   margin: 0;
+  /* sideways swipes step between sleeves; don't let the browser treat them as Back */
+  overscroll-behavior-x: none;
   background: var(--ground);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -1090,6 +1092,68 @@ p {
   color: var(--ink3);
 }
 
+/* ── phone drill-down: list ⇄ detail ─────────────────── */
+.mnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -0.25rem 0 -0.25rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.mnav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  color: var(--indigo);
+  letter-spacing: 0.12em;
+}
+.mnav-back span {
+  font-size: 1rem;
+}
+.mnav-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.mnav-step button {
+  width: 2.25rem;
+  height: 2.25rem;
+  text-align: center;
+  font-size: 1.25rem;
+  color: var(--indigo);
+}
+@keyframes slide-from-right {
+  from { transform: translateX(100%); opacity: 0.4; }
+}
+@keyframes slide-from-left {
+  from { transform: translateX(-100%); opacity: 0.4; }
+}
+@keyframes ease-back-in {
+  from { transform: translateX(-24%); opacity: 0; }
+}
+.detail.anim-push,
+.detail.anim-next {
+  animation: slide-from-right 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.detail.anim-prev {
+  animation: slide-from-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sidebar.anim-pop {
+  animation: ease-back-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail.anim-push,
+  .detail.anim-next,
+  .detail.anim-prev,
+  .sidebar.anim-pop {
+    animation: none;
+  }
+}
+
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
   .mast-inner {
@@ -1129,11 +1193,14 @@ p {
   .sleeves-grid {
     grid-template-columns: 1fr;
     height: auto;
+    min-height: 0;
   }
   .sidebar {
     border-right: 0;
-    border-bottom: 1px solid var(--b1);
     padding: 1rem 0.875rem;
+  }
+  .sleeves {
+    overflow: hidden; /* clip the slide transitions */
   }
   .side-row.ask {
     margin-top: 0.75rem;

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LockButton } from './Gate';
-import { NavBar, useTab } from './Nav';
+import { NavBar, useNarrow, useRoute } from './Nav';
 import { Projects } from './Projects';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
@@ -24,19 +24,89 @@ export function App() {
   const model = useMemo(buildSleeves, []);
   const allItems = useMemo(buildItems, []);
 
-  const [tab, setTab] = useTab();
+  const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
+  const tab = route.tab;
+  const narrow = useNarrow();
   const [sel, setSel] = useState(SEL_TOTAL);
   const [itemsOpen, setItemsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
   const [chat, setChat] = useState<ChatTurn[]>([]);
-  const detailRef = useRef<HTMLDivElement>(null);
+  const sleevesRef = useRef<HTMLElement>(null);
 
-  // On a phone the detail pane sits below the menu, so bring it into view.
+  // ── phones: the list is the home view; a row opens its detail as its own page
+  const subOf = (i: number) => (i === SEL_TOTAL ? 'total' : i === SEL_ASK ? 'ask' : model.sleeves[i].key.toLowerCase());
+  const selOf = (sub: string | null) => {
+    if (sub === 'total') return SEL_TOTAL;
+    if (sub === 'ask') return SEL_ASK;
+    const i = model.sleeves.findIndex((s) => s.key.toLowerCase() === sub);
+    return i >= 0 ? i : null;
+  };
+  const routeSel = tab === 'investments' ? selOf(route.sub) : null;
+  const detailOpen = narrow && routeSel !== null;
+  // next / previous run through TOTAL and the sleeves (Ask is separate)
+  const sequence = [SEL_TOTAL, ...model.sleeves.map((_, i) => i)];
+
+  useEffect(() => {
+    if (routeSel !== null) setSel(routeSel);
+  }, [routeSel]);
+
+  // which way the incoming view slides: push in, pop back, or step sideways
+  const motion = useRef<'push' | 'pop' | 'next' | 'prev'>('push');
+  const wasOpen = useRef(detailOpen);
+  const listScroll = useRef(0);
+  if (wasOpen.current !== detailOpen) {
+    if (!detailOpen) motion.current = 'pop';
+    else if (motion.current === 'pop') motion.current = 'push';
+  }
+
+  useLayoutEffect(() => {
+    if (wasOpen.current === detailOpen) return;
+    wasOpen.current = detailOpen;
+    if (detailOpen) {
+      // start the detail at the top of the sleeves panel
+      const el = sleevesRef.current;
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - 12;
+        if (window.scrollY > top) window.scrollTo(0, top);
+      }
+    } else {
+      window.scrollTo(0, listScroll.current);
+    }
+  }, [detailOpen]);
+
   const select = (i: number) => {
     setSel(i);
-    if (window.matchMedia('(max-width: 860px)').matches)
-      requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (narrow) {
+      listScroll.current = window.scrollY;
+      motion.current = 'push';
+      openSub(subOf(i));
+    }
+  };
+
+  const step = (delta: 1 | -1) => {
+    const at = sequence.indexOf(sel);
+    if (at < 0) return;
+    const next = sequence[(at + delta + sequence.length) % sequence.length];
+    motion.current = delta > 0 ? 'next' : 'prev';
+    setSel(next);
+    replaceSub(subOf(next));
+  };
+
+  // swipe left / right on a detail page to step between sleeves
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: TouchEvent) => {
+    const start = touch.current;
+    touch.current = null;
+    if (!start || sel === SEL_ASK) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
   };
 
   useEffect(() => {
@@ -152,10 +222,11 @@ export function App() {
         </section>
 
         {/* ── Sleeves ────────────────────────────────────────────────── */}
-        <section className="slab sleeves">
-          <div className="sleeves-grid">
-            <nav className="sidebar">
-              <button className={`side-row total ${sel === SEL_TOTAL ? 'is-sel' : ''}`} onClick={() => select(SEL_TOTAL)}>
+        <section className="slab sleeves" ref={sleevesRef}>
+          <div className={`sleeves-grid ${narrow ? (detailOpen ? 'm-detail' : 'm-list') : ''}`}>
+            {(!narrow || !detailOpen) && (
+            <nav className={`sidebar ${narrow && motion.current === 'pop' ? 'anim-pop' : ''}`}>
+              <button className={`side-row total ${!narrow && sel === SEL_TOTAL ? 'is-sel' : ''}`} onClick={() => select(SEL_TOTAL)}>
                 <span className="side-caret">&gt;</span>
                 <span className="side-name">TOTAL</span>
                 <span />
@@ -165,7 +236,7 @@ export function App() {
               <div className="side-rule" />
 
               {model.sleeves.map((s, i) => (
-                <button key={s.key} className={`side-row sleeve ${sel === i ? 'is-sel' : ''}`} onClick={() => select(i)} title={s.alloc}>
+                <button key={s.key} className={`side-row sleeve ${!narrow && sel === i ? 'is-sel' : ''}`} onClick={() => select(i)} title={s.alloc}>
                   <span className="side-caret">&gt;</span>
                   <span className="side-name-wrap">
                     <span className="side-name">{s.name}</span>
@@ -181,15 +252,38 @@ export function App() {
                 </button>
               ))}
 
-              <button className={`side-row ask ${sel === SEL_ASK ? 'is-sel' : ''}`} onClick={() => select(SEL_ASK)}>
+              <button className={`side-row ask ${!narrow && sel === SEL_ASK ? 'is-sel' : ''}`} onClick={() => select(SEL_ASK)}>
                 <span className="side-caret">&gt;</span>
                 <span className="side-name">ASK THE POLICY</span>
                 <span />
                 <span className="ask-arrow">→</span>
               </button>
             </nav>
+            )}
 
-            <div className="detail" ref={detailRef}>
+            {(!narrow || detailOpen) && (
+            <div
+              key={narrow ? `m-${sel}` : 'detail'}
+              className={`detail ${narrow ? `anim-${motion.current}` : ''}`}
+              onTouchStart={narrow ? onTouchStart : undefined}
+              onTouchEnd={narrow ? onTouchEnd : undefined}
+            >
+              {narrow && (
+                <div className="mnav">
+                  <button className="mnav-back" onClick={closeSub} aria-label="Back to all sleeves">
+                    <span aria-hidden>←</span> ALL
+                  </button>
+                  {sel !== SEL_ASK && (
+                    <div className="mnav-step">
+                      <button onClick={() => step(-1)} aria-label="Previous">‹</button>
+                      <span>
+                        {sequence.indexOf(sel) + 1} / {sequence.length}
+                      </span>
+                      <button onClick={() => step(1)} aria-label="Next">›</button>
+                    </div>
+                  )}
+                </div>
+              )}
               <ErrorBoundary resetKey={sel}>
               {sel === SEL_TOTAL && (
                 <TotalDetail model={model} />
@@ -198,12 +292,13 @@ export function App() {
               {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} />}
               </ErrorBoundary>
             </div>
+            )}
           </div>
         </section>
       </main>
       )}
       </div>
-      <NavBar tab={tab} onChange={setTab} />
+      <NavBar tab={tab} onChange={goTab} />
     </>
   );
 }
