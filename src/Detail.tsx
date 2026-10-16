@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { Chart } from './Chart';
 import {
   compact,
   money,
   monYY,
   num,
-  pct,
   STATUS_COLOR,
   type buildSleeves,
   type KV,
@@ -34,15 +34,25 @@ function Cards({ kv }: { kv: KV[] }) {
 }
 
 function Policy({ lines }: { lines: string[] }) {
+  const [open, setOpen] = useState(false);
   return (
     <div className="policy">
-      <div className="label">POLICY</div>
-      {lines.map((l, i) => (
-        <p key={i} className="policy-line">
-          <span className="sect">§</span>
-          {l}
-        </p>
-      ))}
+      <button className={`policy-toggle ${open ? 'is-open' : ''}`} onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="sect">§</span>
+        <span>POLICY</span>
+        <span className="policy-count">{lines.length}</span>
+        <span className={`caret ${open ? '' : 'closed'}`}>▾</span>
+      </button>
+      {open && (
+        <div className="policy-lines">
+          {lines.map((l, i) => (
+            <p key={i} className="policy-line">
+              <span className="sect">§</span>
+              {l}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -173,7 +183,6 @@ export function Detail({ sleeve: s, openCount, onOpenList }: { sleeve: Sleeve; o
         <span className="d-amt">${compact(s.amount)}</span>
       </div>
       <div className="d-sub">
-        <span className="d-role">{s.roleTitle}</span>
         <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
           {s.alloc}
         </span>
@@ -198,36 +207,11 @@ export function TotalDetail({ model, openCount, onOpenList }: { model: Model; op
         <span className="d-amt">${compact(model.total)}</span>
       </div>
       <div className="d-sub">
-        <span className="d-role">Liquid assets across six sleeves · Evergreen not counted</span>
         <span className="d-alloc" style={{ color: STATUS_COLOR[offPolicy.length ? 'amber' : 'green'] }}>
           {offPolicy.length ? `${offPolicy.length} SLEEVES TO WATCH` : 'ALL IN POLICY'}
         </span>
       </div>
       <Cards kv={model.totalCards} />
-      {model.plan.length > 0 && (
-        <div className="module">
-          <div className="module-head">
-            <span className="label">WHAT THE POLICY CALLS FOR THIS REVIEW</span>
-            <span className="label">WITHIN 30 DAYS</span>
-          </div>
-          <div className="plan">
-            {model.plan.map((p, i) => (
-              <div key={i} className="plan-row review">
-                <span className="plan-src">
-                  {p.action}
-                  <span className="plan-why">{p.why}</span>
-                </span>
-                <span className="plan-amt">{money(p.amount)}</span>
-                <span className="plan-when">{p.sleeve}</span>
-              </div>
-            ))}
-          </div>
-          <div className="module-foot">
-            <span>AFTER: CRYPTO {pct(model.after.crypto)} · FORTRESS {Math.floor(model.after.fortressMonths)} MO</span>
-            <span>48-HOUR WAIT ON TRADES OVER $25K</span>
-          </div>
-        </div>
-      )}
       <div className="module">
         <div className="module-head">
           <span className="label">QUARTERLY REVIEWS</span>
@@ -236,21 +220,6 @@ export function TotalDetail({ model, openCount, onOpenList }: { model: Model; op
           </span>
         </div>
         <Chart points={model.history} />
-      </div>
-      <div className="module">
-        <div className="label">ALLOCATION</div>
-        <div className="alloc">
-          {model.sleeves.map((s) => (
-            <div key={s.key} className="alloc-row">
-              <span>{s.name}</span>
-              <span className="alloc-bar">
-                <span style={{ width: `${s.pct * 100}%` }} />
-              </span>
-              <span>{pct(s.pct)}</span>
-              <span style={{ color: STATUS_COLOR[s.status] }}>{s.alloc}</span>
-            </div>
-          ))}
-        </div>
       </div>
       <OpenLink n={openCount} onOpen={onOpenList} />
     </>

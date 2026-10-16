@@ -1,5 +1,7 @@
 :root {
   --ground: #8f9186;
+  --mast-ink: #e5e3db;
+  --mast-ink2: #d3d1c8;
   --mast: #d9d8d0;
   --rule: #a9a596;
   --slab: #e5e3db;
@@ -67,8 +69,11 @@ p {
 
 /* ── masthead ─────────────────────────────────────────── */
 .masthead {
-  background: var(--mast);
-  border-bottom: 1px solid var(--rule);
+  background: var(--ground);
+}
+.mast-inner {
+  max-width: 1080px;
+  margin: 0 auto;
   padding: 20px 34px 22px;
   display: flex;
   justify-content: space-between;
@@ -80,7 +85,7 @@ p {
   font-size: 19px;
   line-height: 1.15;
   letter-spacing: 0.01em;
-  color: var(--ink);
+  color: var(--mast-ink);
 }
 .mast-line2 {
   display: flex;
@@ -92,7 +97,7 @@ p {
   font-family: var(--serif);
   font-style: italic;
   font-size: 13px;
-  color: var(--ink3);
+  color: var(--mast-ink2);
 }
 .mast-date {
   text-align: right;
@@ -294,7 +299,7 @@ p {
 }
 .sleeves-grid {
   display: grid;
-  grid-template-columns: 310px 1fr;
+  grid-template-columns: 360px 1fr;
   height: 940px;
 }
 .sidebar {
@@ -317,6 +322,34 @@ p {
 }
 .side-row:hover {
   opacity: 0.7;
+}
+.side-row.sleeve {
+  grid-template-columns: 20px 118px 1fr 44px 44px;
+  align-items: center;
+}
+.side-bar {
+  height: 4px;
+  margin: 0 10px 0 4px;
+  background: var(--b2);
+  position: relative;
+}
+.side-bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ink3b);
+}
+.side-row.is-sel .side-bar span {
+  background: var(--indigo);
+}
+.side-pct {
+  padding-right: 10px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: right;
+}
+.side-row.sleeve .side-amt {
+  text-align: right;
 }
 .side-caret {
   color: var(--indigo);
@@ -407,7 +440,7 @@ p {
 }
 .d-sub {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: baseline;
   gap: 16px;
   margin-top: -14px;
@@ -601,12 +634,6 @@ p {
   font-family: var(--serif);
   font-size: 14px;
 }
-.plan-why {
-  display: block;
-  margin-top: 3px;
-  font-size: 13px;
-  color: var(--ink3);
-}
 .plan-amt {
   font-family: var(--mono);
   font-size: 13px;
@@ -636,37 +663,41 @@ p {
   background: var(--zebra);
 }
 
-/* allocation */
-.alloc-row {
-  display: grid;
-  grid-template-columns: 110px 1fr 44px 230px;
-  gap: 12px;
+.policy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.policy-toggle {
+  align-self: flex-start;
+  display: inline-flex;
   align-items: center;
-  padding: 5px 0;
+  gap: 8px;
+  padding: 7px 12px 7px 10px;
+  background: var(--inset);
+  border: 1px solid var(--b2);
+  border-radius: 2px;
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--ink2);
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  transition: background 0.15s;
 }
-.alloc-row span:nth-child(3) {
-  text-align: right;
+.policy-toggle:hover {
+  background: var(--hover);
 }
-.alloc-row span:last-child {
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
+.policy-toggle .sect {
+  padding-top: 0;
 }
-.alloc-bar {
-  height: 6px;
-  background: var(--b2);
-  position: relative;
+.policy-toggle .caret {
+  height: 11px;
+  display: flex;
+  align-items: center;
 }
-.alloc-bar span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--ink2);
+.policy-count {
+  color: var(--muted);
 }
-
-.policy {
+.policy-lines {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -774,25 +805,26 @@ p {
   background: #8f93c9;
   cursor: default;
 }
-
-/* ── footer ───────────────────────────────────────────── */
-.footer {
-  background: var(--mast);
-  border-top: 1px solid var(--rule);
-  padding: 15px 34px;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+.ask-input.key {
+  border-top: 0;
+  padding-top: 0;
+}
+.key-note {
+  margin-top: -8px;
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.1em;
-  color: var(--ink3);
+  color: var(--muted);
+}
+.key-note button {
+  color: var(--indigo);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
-  .masthead,
-  .footer {
+  .mast-inner {
     padding-left: 16px;
     padding-right: 16px;
   }
@@ -873,14 +905,5 @@ p {
   .plan-when {
     grid-column: 1 / -1;
     text-align: left;
-  }
-  .alloc-row {
-    grid-template-columns: 84px 1fr 36px;
-  }
-  .alloc-row span:last-child {
-    grid-column: 1 / -1;
-  }
-  .footer {
-    flex-direction: column;
   }
 }

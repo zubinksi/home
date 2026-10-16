@@ -15,7 +15,12 @@ npm run dev        # http://localhost:5173
 
 To turn on **Ask the Policy**, copy `.env.example` to `.env.local` and set
 `ANTHROPIC_API_KEY`. The key stays in the local dev/preview server and is never
-sent to the browser. Without a key, Ask the Policy quotes the closest policy lines instead.
+sent to the browser.
+
+If the site is opened without that server (a static host, or no key in
+`.env.local`), Ask the Policy offers a field to paste a key instead. That key
+is saved in the browser's local storage and sent directly to the Anthropic
+API, so use it only on your own devices. **FORGET** under the input removes it.
 
 ## The quarterly review
 
