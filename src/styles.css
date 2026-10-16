@@ -1,7 +1,8 @@
 :root {
+  --ground: #8f9186;
   --page: #f4f1e9; /* the wallpaper's cream */
-  --mast-ink: #33332c;
-  --mast-ink2: #565549;
+  --mast-ink: #e5e3db;
+  --mast-ink2: #d3d1c8;
   --mast: #d9d8d0;
   --rule: #a9a596;
   --slab: #e5e3db;
@@ -45,8 +46,8 @@ html {
 html,
 body {
   margin: 0;
-  /* our house's iris wallpaper, faded so the slabs stay the focus */
-  background: var(--page) url('./assets/wallpaper-faded.png') repeat;
+  /* our house's iris wallpaper, toned into the sage ground so the slabs stay the focus */
+  background: var(--ground) url('./assets/wallpaper-faded.png') repeat;
   background-size: 10rem 12.5rem;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -979,7 +980,7 @@ p {
   transform-box: fill-box;
 }
 .lock-hole {
-  fill: var(--page);
+  fill: var(--ground);
 }
 .mast-lock.is-locking {
   opacity: 1;
