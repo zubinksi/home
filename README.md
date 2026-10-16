@@ -44,6 +44,25 @@ be on the same Wi-Fi and started with `npm run dev -- --host`. The PIN gate
 is the only thing between that address and your numbers, and Ask the Policy
 answers using the key in `.env.local`. Only do this on your home network.
 
+## Projects
+
+The Projects tab reads the **Projects** tab of the "Home Projects & Vendors"
+Google Sheet live each time you open it (through the local dev server, cached
+for a minute). The sheet must stay shared as *Anyone with the link can view*.
+If it can't be reached, the page shows a saved copy and says so; refresh that
+copy by replacing `src/assets/projects-snapshot.csv`.
+
+The page relies on these sheet conventions:
+
+- Groups are separated by a blank row; a group starts with a heading row,
+  `Area: condition note` (the note is optional).
+- Column B is a moving / maintenance cost, column C a furnishing cost. Any cost,
+  including `FREE`, means the item is done.
+- Start an item with `Optional:` to mark it optional, or `Closed:` to drop it
+  without deleting it.
+- Areas named Moving, Roof, Plumbing, Maintenance/testing, Walls…, Patio or Yard
+  are listed under **The House**; everything else under **The Rooms**.
+
 ## The quarterly review
 
 1. In `src/data.ts`, append one entry to `reviews` with the date and that day's
