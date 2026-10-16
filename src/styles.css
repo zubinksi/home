@@ -1,7 +1,7 @@
 :root {
-  --ground: #8f9186;
-  --mast-ink: #e5e3db;
-  --mast-ink2: #d3d1c8;
+  --page: #f4f1e9; /* the wallpaper's cream */
+  --mast-ink: #33332c;
+  --mast-ink2: #565549;
   --mast: #d9d8d0;
   --rule: #a9a596;
   --slab: #e5e3db;
@@ -45,7 +45,9 @@ html {
 html,
 body {
   margin: 0;
-  background: var(--ground);
+  /* our house's iris wallpaper, faded so the slabs stay the focus */
+  background: var(--page) url('./assets/wallpaper-faded.png') repeat;
+  background-size: 10rem 12.5rem;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -79,7 +81,7 @@ p {
 
 /* ── masthead ─────────────────────────────────────────── */
 .masthead {
-  background: var(--ground);
+  background: transparent;
 }
 .mast-inner {
   max-width: 67.5rem;
@@ -123,6 +125,7 @@ p {
 }
 .slab {
   background: var(--slab);
+  border: 1px solid var(--b1);
   box-shadow: 0 0.25rem 1rem rgba(60, 58, 48, 0.13);
 }
 
@@ -823,6 +826,8 @@ p {
 /* ── pin gate ─────────────────────────────────────────── */
 .gate {
   min-height: 100vh;
+  background: var(--page) url('./assets/wallpaper.png') repeat;
+  background-size: 10rem 12.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -832,7 +837,8 @@ p {
   width: 100%;
   max-width: 21rem;
   background: var(--slab);
-  box-shadow: 0 0.25rem 1rem rgba(60, 58, 48, 0.13);
+  border: 1px solid var(--b1);
+  box-shadow: 0 0.375rem 1.75rem rgba(60, 58, 48, 0.22);
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -973,7 +979,7 @@ p {
   transform-box: fill-box;
 }
 .lock-hole {
-  fill: var(--ground);
+  fill: var(--page);
 }
 .mast-lock.is-locking {
   opacity: 1;
