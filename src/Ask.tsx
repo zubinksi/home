@@ -89,7 +89,11 @@ export function Ask({ chat, setChat }: { chat: ChatTurn[]; setChat: (c: ChatTurn
   const [needKey, setNeedKey] = useState(false);
   const end = useRef<HTMLDivElement>(null);
 
-  useEffect(() => end.current?.scrollIntoView({ block: 'nearest' }), [chat, needKey]);
+  // Braces matter: newer browsers return a Promise from scrollIntoView, and
+  // React would try to call whatever the effect returns as its cleanup.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'nearest' });
+  }, [chat, needKey]);
 
   const ask = async (q: string, base: ChatTurn[] = chat, apiKey = key) => {
     q = q.trim();
