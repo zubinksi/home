@@ -32,6 +32,18 @@ code and the numbers both ship in the page's JavaScript. It keeps casual eyes
 out on a shared screen. Don't rely on it to protect a copy hosted on the
 public internet.
 
+## On your home screen
+
+The site is set up as a home-screen app (icon: the iris from our wallpaper).
+Open it in Safari on iPhone → Share → **Add to Home Screen**, or in Chrome on
+Android → menu → **Add to Home screen** / **Install app**. It opens full-screen
+without the browser bar.
+
+Your phone has to be able to reach the site, so the computer running it must
+be on the same Wi-Fi and started with `npm run dev -- --host`. The PIN gate
+is the only thing between that address and your numbers, and Ask the Policy
+answers using the key in `.env.local`. Only do this on your home network.
+
 ## The quarterly review
 
 1. In `src/data.ts`, append one entry to `reviews` with the date and that day's
