@@ -7,6 +7,17 @@ import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource'
 import { useDrill } from './useDrill';
 
 const OPTIONAL_KEY = 'browns.projects.optional.v1';
+const SORT_KEY = 'browns.projects.sort.v1';
+
+type SortMode = 'listed' | 'spend';
+
+function loadSort(): SortMode {
+  try {
+    return localStorage.getItem(SORT_KEY) === 'spend' ? 'spend' : 'listed';
+  } catch {
+    return 'listed';
+  }
+}
 const money = (n: number) => `$${compact(n)}`;
 
 type Source =
@@ -102,6 +113,7 @@ export function Projects(props: {
 }) {
   const { areas, source } = useProjects();
   const [showOptional, setShowOptional] = useState(loadOptional);
+  const [sort, setSort] = useState<SortMode>(loadSort);
   const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -112,13 +124,29 @@ export function Projects(props: {
     }
   }, [showOptional]);
 
-  const sequence = ['all', ...areas.map((a) => a.key)];
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_KEY, sort);
+    } catch {
+      /* fine */
+    }
+  }, [sort]);
+
+  // as listed: the sheet's order, house first then rooms; by spend: one list, highest first
+  const house = areas.filter((a) => a.section === 'house');
+  const rooms = areas.filter((a) => a.section === 'rooms');
+  const ordered =
+    sort === 'spend'
+      ? [...areas].sort((x, y) => areaStats(y).spent - areaStats(x).spent)
+      : [...house, ...rooms];
+
+  const sequence = ordered.map((a) => a.key);
   const drill = useDrill({
     narrow: props.narrow,
     sub: props.sub,
     keys: sequence,
     sequence,
-    defaultKey: 'all',
+    defaultKey: sequence[0] ?? '',
     openSub: props.openSub,
     replaceSub: props.replaceSub,
     closeSub: props.closeSub,
@@ -126,9 +154,9 @@ export function Projects(props: {
   });
 
   const t = totals(areas);
-  const area = areas.find((a) => a.key === drill.selKey) ?? null;
-  const house = areas.filter((a) => a.section === 'house');
-  const rooms = areas.filter((a) => a.section === 'rooms');
+  // on wide screens an area is always showing: the chosen one, else the first in order
+  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : sequence[0];
+  const area = areas.find((a) => a.key === activeKey) ?? null;
   const counted = showOptional ? t.items : t.items - t.openOptional;
 
   const row = (a: Area) => {
@@ -136,7 +164,7 @@ export function Projects(props: {
     return (
       <button
         key={a.key}
-        className={`side-row proj-row ${!props.narrow && drill.selKey === a.key ? 'is-sel' : ''}`}
+        className={`side-row proj-row ${!props.narrow && activeKey === a.key ? 'is-sel' : ''}`}
         onClick={() => drill.select(a.key)}
       >
         <span className="side-caret">&gt;</span>
@@ -158,24 +186,40 @@ export function Projects(props: {
         <div className={`sleeves-grid ${drill.gridClass}`}>
           {drill.showList && (
             <nav className={`sidebar ${drill.listClass}`}>
-              <button
-                className={`side-row total ${!props.narrow && drill.selKey === 'all' ? 'is-sel' : ''}`}
-                onClick={() => drill.select('all')}
-              >
-                <span className="side-caret">&gt;</span>
+              <div className="side-row total static">
+                <span />
                 <span className="side-name">ALL PROJECTS</span>
                 <span />
                 <span className="side-amt">{compact(t.spent)}</span>
-              </button>
+              </div>
               <div className="side-sub">
                 {t.done} OF {counted} DONE · {t.openNeeded} TO DO
               </div>
               <div className="side-rule" />
 
-              <div className="label side-section">THE HOUSE</div>
-              {house.map(row)}
-              <div className="label side-section">THE ROOMS</div>
-              {rooms.map(row)}
+              <div className="proj-sortbar">
+                <span className="label">{sort === 'spend' ? 'BY SPEND' : 'THE HOUSE'}</span>
+                <button
+                  className={`proj-sort ${sort === 'spend' ? 'on' : ''}`}
+                  onClick={() => setSort(sort === 'spend' ? 'listed' : 'spend')}
+                  aria-label={sort === 'spend' ? 'Sorted by highest spend. Switch to sheet order' : 'In sheet order. Sort by highest spend'}
+                  title={sort === 'spend' ? 'Sorted by highest spend' : 'Sort by highest spend'}
+                >
+                  <svg viewBox="0 0 16 14" width="16" height="14" aria-hidden>
+                    <path d="M1 2h14M1 7h9M1 12h4" />
+                  </svg>
+                  {sort === 'spend' ? 'SPEND' : 'LISTED'}
+                </button>
+              </div>
+              {sort === 'spend' ? (
+                ordered.map(row)
+              ) : (
+                <>
+                  {house.map(row)}
+                  <div className="label side-section">THE ROOMS</div>
+                  {rooms.map(row)}
+                </>
+              )}
 
               <div className="proj-foot">
                 <button className="proj-toggle" onClick={() => setShowOptional(!showOptional)} aria-pressed={showOptional}>
@@ -198,80 +242,12 @@ export function Projects(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} position={drill.position} onStep={drill.step} />}
-              {area ? (
-                <AreaDetail area={area} showOptional={showOptional} />
-              ) : (
-                <Overview areas={areas} showOptional={showOptional} onOpen={drill.select} />
-              )}
+              {area && <AreaDetail area={area} showOptional={showOptional} />}
             </div>
           )}
         </div>
       </section>
     </main>
-  );
-}
-
-function Overview({ areas, showOptional, onOpen }: { areas: Area[]; showOptional: boolean; onOpen: (k: string) => void }) {
-  const t = totals(areas);
-  const counted = showOptional ? t.items : t.items - t.openOptional;
-  const bySpend = areas
-    .map((a) => ({ a, spent: areaStats(a).spent }))
-    .filter((x) => x.spent > 0)
-    .sort((x, y) => y.spent - x.spent);
-  const max = bySpend[0]?.spent || 1;
-  return (
-    <>
-      <div className="d-title">
-        <span className="d-name">ALL PROJECTS</span>
-        <span className="d-amt">{money(t.spent)}</span>
-      </div>
-      <div className="d-sub">
-        <span className="d-alloc" style={{ color: 'var(--amber)' }}>
-          {t.openNeeded} TO DO{showOptional && t.openOptional ? ` · ${t.openOptional} OPTIONAL` : ''}
-        </span>
-      </div>
-      <div className="cards" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-        <div className="card">
-          <div className="label">SPENT</div>
-          <div className="card-v">{money(t.spent)}</div>
-          <div className="card-d">
-            {money(t.maintenance)} MAINT · {money(t.furnishing)} FURNISHING
-          </div>
-        </div>
-        <div className="card">
-          <div className="label">DONE</div>
-          <div className="card-v">
-            {t.done} / {counted}
-          </div>
-          <div className="card-d" style={{ color: 'var(--green)' }}>
-            {Math.round((t.done / Math.max(1, counted)) * 100)}% COMPLETE
-          </div>
-        </div>
-        <div className="card">
-          <div className="label">TO DO</div>
-          <div className="card-v">{t.openNeeded}</div>
-          <div className="card-d">{showOptional ? `+ ${t.openOptional} OPTIONAL` : 'OPTIONAL HIDDEN'}</div>
-        </div>
-      </div>
-
-      <div className="module">
-        <div className="module-head">
-          <span className="label">WHERE THE MONEY WENT</span>
-          <span className="label">BY AREA</span>
-        </div>
-        <div className="spend">
-          {bySpend.map(({ a, spent }) => (
-            <button key={a.key} className="spend-row" onClick={() => onOpen(a.key)}>
-              <span className="spend-name">{a.name}</span>
-              <span className="spend-bar">
-                <span style={{ width: `${(spent / max) * 100}%` }} />
-              </span>
-              <span className="spend-amt">{money(spent)}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
   );
 }
 
