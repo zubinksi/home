@@ -46,9 +46,7 @@ html {
 html,
 body {
   margin: 0;
-  /* our house's iris wallpaper, toned into the sage ground so the slabs stay the focus */
-  background: var(--ground) url('./assets/wallpaper-faded.png') repeat;
-  background-size: 10rem 12.5rem;
+  background: var(--ground);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -126,7 +124,6 @@ p {
 }
 .slab {
   background: var(--slab);
-  border: 1px solid var(--b1);
   box-shadow: 0 0.25rem 1rem rgba(60, 58, 48, 0.13);
 }
 
