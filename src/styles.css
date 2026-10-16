@@ -1004,17 +1004,29 @@ p {
   overflow: visible;
 }
 .iris-petal {
-  fill: #964a50;
+  fill: #9c4c4e;
   stroke: var(--iris-gap);
-  stroke-width: 1.1;
+  stroke-width: 0.75;
   stroke-linejoin: round;
   paint-order: stroke;
 }
+.iris-fold {
+  fill: #83443f;
+}
+.iris-vein {
+  fill: none;
+  stroke: #dcb6b1;
+  stroke-width: 0.45;
+  stroke-linecap: round;
+}
 .iris-stem {
-  fill: #a39b7d;
+  fill: #a59d7a;
   stroke: var(--iris-gap);
-  stroke-width: 0.9;
+  stroke-width: 0.8;
   paint-order: stroke;
+}
+.iris-stem-light {
+  fill: #b9b097;
 }
 .mast-brand {
   display: flex;
