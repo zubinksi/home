@@ -301,13 +301,6 @@ p {
 }
 
 /* ── sleeves ──────────────────────────────────────────── */
-.sleeves-head {
-  font-family: var(--mono);
-  font-size: 0.9375rem;
-  letter-spacing: 0.14em;
-  padding: 1.25rem 2rem 1rem;
-  border-bottom: 1px solid var(--b1);
-}
 .sleeves-grid {
   display: grid;
   grid-template-columns: 22.5rem 1fr;
@@ -875,8 +868,12 @@ p {
 }
 .gate-mast {
   align-self: stretch;
+  text-align: center;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--b1);
+}
+.gate-mast .mast-line2 {
+  justify-content: center;
 }
 .gate-mast .mast-title {
   color: var(--ink);
@@ -1023,9 +1020,6 @@ p {
   }
   .item-why {
     padding-left: 0.875rem;
-  }
-  .sleeves-head {
-    padding: 1rem 0.875rem 0.75rem;
   }
   .sleeves-grid {
     grid-template-columns: 1fr;

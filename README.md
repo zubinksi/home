@@ -1,6 +1,6 @@
-# Investment Policy · The Browns
+# The Household of the Browns
 
-A one-page site for our quarterly finance review. It answers two questions:
+A one-page household site, starting with our quarterly finance review. It answers two questions:
 **what needs doing** (Open Items) and **what's out of policy** (Sleeves).
 
 The rules come from [`policy/investment-policy.md`](policy/investment-policy.md).
