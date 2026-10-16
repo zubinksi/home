@@ -3,6 +3,7 @@ import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LockButton } from './Gate';
+import { Iris } from './Iris';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -59,21 +60,23 @@ export function App() {
     <>
       <header className="masthead">
         <div className="mast-inner">
-        <div>
-          <div className="mast-title">THE HOUSEHOLD</div>
-          <div className="mast-line2">
-            <span className="mast-of">of</span>
-            <span className="mast-title">THE BROWNS</span>
+          <div className="mast-brand">
+            <Iris className="mast-iris" size="2.875rem" />
+            <div>
+              <div className="mast-title">THE HOUSEHOLD</div>
+              <div className="mast-line2">
+                <span className="mast-of">of</span>
+                <span className="mast-title">THE BROWNS</span>
+              </div>
+            </div>
+          </div>
+          <div className="mast-right">
+            <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
+            <LockButton />
           </div>
         </div>
-        <div className="mast-right">
-          <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
-          <LockButton />
-        </div>
-        </div>
       </header>
-    <div className="doc">
-
+      <div className="doc">
       <main className="body">
         {/* ── Open items ─────────────────────────────────────────────── */}
         <section className={`slab items ${itemsOpen ? 'is-open' : ''}`}>

@@ -996,6 +996,42 @@ p {
   from { opacity: 0; }
 }
 
+/* ── iris mark (one flower from our wallpaper) ───────── */
+.iris {
+  --iris-gap: var(--slab);
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+.iris-petal {
+  fill: #964a50;
+  stroke: var(--iris-gap);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.iris-stem {
+  fill: #a39b7d;
+  stroke: var(--iris-gap);
+  stroke-width: 0.9;
+  paint-order: stroke;
+}
+.mast-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.mast-iris {
+  --iris-gap: var(--ground);
+}
+.gate-iris {
+  margin: 0 auto 0.875rem;
+}
+.chat-iris {
+  margin: auto;
+  opacity: 0.55;
+}
+
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
   .mast-inner {
