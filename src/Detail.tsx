@@ -41,7 +41,7 @@ function Policy({ lines }: { lines: string[] }) {
         <span className="sect">§</span>
         <span>POLICY</span>
         <span className="policy-count">{lines.length}</span>
-        <span className={`caret ${open ? '' : 'closed'}`}>▾</span>
+        <span className={`caret ${open ? '' : 'closed'}`} aria-hidden />
       </button>
       {open && (
         <div className="policy-lines">

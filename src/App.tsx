@@ -79,7 +79,7 @@ export function App() {
         {/* ── Open items ─────────────────────────────────────────────── */}
         <section className={`slab items ${itemsOpen ? 'is-open' : ''}`} ref={itemsRef}>
           <button className="items-head" onClick={() => setItemsOpen(!itemsOpen)} aria-expanded={itemsOpen}>
-            <span className={`caret ${itemsOpen ? '' : 'closed'}`}>▾</span>
+            <span className={`caret ${itemsOpen ? '' : 'closed'}`} aria-hidden />
             <span>{open.length} OPEN ITEMS</span>
           </button>
 
@@ -105,7 +105,7 @@ export function App() {
                       <span className="item-text">{item.text}</span>
                       <span className="item-sleeve">{item.sleeve}</span>
                       <span className={`tag tag-${item.when.replace(' ', '-')}`}>{item.when}</span>
-                      <span className={`caret small ${isExp ? '' : 'closed'}`}>▾</span>
+                      <span className={`caret small ${isExp ? '' : 'closed'}`} aria-hidden />
                     </div>
                     {isExp && (
                       <div className="item-why">
@@ -129,7 +129,7 @@ export function App() {
               })}
 
               {closed.length > 0 && (
-                <div className="closed">
+                <div className="closed-list">
                   <div className="label closed-label">[{closed.length}] RECENTLY CLOSED · CLICK TO REOPEN</div>
                   {closed.map((item) => (
                     <div key={item.id} className="item is-closed">

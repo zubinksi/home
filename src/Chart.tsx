@@ -7,28 +7,29 @@ const BAYER = [
   [3, 11, 1, 9],
   [15, 7, 13, 5],
 ];
-const HEIGHT = 230;
 const PITCH = 4;
 const INK = '#33332c';
 const STIPPLE = '#57564b';
 
 /** Ink line with a 4×4 Bayer ordered-dither stipple beneath it. */
 export function Chart({ points }: { points: { date: string; total: number }[] }) {
-  const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [width, setWidth] = useState(0);
+  const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
 
+  // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
   useEffect(() => {
-    const el = wrap.current;
+    const el = canvas.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setWidth(Math.floor(e.contentRect.width)));
+    const ro = new ResizeObserver(([e]) =>
+      setSize({ width: Math.floor(e.contentRect.width), height: Math.floor(e.contentRect.height) }),
+    );
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
     const c = canvas.current;
-    if (!c || !width || points.length === 0) return;
+    if (!c || !width || !HEIGHT || points.length === 0) return;
     const dpr = window.devicePixelRatio || 1;
     c.width = width * dpr;
     c.height = HEIGHT * dpr;
@@ -83,11 +84,11 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
     ctx.beginPath();
     ctx.arc(x(points.length - 1), y(vals[vals.length - 1]), 3, 0, Math.PI * 2);
     ctx.fill();
-  }, [width, points]);
+  }, [width, HEIGHT, points]);
 
   return (
-    <div className="chart" ref={wrap}>
-      <canvas ref={canvas} style={{ width: '100%', height: HEIGHT, display: 'block' }} />
+    <div className="chart">
+      <canvas ref={canvas} />
       <div className="chart-axis">
         {points.map((p, i) => (
           <span key={i}>{dayMon(p.date)}</span>
