@@ -3,13 +3,43 @@ import snapshotCsv from './assets/projects-snapshot.csv?raw';
 import { MobileNav } from './MobileNav';
 import { compact } from './model';
 import { areaStats, parseCsv, parseProjects, totals, type Area, type ProjectItem } from './projectsModel';
-import { PROJECTS_SHEET_URL } from './projectsSource';
+import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
 import { useDrill } from './useDrill';
 
 const OPTIONAL_KEY = 'browns.projects.optional.v1';
 const money = (n: number) => `$${compact(n)}`;
 
-type Source = { kind: 'saved' } | { kind: 'live'; at: number } | { kind: 'error'; message: string };
+type Source =
+  | { kind: 'saved' }
+  | { kind: 'live'; at: number; via: 'server' | 'browser' }
+  | { kind: 'error'; message: string; hint: string };
+
+type Got = { csv: string; at: number } | { problem: string };
+
+/** Ask this site's server, which fetches the sheet on our behalf. */
+async function viaServer(): Promise<Got> {
+  try {
+    const res = await fetch('/api/projects');
+    if (!(res.headers.get('content-type') ?? '').includes('json')) return { problem: 'no-server' };
+    const data = await res.json();
+    if (res.ok && data?.csv) return { csv: data.csv, at: data.fetchedAt ?? Date.now() };
+    return { problem: data?.message ?? `Server error ${res.status}` };
+  } catch {
+    return { problem: 'no-server' };
+  }
+}
+
+/** Read the sheet straight from Google in the browser (works without the server). */
+async function viaBrowser(): Promise<Got> {
+  try {
+    const res = await fetch(PROJECTS_SHEET_DIRECT_URL);
+    const text = await res.text();
+    if (!res.ok || /<html/i.test(text.slice(0, 500))) return { problem: 'not-shared' };
+    return { csv: text, at: Date.now() };
+  } catch {
+    return { problem: 'blocked' };
+  }
+}
 
 /** Starts from the saved copy, then swaps in the live sheet when it arrives. */
 function useProjects() {
@@ -20,22 +50,32 @@ function useProjects() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json().catch(() => null);
-        if (cancelled) return;
-        if (res.ok && data?.csv) {
-          const live = parseProjects(parseCsv(data.csv));
-          if (live.length) {
-            setAreas(live);
-            setSource({ kind: 'live', at: data.fetchedAt ?? Date.now() });
-            return;
-          }
+      const use = (got: Got, via: 'server' | 'browser') => {
+        if (!('csv' in got)) return false;
+        const live = parseProjects(parseCsv(got.csv));
+        if (!live.length) return false;
+        if (!cancelled) {
+          setAreas(live);
+          setSource({ kind: 'live', at: got.at, via });
         }
-        setSource({ kind: 'error', message: data?.message ?? 'The sheet couldn’t be loaded.' });
-      } catch {
-        if (!cancelled) setSource({ kind: 'error', message: 'The sheet couldn’t be loaded.' });
-      }
+        return true;
+      };
+      const server = await viaServer();
+      if (use(server, 'server')) return;
+      const browser = await viaBrowser();
+      if (use(browser, 'browser')) return;
+      if (cancelled) return;
+      console.warn('[projects] server:', 'problem' in server ? server.problem : 'ok', '· browser:', 'problem' in browser ? browser.problem : 'ok');
+      const notShared = 'problem' in browser && browser.problem === 'not-shared';
+      setSource({
+        kind: 'error',
+        message: notShared ? 'The sheet isn’t shared by link' : 'Couldn’t reach the sheet',
+        hint: notShared
+          ? 'In Google Sheets: Share → General access → Anyone with the link → Viewer.'
+          : 'problem' in server && server.problem === 'no-server'
+            ? 'Restart the site (npm run dev) so its sheet reader is running, and check the sheet is shared by link.'
+            : 'Check the sheet is shared “Anyone with the link · Viewer”.',
+      });
     })();
     return () => {
       cancelled = true;
@@ -147,6 +187,7 @@ export function Projects(props: {
                   {source.kind === 'saved' && 'LOADING THE SHEET…'}
                   {source.kind === 'error' && `SAVED COPY · ${source.message.toUpperCase()}`}
                 </div>
+                {source.kind === 'error' && <div className="proj-hint">{source.hint}</div>}
                 <a className="proj-sheet" href={PROJECTS_SHEET_URL} target="_blank" rel="noreferrer">
                   OPEN THE SHEET <span aria-hidden>↗</span>
                 </a>

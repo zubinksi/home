@@ -1120,6 +1120,14 @@ p {
 .proj-source.error {
   color: var(--amber);
 }
+.proj-hint {
+  font-family: var(--serif);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  line-height: 1.45;
+  color: var(--ink3);
+  max-width: 18rem;
+}
 .proj-sheet {
   font-size: 0.6875rem;
   color: var(--indigo);
