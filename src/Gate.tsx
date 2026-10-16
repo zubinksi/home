@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Iris } from './Iris';
+import irisUrl from './assets/iris.png';
 
 // A household gate, not real security: the code and the data both ship in the
 // page's JavaScript. It keeps casual eyes out; see README for the caveat.
@@ -112,7 +112,7 @@ export function Gate({ children }: { children: ReactNode }) {
     <div className="gate">
       <div className="gate-card">
         <div className="gate-mast">
-          <Iris className="gate-iris" size="3rem" />
+          <img className="gate-iris" src={irisUrl} alt="" />
           <div className="mast-title">THE HOUSEHOLD</div>
           <div className="mast-line2">
             <span className="mast-of">of</span>

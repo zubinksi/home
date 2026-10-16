@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Turn } from './askCore';
-import { Iris } from './Iris';
 import { buildSleeves, PORTFOLIO_RULES } from './model';
 
 export type ChatTurn = Turn & { pending?: boolean };
@@ -139,7 +138,6 @@ export function Ask({ chat, setChat }: { chat: ChatTurn[]; setChat: (c: ChatTurn
         <span className="d-name">ASK THE POLICY</span>
       </div>
       <div className="chat">
-        {chat.length === 0 && <Iris className="chat-iris" size="2.5rem" />}
         {chat.map((t, i) => (
           <div key={i} className={`msg ${t.who}`}>
             <div className="label">{t.who === 'you' ? 'YOU' : 'POLICY'}</div>

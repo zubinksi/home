@@ -831,7 +831,7 @@ p {
 .gate-card {
   width: 100%;
   max-width: 21rem;
-  background: var(--slab);
+  background: #f4f1ea; /* the iris image's own background */
   box-shadow: 0 0.25rem 1rem rgba(60, 58, 48, 0.13);
   padding: 2rem;
   display: flex;
@@ -996,52 +996,12 @@ p {
   from { opacity: 0; }
 }
 
-/* ── iris mark (one flower from our wallpaper) ───────── */
-.iris {
-  --iris-gap: var(--slab);
-  display: block;
-  flex: none;
-  overflow: visible;
-}
-.iris-petal {
-  fill: #9c4c4e;
-  stroke: var(--iris-gap);
-  stroke-width: 0.75;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-.iris-fold {
-  fill: #83443f;
-}
-.iris-vein {
-  fill: none;
-  stroke: #dcb6b1;
-  stroke-width: 0.45;
-  stroke-linecap: round;
-}
-.iris-stem {
-  fill: #a59d7a;
-  stroke: var(--iris-gap);
-  stroke-width: 0.8;
-  paint-order: stroke;
-}
-.iris-stem-light {
-  fill: #b9b097;
-}
-.mast-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.mast-iris {
-  --iris-gap: var(--ground);
-}
+/* the iris from our wallpaper, on the PIN pad only */
 .gate-iris {
-  margin: 0 auto 0.875rem;
-}
-.chat-iris {
-  margin: auto;
-  opacity: 0.55;
+  display: block;
+  width: 6.5rem;
+  height: auto;
+  margin: 0 auto 1rem;
 }
 
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
