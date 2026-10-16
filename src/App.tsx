@@ -3,6 +3,8 @@ import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LockButton } from './Gate';
+import { NavBar, useTab } from './Nav';
+import { Projects } from './Projects';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -22,6 +24,7 @@ export function App() {
   const model = useMemo(buildSleeves, []);
   const allItems = useMemo(buildItems, []);
 
+  const [tab, setTab] = useTab();
   const [sel, setSel] = useState(SEL_TOTAL);
   const [itemsOpen, setItemsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -73,6 +76,8 @@ export function App() {
         </div>
       </header>
       <div className="doc">
+      {tab === 'projects' && <Projects />}
+      {tab === 'investments' && (
       <main className="body">
         {/* ── Open items ─────────────────────────────────────────────── */}
         <section className={`slab items ${itemsOpen ? 'is-open' : ''}`}>
@@ -196,7 +201,9 @@ export function App() {
           </div>
         </section>
       </main>
-    </div>
+      )}
+      </div>
+      <NavBar tab={tab} onChange={setTab} />
     </>
   );
 }
