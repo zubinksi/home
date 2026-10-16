@@ -118,14 +118,15 @@ export function Gate({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <div className={`gate-label ${wrong ? 'is-wrong' : ''} ${done ? 'is-done' : ''}`} aria-live="polite">
-          {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
-        </div>
-
-        <div className={`gate-slots ${wrong ? 'shake' : ''}`} role="img" aria-label={`${entry.length} of ${LEN} digits entered`}>
-          {Array.from({ length: LEN }, (_, i) => (
-            <span key={i} className={`gate-slot ${i < entry.length ? 'filled' : ''} ${wrong ? 'wrong' : ''} ${done ? 'done' : ''}`} />
-          ))}
+        <div className="gate-plate">
+          <div className={`gate-label ${wrong ? 'is-wrong' : ''} ${done ? 'is-done' : ''}`} aria-live="polite">
+            {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
+          </div>
+          <div className={`gate-slots ${wrong ? 'shake' : ''}`} role="img" aria-label={`${entry.length} of ${LEN} digits entered`}>
+            {Array.from({ length: LEN }, (_, i) => (
+              <span key={i} className={`gate-slot ${i < entry.length ? 'filled' : ''} ${wrong ? 'wrong' : ''} ${done ? 'done' : ''}`} />
+            ))}
+          </div>
         </div>
 
         <div className="keypad">

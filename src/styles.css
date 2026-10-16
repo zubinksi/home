@@ -824,38 +824,45 @@ p {
 /* ── pin gate ─────────────────────────────────────────── */
 .gate {
   min-height: 100vh;
-  background: var(--page) url('./assets/wallpaper.png') repeat;
-  background-size: 10rem 12.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
 }
 .gate-card {
-  /* dark card so the keypad stands off the full-strength wallpaper */
-  --gate-bg: #3f4038;
-  --gate-key: #4d4e45;
-  --gate-key-hover: #585950;
-  --gate-line: #6b6c61;
-  --gate-ink: #ecebe4;
-  --gate-muted: #b3b1a4;
-  --gate-red: #e08a8e;
-  --gate-green: #9cc79b;
+  /* the card itself is papered with our iris wallpaper; type and keys sit on solid tiles */
+  --gate-tile: #f7f5ef;
+  --gate-tile-hover: #ecebe4;
+  --gate-line: #cbc6b6;
+  --gate-ink: var(--ink);
+  --gate-muted: var(--muted);
+  --gate-red: var(--red);
+  --gate-green: var(--green);
   width: 100%;
   max-width: 21rem;
-  background: var(--gate-bg);
-  border: 1px solid #2c2d27;
-  box-shadow: 0 0.5rem 2.25rem rgba(40, 38, 30, 0.38);
-  padding: 2rem;
+  background: var(--page) url('./assets/wallpaper.png') repeat;
+  background-size: 10rem 12.5rem;
+  /* center a vine line (x=56.5px of the 160px tile) on the card */
+  background-position: calc(50% + 1.4688rem) top;
+  border: 1px solid #b7b19f;
+  box-shadow: 0 0.5rem 2.25rem rgba(40, 38, 30, 0.3);
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
 }
-.gate-mast {
+.gate-mast,
+.gate-plate {
   align-self: stretch;
   text-align: center;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--gate-line);
+  background: var(--gate-tile);
+  border: 1px solid var(--gate-line);
+  border-radius: 2px;
+  box-shadow: 0 1px 0.25rem rgba(60, 58, 48, 0.12);
+}
+.gate-mast {
+  padding: 1.125rem 1rem 1.25rem;
 }
 .gate-mast .mast-line2 {
   justify-content: center;
@@ -864,10 +871,15 @@ p {
   color: var(--gate-ink);
 }
 .gate-mast .mast-of {
-  color: var(--gate-muted);
+  color: var(--ink3);
+}
+.gate-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.875rem 1rem 1rem;
 }
 .gate-label {
-  margin-top: 1.75rem;
   font-family: var(--mono);
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
@@ -882,18 +894,18 @@ p {
 .gate-slots {
   display: flex;
   gap: 0.875rem;
-  margin: 1rem 0 1.75rem;
+  margin-top: 0.75rem;
 }
 .gate-slot {
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 50%;
-  border: 1.5px solid var(--gate-line);
+  border: 1.5px solid var(--rule);
   transition: background 0.12s, border-color 0.12s;
 }
 .gate-slot.filled {
-  background: var(--gate-ink);
-  border-color: var(--gate-ink);
+  background: var(--indigo);
+  border-color: var(--indigo);
 }
 .gate-slot.wrong {
   background: var(--gate-red);
@@ -920,36 +932,31 @@ p {
 }
 .key {
   height: 3.5rem;
-  background: var(--gate-key);
+  background: var(--gate-tile);
   border: 1px solid var(--gate-line);
   border-radius: 2px;
+  box-shadow: 0 1px 0.25rem rgba(60, 58, 48, 0.14);
   text-align: center;
   font-family: var(--mono);
   font-size: 1.375rem;
   color: var(--gate-ink);
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.08s;
 }
 .key:hover {
-  background: var(--gate-key-hover);
+  background: var(--gate-tile-hover);
 }
 .key:active {
-  background: var(--gate-line);
-  border-color: var(--gate-ink);
+  transform: translateY(1px);
+  border-color: var(--indigo);
 }
 .key:focus-visible {
-  outline: 2px solid var(--gate-ink);
+  outline: 2px solid var(--indigo);
   outline-offset: 1px;
 }
 .key-fn {
-  background: transparent;
-  border-color: transparent;
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   color: var(--gate-muted);
-}
-.key-fn:hover {
-  background: transparent;
-  color: var(--gate-ink);
 }
 .key-fn:last-child {
   font-size: 1.125rem;
