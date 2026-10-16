@@ -109,7 +109,6 @@ export function Gate({ children }: { children: ReactNode }) {
           ))}
         </div>
 
-        <div className="gate-foot">REVIEWED QUARTERLY · BOTH SIGNATURES</div>
       </div>
     </div>
   );
