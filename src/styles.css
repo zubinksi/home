@@ -1,6 +1,5 @@
 :root {
   --ground: #8f9186;
-  --page: #f4f1e9; /* the wallpaper's cream */
   --mast-ink: #e5e3db;
   --mast-ink2: #d3d1c8;
   --mast: #d9d8d0;
@@ -80,7 +79,7 @@ p {
 
 /* ── masthead ─────────────────────────────────────────── */
 .masthead {
-  background: transparent;
+  background: var(--ground);
 }
 .mast-inner {
   max-width: 67.5rem;
@@ -830,71 +829,47 @@ p {
   padding: 2rem 1rem;
 }
 .gate-card {
-  /* the card itself is papered with our iris wallpaper; type and keys sit on solid tiles */
-  --gate-tile: #f7f5ef;
-  --gate-tile-hover: #ecebe4;
-  --gate-line: #cbc6b6;
-  --gate-ink: var(--ink);
-  --gate-muted: var(--muted);
-  --gate-red: var(--red);
-  --gate-green: var(--green);
   width: 100%;
   max-width: 21rem;
-  background: var(--page) url('./assets/wallpaper.png') repeat;
-  background-size: 10rem 12.5rem;
-  /* center a vine line (x=56.5px of the 160px tile) on the card */
-  background-position: calc(50% + 1.4688rem) top;
-  border: 1px solid #b7b19f;
-  box-shadow: 0 0.5rem 2.25rem rgba(40, 38, 30, 0.3);
-  padding: 1.5rem;
+  background: var(--slab);
+  box-shadow: 0 0.25rem 1rem rgba(60, 58, 48, 0.13);
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-}
-.gate-mast,
-.gate-plate {
-  align-self: stretch;
-  text-align: center;
-  background: var(--gate-tile);
-  border: 1px solid var(--gate-line);
-  border-radius: 2px;
-  box-shadow: 0 1px 0.25rem rgba(60, 58, 48, 0.12);
 }
 .gate-mast {
-  padding: 1.125rem 1rem 1.25rem;
+  align-self: stretch;
+  text-align: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--b1);
 }
 .gate-mast .mast-line2 {
   justify-content: center;
 }
 .gate-mast .mast-title {
-  color: var(--gate-ink);
+  color: var(--ink);
 }
 .gate-mast .mast-of {
   color: var(--ink3);
 }
-.gate-plate {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.875rem 1rem 1rem;
-}
 .gate-label {
+  margin-top: 1.75rem;
   font-family: var(--mono);
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
-  color: var(--gate-muted);
+  color: var(--muted);
 }
 .gate-label.is-wrong {
-  color: var(--gate-red);
+  color: var(--red);
 }
 .gate-label.is-done {
-  color: var(--gate-green);
+  color: var(--green);
 }
 .gate-slots {
   display: flex;
   gap: 0.875rem;
-  margin-top: 0.75rem;
+  margin: 1rem 0 1.75rem;
 }
 .gate-slot {
   width: 0.875rem;
@@ -908,12 +883,12 @@ p {
   border-color: var(--indigo);
 }
 .gate-slot.wrong {
-  background: var(--gate-red);
-  border-color: var(--gate-red);
+  background: var(--red);
+  border-color: var(--red);
 }
 .gate-slot.done {
-  background: var(--gate-green);
-  border-color: var(--gate-green);
+  background: var(--green);
+  border-color: var(--green);
 }
 .shake {
   animation: shake 0.42s;
@@ -932,21 +907,20 @@ p {
 }
 .key {
   height: 3.5rem;
-  background: var(--gate-tile);
-  border: 1px solid var(--gate-line);
+  background: var(--inset);
+  border: 1px solid var(--b2);
   border-radius: 2px;
-  box-shadow: 0 1px 0.25rem rgba(60, 58, 48, 0.14);
   text-align: center;
   font-family: var(--mono);
   font-size: 1.375rem;
-  color: var(--gate-ink);
-  transition: background 0.15s, border-color 0.15s, transform 0.08s;
+  color: var(--ink);
+  transition: background 0.15s, border-color 0.15s;
 }
 .key:hover {
-  background: var(--gate-tile-hover);
+  background: var(--hover);
 }
 .key:active {
-  transform: translateY(1px);
+  background: var(--card);
   border-color: var(--indigo);
 }
 .key:focus-visible {
@@ -954,9 +928,11 @@ p {
   outline-offset: 1px;
 }
 .key-fn {
+  background: transparent;
+  border-color: transparent;
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
-  color: var(--gate-muted);
+  color: var(--muted);
 }
 .key-fn:last-child {
   font-size: 1.125rem;
