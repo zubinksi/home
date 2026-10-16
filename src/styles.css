@@ -832,6 +832,29 @@ p {
   text-underline-offset: 0.1875rem;
 }
 
+.view-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 2rem auto;
+  max-width: 45rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--slab);
+  color: var(--red);
+}
+.view-error p {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+.view-error button {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--indigo);
+}
+
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
   .mast-inner {

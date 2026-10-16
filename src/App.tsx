@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
+import { ErrorBoundary } from './ErrorBoundary';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -188,11 +189,13 @@ export function App() {
             </nav>
 
             <div className="detail" ref={detailRef}>
+              <ErrorBoundary resetKey={sel}>
               {sel === SEL_TOTAL && (
                 <TotalDetail model={model} openCount={open.length} onOpenList={openTheList} />
               )}
               {selected && <Detail key={selected.key} sleeve={selected} openCount={openCount(selected.key)} onOpenList={openTheList} />}
               {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} />}
+              </ErrorBoundary>
             </div>
           </div>
         </section>
