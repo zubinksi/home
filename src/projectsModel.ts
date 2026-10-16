@@ -7,6 +7,9 @@
 //    Any cost (including "FREE") means the item is done.
 //  - "Optional:" before an item marks it optional; "Closed:" marks it dropped.
 //  - The totals rows at the bottom are ignored; the page adds things up itself.
+//  - Hidden column D holds each row's number (=ARRAYFORMULA(ROW(…))). Google's
+//    browser-readable export skips blank rows, so a jump in those numbers is
+//    read as the blank row that separates two groups.
 
 export type Section = 'house' | 'rooms';
 
@@ -87,11 +90,16 @@ export function parseProjects(rows: string[][]): Area[] {
   let current: Area | null = null;
   const used = new Set<string>();
 
+  let lastRow: number | null = null;
   for (const r of rows.slice(start + 1)) {
     const a = cell(r, 0);
     const b = cell(r, 1);
     const c = cell(r, 2);
     if (TOTAL_ROWS.test(a)) break;
+    const rowNo = Number(cell(r, 3)) || null;
+    const skipped = rowNo !== null && lastRow !== null && rowNo > lastRow + 1;
+    if (rowNo !== null) lastRow = rowNo;
+    if (skipped) current = null; // rows missing between these two = a blank row
     if (!a && !b && !c) {
       current = null; // blank row ends the group
       continue;

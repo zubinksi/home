@@ -1,90 +1,92 @@
-"Purpose: Track and list in order of priority home renovation projects and large purchases (i.e. furnishings, appliances) with vendor quotes and ballpark estimates to keep us in budget and in sync on timeline and spending. ",,
-,,
-Item/Space: Status,Moving / maintenance,Furnishing
-Moving,,
-ARS Moving,$700,
-Reserved parking,$110,
-Upholstery and carpet cleaning,$841,
-Painting,"$6,000",
-,,
-"Roof:  ~20 years old, seams need to be resealed. Needs another coat of aluminized paint, or to be replaced with a rubber roof. Skylight chases need to be insulated. Flashing in crown to be maintained on chimney",,
-"New metal roof, decking replaced, chimney flashing ","$15,800",
-Closed: Replace with rubber roof,,
-Insulate skylight chases,,
-Maintain flashing in chimney crown,,
-,,
-"Plumbing: Clogged downspout in rear leading to water getting into back unfinished space, check out basement bathroom, drain lines need investigation, primary bathroom shower head dripping, main shower needs new diverter to route water properly",,
-"Get main drain video scoped to determine condition, what its made of, if needs replacing","$1,200",
-Unclog downspout,,
-Fix primary and second shower heads,,
-Water test,FREE,
-Optional: add whole house water filter ,,
-Main drain repairs,,
-,,
-"Maintenance/ testing: Radon, Lead is presumably present throughout. understand hot spots for safety",,
-Radon,$235,
-Comprehensive Lead Inspection ,$700,
-HVAC,$89,
-,,
-Zora's room,,
-New drapes,,$370
-Area rugs,,
-,,
-"Living room: Needs new furnishings, no obvious issues",,
-Add alternate seating options,,
-Add TV armoire,,
-Add television,,
-Add rug,,"$1,300"
-Add coffee table/ottoman,,
-Add lamps,,
-Optional: Add shelving,,
-,,
-Basement: carpet from 2017,,
-Add seating,,
-Add sleepersofa,,
-Add book storage,,
-Add side tables,,
-Optional: replace washer and dryer,,
-Optional: Add shower to bathroom,,
-,,
-"Dining room: Needs new furnishings, no obvious issues",,
-Replace dining table and chairs,,
-Add large mirror,,
-Add judaica cabinet,,
-Optional: Replace light fixtures,,
-Optional: Add chandelier,,
-Optional: Add rug,,
-,,
-Primary bed and bath: bathroom redone 2022,,
-Replace bedframe,,
-Replace nightstands,,
-Replace dresser,,
-Add seating,,
-Add lighting,,
-Add shoe storage to closet,,
-,,
-Third bedroom,,
-Add desk,,
-Add desk chair,,
-Add printer,,
-,,
-"Kitchen: All cosmetic, no obvious issues",,
-Add runner,,
-Add bar seats,,$200
-Optional: Replace faucet,,
-Optional: Paint cabinets,,
-,,
-Mudroom,,
-Wall papering,,675
-,,
-Yard,,
-Landscaping,,600
-,,
-Walls and openings: windows and exterior doors redone 2022,,
-Optional: Replace light switch panels,,
-,,
-Patio,,
-Grill cleaning,$450,
-Moving & Maintenance,"$26,125",
-Furniture & Decor,,3145
-TOTAL,"$29,270",
+"Purpose: Track and list in order of priority home renovation projects and large purchases (i.e. furnishings, appliances) with vendor quotes and ballpark estimates to keep us in budget and in sync on timeline and spending. ",,,1
+,,,2
+Item/Space: Status,Moving / maintenance,Furnishing,3
+Moving,,,4
+ARS Moving,$700,,5
+Reserved parking,$110,,6
+Upholstery and carpet cleaning,$841,,7
+Painting,"$6,000",,8
+,,,9
+"Roof:  ~20 years old, seams need to be resealed. Needs another coat of aluminized paint, or to be replaced with a rubber roof. Skylight chases need to be insulated. Flashing in crown to be maintained on chimney",,,10
+"New metal roof, decking replaced, chimney flashing ","$15,800",,11
+,,,12
+,,,13
+,,,14
+,,,15
+"Plumbing: Clogged downspout in rear leading to water getting into back unfinished space, check out basement bathroom, drain lines need investigation, primary bathroom shower head dripping, main shower needs new diverter to route water properly",,,16
+"Get main drain video scoped to determine condition, what its made of, if needs replacing","$1,200",,17
+Unclog downspout,,,18
+Fix primary and second shower heads,,,19
+Water test,FREE,,20
+Optional: add whole house water filter ,,,21
+Main drain repairs,,,22
+,,,23
+"Maintenance/ testing: Radon, Lead is presumably present throughout. understand hot spots for safety",,,24
+Radon,$235,,25
+Comprehensive Lead Inspection ,$700,,26
+HVAC,$89,,27
+,,,28
+Zora's room,,,29
+New drapes,,$370,30
+New rug,,2000,31
+,,,32
+"Living room: Needs new furnishings, no obvious issues",,,33
+Swivel chairs,,1400,34
+Side table,,349,35
+Add TV armoire,,,36
+Add television,,,37
+Add rug,,"$1,300",38
+Add coffee table/ottoman,,,39
+Add lamps,,,40
+Optional: Add shelving,,,41
+,,,42
+Basement: carpet from 2017,,,43
+Add seating,,,44
+Add sleepersofa,,,45
+Add book storage,,,46
+Add side tables,,,47
+Optional: replace washer and dryer,,,48
+Optional: Add shower to bathroom,,,49
+,,,50
+"Dining room: Needs new furnishings, no obvious issues",,,51
+Replace dining table and chairs,,,52
+Add large mirror,,,53
+Add judaica cabinet,,,54
+Optional: Replace light fixtures,,,55
+Optional: Add chandelier,,,56
+Optional: Add rug,,,57
+,,,58
+Primary bed and bath: bathroom redone 2022,,,59
+Replace bedframe,,,60
+Replace nightstands,,,61
+Replace dresser,,,62
+Add seating,,,63
+Add lighting,,,64
+Add shoe storage to closet,,,65
+,,,66
+Third bedroom,,,67
+Desk,,$500,68
+Add desk chair,,,69
+Add printer,,,70
+,,,71
+"Kitchen: All cosmetic, no obvious issues",,,72
+Add runner,,,73
+Add bar seats,,$200,74
+Optional: Replace faucet,,,75
+Optional: Paint cabinets,,,76
+,,,77
+Mudroom,,,78
+Wall papering,,675,79
+Bench,,350,80
+,,,81
+Yard,,,82
+Landscaping,,600,83
+,,,84
+Walls and openings: windows and exterior doors redone 2022,,,85
+Optional: Replace light switch panels,,,86
+,,,87
+Patio,,,88
+Grill cleaning,$450,,89
+Moving & Maintenance,"$26,125",,90
+Furniture & Decor,,7744,91
+TOTAL,"$33,869",,92

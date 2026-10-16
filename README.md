@@ -60,6 +60,9 @@ The page relies on these sheet conventions:
   including `FREE`, means the item is done.
 - Start an item with `Optional:` to mark it optional, or `Closed:` to drop it
   without deleting it.
+- Hidden column D holds `=ARRAYFORMULA(ROW(A1:A300))`. Leave it there: Google's
+  browser-readable export drops blank rows, and those row numbers are how the
+  page still sees where one area ends and the next begins.
 - Areas named Moving, Roof, Plumbing, Maintenance/testing, Walls…, Patio or Yard
   are listed under **The House**; everything else under **The Rooms**.
 
