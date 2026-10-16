@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
+import { lock } from './Gate';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -71,7 +72,12 @@ export function App() {
             <span className="mast-title">THE BROWNS</span>
           </div>
         </div>
-        <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
+        <div className="mast-right">
+          <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
+          <button className="mast-lock" onClick={lock}>
+            LOCK
+          </button>
+        </div>
         </div>
       </header>
     <div className="doc">

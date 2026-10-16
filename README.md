@@ -22,6 +22,16 @@ If the site is opened without that server (a static host, or no key in
 is saved in the browser's local storage and sent directly to the Anthropic
 API, so use it only on your own devices. **FORGET** under the input removes it.
 
+## The PIN gate
+
+The site opens behind a 4-digit code (set as `CODE` in `src/Gate.tsx`). It stays
+unlocked until the browser tab is closed; **LOCK** in the header re-locks it.
+
+This is a household gate, not real security: there is no login server, so the
+code and the numbers both ship in the page's JavaScript. It keeps casual eyes
+out on a shared screen. Don't rely on it to protect a copy hosted on the
+public internet.
+
 ## The quarterly review
 
 1. In `src/data.ts`, append one entry to `reviews` with the date and that day's
