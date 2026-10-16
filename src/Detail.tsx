@@ -204,14 +204,38 @@ export function TotalDetail({ model, openCount, onOpenList }: { model: Model; op
         </span>
       </div>
       <Cards kv={model.totalCards} />
+      {model.plan.length > 0 && (
+        <div className="module">
+          <div className="module-head">
+            <span className="label">WHAT THE POLICY CALLS FOR THIS REVIEW</span>
+            <span className="label">WITHIN 30 DAYS</span>
+          </div>
+          <div className="plan">
+            {model.plan.map((p, i) => (
+              <div key={i} className="plan-row review">
+                <span className="plan-src">
+                  {p.action}
+                  <span className="plan-why">{p.why}</span>
+                </span>
+                <span className="plan-amt">{money(p.amount)}</span>
+                <span className="plan-when">{p.sleeve}</span>
+              </div>
+            ))}
+          </div>
+          <div className="module-foot">
+            <span>AFTER: CRYPTO {pct(model.after.crypto)} · FORTRESS {Math.floor(model.after.fortressMonths)} MO</span>
+            <span>48-HOUR WAIT ON TRADES OVER $25K</span>
+          </div>
+        </div>
+      )}
       <div className="module">
         <div className="module-head">
-          <span className="label">QUARTERLY SNAPSHOTS</span>
+          <span className="label">QUARTERLY REVIEWS</span>
           <span className="label">
             {compact(lo)} — {compact(hi)}
           </span>
         </div>
-        <Chart points={[...model.history, { date: 'now', total: model.total }]} />
+        <Chart points={model.history} />
       </div>
       <div className="module">
         <div className="label">ALLOCATION</div>

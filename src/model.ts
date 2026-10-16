@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, holdings, household, items, snapshots } from './data';
+import { diversifiedGoalDate, holdings, household, items, reviewDate, snapshots } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -51,6 +51,13 @@ export interface Sleeve {
   kv: KV[];
   policy: string[];
   module?: Module;
+}
+
+export interface PlanStep {
+  sleeve: SleeveKey;
+  action: string;
+  amount: number;
+  why: string;
 }
 
 export interface Item {
@@ -144,11 +151,55 @@ export function buildSleeves() {
 
   // ── AAPL
   const aaplGain = h.aapl.basis == null ? null : h.aapl.value - h.aapl.basis;
-  const aaplTax = aaplGain == null ? null : Math.max(0, aaplGain) * RULES.taxSetAside;
+  const aaplTax = h.aapl.value * RULES.taxSetAside;
 
   // ── FORTRESS
   const fortressStatus: Status =
     fortressMonths < RULES.austerityMonths ? 'red' : fortressMonths < RULES.fortressTargetMonths - 0.5 ? 'amber' : 'green';
+
+  // ── THIS REVIEW: trims and refills the policy calls for (§2, §3, §4, §5)
+  const plan: PlanStep[] = [];
+  const zecTrimTokens = zecShare > RULES.zecTrimAt ? Math.ceil((zec - RULES.zecTrimTo * total) / h.zec.price) : 0;
+  const zecAfter = zec - zecTrimTokens * h.zec.price;
+  const cryptoTarget = RULES.cryptoTrimTo * total;
+  const hypeTrimTokens =
+    crypto > RULES.cryptoCeiling
+      ? Math.min(h.hype.tokens - RULES.hypeKeep, Math.max(0, Math.ceil((hype + zecAfter - cryptoTarget) / h.hype.price)))
+      : 0;
+  if (zecTrimTokens > 0)
+    plan.push({
+      sleeve: 'ZEC',
+      action: `Sell ${num(zecTrimTokens)} ZEC at $${num(h.zec.price)}`,
+      amount: zecTrimTokens * h.zec.price,
+      why: `ZEC is ${pct(zecShare, 1)} of liquid, past the 10% line. Trim back to 7%.`,
+    });
+  if (hypeTrimTokens > 0)
+    plan.push({
+      sleeve: 'HYPE',
+      action: `Sell ${num(hypeTrimTokens)} HYPE at $${num(h.hype.price)}`,
+      amount: hypeTrimTokens * h.hype.price,
+      why: `HYPE + ZEC are ${pct(crypto)} of liquid, over the 45% ceiling. Trim back to 40% within 30 days.`,
+    });
+  const proceeds = plan.reduce((s, p) => s + p.amount, 0);
+  const taxReserve = proceeds * RULES.taxSetAside;
+  const toWork = proceeds - taxReserve;
+  const fortressGap = Math.max(0, RULES.fortressTargetMonths * burn - h.fortress.value);
+  const toFortress = Math.min(toWork, fortressGap);
+  const toDiversified = toWork - toFortress;
+  if (taxReserve > 0)
+    plan.push({ sleeve: 'FORTRESS', action: 'Set aside 30% for taxes', amount: taxReserve, why: 'Held in the Fortress, reserved for the estimated tax payment. Not counted toward months of coverage.' });
+  if (toFortress > 0)
+    plan.push({
+      sleeve: 'FORTRESS',
+      action: `Refill the Fortress to ${RULES.fortressTargetMonths} months`,
+      amount: toFortress,
+      why: `The Fortress covers ${Math.floor(fortressMonths)} months. Refill from what is up, HYPE proceeds first.`,
+    });
+  if (toDiversified > 0)
+    plan.push({ sleeve: 'DIVERSIFIED', action: 'Fund Diversified: VOO 55 · VXUS 30 · AVUV 15', amount: toDiversified, why: 'Anything above the Fortress target goes to the Diversified sleeve. Over $100K goes in in thirds.' });
+  const hypeTokensAfter = h.hype.tokens - hypeTrimTokens;
+  const cryptoAfter = (hype - hypeTrimTokens * h.hype.price + zecAfter) / total;
+  const fortressMonthsAfter = (h.fortress.value + toFortress) / burn;
 
   // ── DIVERSIFIED
   const divShare = share(div);
@@ -167,7 +218,7 @@ export function buildSleeves() {
       pct: share(hype),
       roleTitle: `Our biggest bet — ${num(h.hype.tokens)} tokens, skimmed on the way up`,
       status: hypeStatus,
-      alloc: `CRYPTO ${pct(crypto)} OF ${pct(RULES.cryptoCeiling)} CEILING`,
+      alloc: crypto > RULES.cryptoCeiling ? `CRYPTO ${pct(crypto)} · OVER ${pct(RULES.cryptoCeiling)} CEILING` : `CRYPTO ${pct(crypto)} OF ${pct(RULES.cryptoCeiling)} CEILING`,
       cap: { cap: RULES.cryptoCeiling, kind: 'cap' },
       kv: [
         { k: 'PRICE', v: `$${num(h.hype.price)}`, d: `FLOOR $${RULES.hypeFloor}` },
@@ -220,8 +271,8 @@ export function buildSleeves() {
         rows: [
           { k: 'Cost basis', v: dash(h.aapl.basis, money) },
           { k: 'Long-term gain', v: dash(aaplGain, money), color: 'green' },
-          { k: 'Est. tax at 30% set-aside', v: dash(aaplTax, money), color: 'red' },
-          { k: 'Net to the Fortress / Diversified', v: aaplTax == null ? '—' : money(h.aapl.value - aaplTax) },
+          { k: '30% tax set-aside (§4)', v: money(aaplTax), color: 'red' },
+          { k: 'Net to the Fortress / Diversified', v: money(h.aapl.value - aaplTax) },
         ],
         note: h.aapl.basis == null ? 'Add shares and basis in src/data.ts to see the numbers. The CPA confirms actuals.' : 'Estimate only. The CPA confirms actuals each year.',
       },
@@ -266,7 +317,7 @@ export function buildSleeves() {
       pct: zecShare,
       roleTitle: `Small bet on purpose — ${num(h.zec.tokens)} tokens`,
       status: zecStatus,
-      alloc: `${pct(zecShare)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
+      alloc: zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
       cap: { cap: RULES.zecTrimAt, kind: 'trim' },
       kv: [
         { k: 'PRICE', v: `$${num(h.zec.price)}` },
@@ -329,6 +380,7 @@ export function buildSleeves() {
         goal: divGoal,
         goalDate: diversifiedGoalDate,
         rows: [
+          ...(toDiversified > 0 ? [{ source: 'This review’s trim, after the Fortress refill', amount: money(toDiversified), when: 'THIS MONTH' }] : []),
           { source: 'Flexible equities bucket', amount: money(h.equities.value), when: 'THIS MONTH' },
           { source: 'HYPE ladder, after 30% tax set-aside', amount: money(ladderTotal * (1 - RULES.taxSetAside)), when: 'AS RUNGS FILL' },
           { source: 'Evergreen above the Fortress target', amount: 'VARIES', when: 'AS RECEIVED' },
@@ -339,20 +391,24 @@ export function buildSleeves() {
   ];
 
   // ── TOTAL
-  const last = snapshots[snapshots.length - 1];
-  const prior = snapshots.length > 1 ? snapshots[snapshots.length - 2] : snapshots[0];
-  const sinceFirst = snapshots.length ? total / snapshots[0].total - 1 : 0;
+  const first = snapshots[0];
+  const prior = snapshots.length > 1 ? snapshots[snapshots.length - 2] : first;
+  const sinceFirst = total / first.total - 1;
   const netDraw = household.annualSpend - household.evergreenIncome;
   const unfunded = sleeves.filter((s) => s.amount === 0);
-  const sinceLast = last ? total - prior.total : 0;
+  const sinceLast = total - prior.total;
+  const months = monthsBetween(first.date, reviewDate);
 
   const totalCards: KV[] = [
     { k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` },
     {
-      k: 'SINCE LAST REVIEW',
+      k: 'THIS QUARTER',
       v: sinceLast === 0 ? '$0' : `${sinceLast > 0 ? '+' : '−'}${money(Math.abs(sinceLast))}`,
-      d: sinceLast === 0 ? `SNAPSHOT ${monYY(prior.date)}` : `${sinceLast > 0 ? '▲' : '▼'} ${pct(Math.abs(sinceLast) / prior.total, 1)}`,
-      dc: sinceLast > 0 ? 'green' : sinceLast < 0 ? 'red' : undefined,
+      d:
+        snapshots.length < 2
+          ? `FIRST REVIEW ${dayMon(prior.date)}`
+          : `${sinceLast >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(sinceLast) / prior.total, 1)} SINCE ${dayMon(prior.date)}`,
+      dc: snapshots.length < 2 ? undefined : sinceLast >= 0 ? 'green' : 'red',
     },
     {
       k: 'SLEEVES UNFUNDED',
@@ -367,13 +423,28 @@ export function buildSleeves() {
     total,
     totalCards,
     totalSub:
-      snapshots.length && Math.round(sinceFirst * 100) !== 0
-        ? `${sinceFirst > 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · SINCE ${monYY(snapshots[0].date)}`
-        : `FIRST SNAPSHOT · ${monYY(snapshots[0]?.date ?? new Date())}`,
-    history: [...snapshots.map((s) => ({ date: s.date, total: s.total }))],
+      snapshots.length < 2
+        ? `FIRST REVIEW · ${dayMon(first.date)}`
+        : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
+    history: snapshots,
+    reviewDate,
     fortressMonths,
     crypto,
+    plan,
+    after: { crypto: cryptoAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve },
   };
+}
+
+function monthsBetween(a: string, b: string) {
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  return (db.getFullYear() - da.getFullYear()) * 12 + db.getMonth() - da.getMonth();
+}
+
+/** "2026-08-01" → "AUG 1" */
+export function dayMon(d: string) {
+  const date = new Date(d + 'T00:00:00');
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
 export function buildItems(): Item[] {
@@ -381,6 +452,27 @@ export function buildItems(): Item[] {
   for (const [sleeve, list] of Object.entries(items)) {
     list.forEach((it, i) => out.push({ id: `${sleeve}:${i}`, sleeve: sleeve as Item['sleeve'], ...it }));
   }
+
+  // Items the policy itself calls for at this review. Ids carry the review
+  // date so a new quarter's trims start unchecked.
+  const m = buildSleeves();
+  const wait = (n: number) => (n > 25_000 ? ', after the 48-hour wait' : '');
+  m.plan.forEach((p, i) =>
+    out.push({
+      id: `${p.sleeve}:plan${i}@${m.reviewDate}`,
+      sleeve: p.sleeve,
+      text: `${p.action} (${money(p.amount)})${p.sleeve === 'HYPE' || p.sleeve === 'ZEC' ? wait(p.amount) : ''}`,
+      when: 'this month',
+    }),
+  );
+  const laddered = LADDER.reduce((s, r) => s + r.tokens, 0) + RULES.hypeKeep;
+  if (m.after.hypeTokens < laddered)
+    out.push({
+      id: `HYPE:ladder@${m.reviewDate}`,
+      sleeve: 'HYPE',
+      text: `After the trim we hold ${num(m.after.hypeTokens)} HYPE, fewer than the ${num(laddered)} the ladder and the 750-token keep assume. Write down how the rungs scale at the annual review`,
+      when: 'q1 review',
+    });
   return out;
 }
 
@@ -388,12 +480,17 @@ export function buildItems(): Item[] {
 export function stateForPrompt(): string {
   const m = buildSleeves();
   const lines = [
+    `Numbers as of the ${m.reviewDate} quarterly review. Previous snapshots: ${m.history.map((h) => `${h.date} $${num(Math.round(h.total))}`).join('; ')}.`,
     `Total liquid: $${num(Math.round(m.total))}. Annual spend $${num(household.annualSpend)}; Evergreen ~$${num(household.evergreenIncome)}/yr; mortgage $${num(household.mortgage.balance)} at ${household.mortgage.rate}%.`,
     `Fortress coverage: ${m.fortressMonths.toFixed(1)} months. Crypto (HYPE+ZEC): ${pct(m.crypto, 1)} of liquid.`,
     '',
   ];
   for (const s of m.sleeves) {
     lines.push(`${s.name} — ${s.roleTitle}. Value $${num(Math.round(s.amount))} (${pct(s.pct, 1)}). Status: ${s.status} (${s.alloc}).`);
+  }
+  if (m.plan.length) {
+    lines.push('', 'Trims and refills this review calls for (computed from the rules):');
+    for (const p of m.plan) lines.push(`- ${p.action}: $${num(Math.round(p.amount))}. ${p.why}`);
   }
   lines.push('', 'Open items:');
   for (const it of buildItems()) lines.push(`- [${it.sleeve}] ${it.text} (${it.when})`);

@@ -601,6 +601,12 @@ p {
   font-family: var(--serif);
   font-size: 14px;
 }
+.plan-why {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--ink3);
+}
 .plan-amt {
   font-family: var(--mono);
   font-size: 13px;

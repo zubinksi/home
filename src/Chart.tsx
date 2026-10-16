@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { monYY } from './model';
+import { dayMon } from './model';
 
 const BAYER = [
   [0, 8, 2, 10],
@@ -90,10 +90,10 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
       <canvas ref={canvas} style={{ width: '100%', height: HEIGHT, display: 'block' }} />
       <div className="chart-axis">
         {points.map((p, i) => (
-          <span key={i}>{p.date === 'now' ? 'NOW' : monYY(p.date)}</span>
+          <span key={i}>{dayMon(p.date)}</span>
         ))}
       </div>
-      {points.length <= 2 && <div className="module-note">One snapshot so far. Append one to src/data.ts at each quarterly review.</div>}
+      {points.length < 3 && <div className="module-note">Append a review to src/data.ts each quarter to extend the line.</div>}
     </div>
   );
 }

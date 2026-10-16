@@ -19,16 +19,19 @@ sent to the browser. Without a key, Ask the Policy quotes the closest policy lin
 
 ## The quarterly review
 
-1. Open `src/data.ts` and update the numbers: HYPE/ZEC price, AAPL, Fortress,
-   flexible equities, Diversified fund balances, ladder rungs sold.
-2. Append a row to `snapshots` with today's total liquid.
-3. Add, or check off, open items. Checked-off items are remembered in this
+1. In `src/data.ts`, append one entry to `reviews` with the date and that day's
+   amounts and prices (the latest entry is treated as "now").
+2. Update `basis` after any buy or sell, and `hypeRungsSold` when a rung fills.
+3. Open the site. The TOTAL view lists **what the policy calls for this
+   review** (trims over the 45% crypto ceiling or the 10% ZEC line, the 30% tax
+   set-aside, the Fortress refill to 30 months, the overflow to Diversified),
+   and those steps appear as open items automatically.
+4. Check off items as you do them. Checked-off items are remembered in this
    browser only.
-4. Fill in anything still showing "—" (basis, share counts, idle cash) when you have it.
 
-Every percentage, status dot, gauge, ladder marker and funding-plan figure is
-derived from those numbers by `src/model.ts` using the rules in the policy.
-Change rules there only at the annual review.
+Every percentage, status dot, gauge, ladder marker and trim amount is derived
+from those numbers by `src/model.ts` using the rules in the policy. Change
+rules there only at the annual review.
 
 ## Layout
 

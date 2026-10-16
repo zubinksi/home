@@ -61,7 +61,7 @@ export function App() {
             <span className="mast-title">THE BROWNS</span>
           </div>
         </div>
-        <div className="mast-title mast-date">{monYY(new Date())}</div>
+        <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
       </header>
 
       <main className="body">
