@@ -25,7 +25,7 @@ API, so use it only on your own devices. **FORGET** under the input removes it.
 ## The PIN gate
 
 The site opens behind a 4-digit code (set as `CODE` in `src/Gate.tsx`). It stays
-unlocked until the browser tab is closed; **LOCK** in the header re-locks it.
+unlocked until the browser tab is closed; the padlock in the header re-locks it.
 
 This is a household gate, not real security: there is no login server, so the
 code and the numbers both ship in the page's JavaScript. It keeps casual eyes

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
-import { lock } from './Gate';
+import { LockButton } from './Gate';
 import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -27,7 +27,6 @@ export function App() {
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
   const [chat, setChat] = useState<ChatTurn[]>([]);
-  const itemsRef = useRef<HTMLElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
   // On a phone the detail pane sits below the menu, so bring it into view.
@@ -47,14 +46,9 @@ export function App() {
 
   const open = allItems.filter((i) => !done.includes(i.id)).sort((a, b) => WHEN_RANK[a.when] - WHEN_RANK[b.when]);
   const closed = allItems.filter((i) => done.includes(i.id));
-  const openCount = (key: string) => open.filter((i) => i.sleeve === key).length;
 
   const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
-  const openTheList = () => {
-    setItemsOpen(true);
-    itemsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   const policyFor = (item: Item) =>
     item.sleeve === 'POLICY' ? PORTFOLIO_RULES : model.sleeves.find((s) => s.key === item.sleeve)!.policy;
@@ -74,9 +68,7 @@ export function App() {
         </div>
         <div className="mast-right">
           <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
-          <button className="mast-lock" onClick={lock}>
-            LOCK
-          </button>
+          <LockButton />
         </div>
         </div>
       </header>
@@ -84,7 +76,7 @@ export function App() {
 
       <main className="body">
         {/* ── Open items ─────────────────────────────────────────────── */}
-        <section className={`slab items ${itemsOpen ? 'is-open' : ''}`} ref={itemsRef}>
+        <section className={`slab items ${itemsOpen ? 'is-open' : ''}`}>
           <button className="items-head" onClick={() => setItemsOpen(!itemsOpen)} aria-expanded={itemsOpen}>
             <span className={`caret ${itemsOpen ? '' : 'closed'}`} aria-hidden />
             <span>{open.length} OPEN ITEMS</span>
@@ -196,9 +188,9 @@ export function App() {
             <div className="detail" ref={detailRef}>
               <ErrorBoundary resetKey={sel}>
               {sel === SEL_TOTAL && (
-                <TotalDetail model={model} openCount={open.length} onOpenList={openTheList} />
+                <TotalDetail model={model} />
               )}
-              {selected && <Detail key={selected.key} sleeve={selected} openCount={openCount(selected.key)} onOpenList={openTheList} />}
+              {selected && <Detail key={selected.key} sleeve={selected} />}
               {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} />}
               </ErrorBoundary>
             </div>

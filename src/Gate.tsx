@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 // A household gate, not real security: the code and the data both ship in the
 // page's JavaScript. It keeps casual eyes out; see README for the caveat.
@@ -23,9 +23,34 @@ function remember(on: boolean) {
   }
 }
 
-export function lock() {
-  remember(false);
-  location.reload();
+const LockContext = createContext<() => void>(() => {});
+
+/** Open padlock in the masthead: the shackle snaps shut, then the pin pad returns. */
+export function LockButton() {
+  const lock = useContext(LockContext);
+  const [locking, setLocking] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  return (
+    <button
+      className={`mast-lock ${locking ? 'is-locking' : ''}`}
+      aria-label="Lock the site"
+      title="Lock"
+      disabled={locking}
+      onClick={() => {
+        setLocking(true);
+        timer.current = setTimeout(lock, 560);
+      }}
+    >
+      <svg viewBox="0 0 16 19" width="16" height="19" aria-hidden>
+        {/* left leg runs down behind the body so it stays attached when the shackle lifts */}
+        <path className="lock-shackle" d="M4.5 12V6a3.5 3.5 0 0 1 7 0v3.5" />
+        <rect className="lock-body" x="1.5" y="9" width="13" height="9.5" rx="1.5" />
+        <circle className="lock-hole" cx="8" cy="13.25" r="1.25" />
+      </svg>
+    </button>
+  );
 }
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const;
@@ -72,7 +97,14 @@ export function Gate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [unlocked, press]);
 
-  if (unlocked) return <>{children}</>;
+  const lock = useCallback(() => {
+    remember(false);
+    setEntry('');
+    setWrong(false);
+    setUnlocked(false);
+  }, []);
+
+  if (unlocked) return <LockContext.Provider value={lock}>{children}</LockContext.Provider>;
 
   const done = entry === CODE;
   return (

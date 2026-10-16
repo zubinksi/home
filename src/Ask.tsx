@@ -6,13 +6,6 @@ export type ChatTurn = Turn & { pending?: boolean };
 
 const KEY_STORE = 'browns.anthropicKey.v1';
 
-const SUGGESTIONS = [
-  'HYPE just hit $100. What do we do?',
-  'Markets are down 40%. Can we change the rules?',
-  'Evergreen sent $60K. Where does it go?',
-  'Can we prepay the mortgage this year?',
-];
-
 function loadKey(): string {
   try {
     return localStorage.getItem(KEY_STORE) ?? '';
@@ -145,16 +138,6 @@ export function Ask({ chat, setChat }: { chat: ChatTurn[]; setChat: (c: ChatTurn
         <span className="d-name">ASK THE POLICY</span>
       </div>
       <div className="chat">
-        {chat.length === 0 && (
-          <div className="suggest">
-            <div className="label">TRY ONE OF THESE</div>
-            {SUGGESTIONS.map((s) => (
-              <button key={s} className="chip" onClick={() => ask(s)}>
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
         {chat.map((t, i) => (
           <div key={i} className={`msg ${t.who}`}>
             <div className="label">{t.who === 'you' ? 'YOU' : 'POLICY'}</div>

@@ -57,16 +57,6 @@ function Policy({ lines }: { lines: string[] }) {
   );
 }
 
-function OpenLink({ n, name, onOpen }: { n: number; name?: string; onOpen: () => void }) {
-  if (n === 0) return <div className="open-link none">NOTHING OPEN{name ? ` ON ${name}` : ''}. THE POLICY STANDS AS WRITTEN.</div>;
-  return (
-    <button className="open-link" onClick={onOpen}>
-      {n} OPEN ITEM{n === 1 ? '' : 'S'}
-      {name ? ` ON ${name}` : ''} — OPEN THE LIST ↑
-    </button>
-  );
-}
-
 function ModuleView({ m }: { m: Module }) {
   switch (m.kind) {
     case 'ladder': {
@@ -175,7 +165,7 @@ function ModuleView({ m }: { m: Module }) {
   }
 }
 
-export function Detail({ sleeve: s, openCount, onOpenList }: { sleeve: Sleeve; openCount: number; onOpenList: () => void }) {
+export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
   return (
     <>
       <div className="d-title">
@@ -190,12 +180,11 @@ export function Detail({ sleeve: s, openCount, onOpenList }: { sleeve: Sleeve; o
       <Cards kv={s.kv} />
       {s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
-      <OpenLink n={openCount} name={s.name} onOpen={onOpenList} />
     </>
   );
 }
 
-export function TotalDetail({ model, openCount, onOpenList }: { model: Model; openCount: number; onOpenList: () => void }) {
+export function TotalDetail({ model }: { model: Model }) {
   const values = model.history.map((h) => h.total);
   const lo = Math.min(...values, model.total);
   const hi = Math.max(...values, model.total);
@@ -221,7 +210,6 @@ export function TotalDetail({ model, openCount, onOpenList }: { model: Model; op
         </div>
         <Chart points={model.history} />
       </div>
-      <OpenLink n={openCount} onOpen={onOpenList} />
     </>
   );
 }
