@@ -108,7 +108,6 @@ export function Gate({ children }: { children: ReactNode }) {
             </button>
           ))}
         </div>
-
       </div>
     </div>
   );
