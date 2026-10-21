@@ -192,7 +192,7 @@ function MarketNote({ market }: { market: MarketState }) {
   const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase();
   const ok = (['hype', 'zec', 'aapl'] as const).some((a) => market.live[a] && !market.problems[a]);
   return (
-    <div className="market-note">
+    <div className="market-note chart-title">
       <span className={`market-dot ${market.at && ok ? 'on' : ''}`} />
       {market.at ? `LIVE PRICES · ${time(market.at)}` : Object.keys(market.problems).length ? 'PRICES UNAVAILABLE' : 'LOADING PRICES…'}
     </div>
@@ -219,21 +219,15 @@ export function TotalDetail({ model, market }: { model: Model; market: MarketSta
   const values = model.history.map((h) => h.total);
   const lo = Math.min(...values, model.total);
   const hi = Math.max(...values, model.total);
-  const offPolicy = model.sleeves.filter((s) => s.status === 'amber' || s.status === 'red');
   return (
     <>
       <div className="d-title">
         <span className="d-name">TOTAL</span>
         <span className="d-amt">${compact(model.total)}</span>
       </div>
-      <div className="d-sub">
-        <span className="d-alloc" style={{ color: STATUS_COLOR[offPolicy.length ? 'amber' : 'green'] }}>
-          {offPolicy.length ? `${offPolicy.length} SLEEVES TO WATCH` : 'ALL IN POLICY'}
-        </span>
-      </div>
       <div className="module">
         <div className={`module-head ${scrub ? 'is-scrubbing' : ''}`}>
-          <span className="label chart-title">{model.marketLine ? 'LIQUID PORTFOLIO · DAILY AT MARKET' : 'QUARTERLY REVIEWS'}</span>
+          <MarketNote market={market} />
           {scrub ? (
             <span className="label chart-readout">
               {longDate(new Date(scrub.date + 'T00:00:00'))} · <b>${Math.round(scrub.total).toLocaleString()}</b>
@@ -246,7 +240,6 @@ export function TotalDetail({ model, market }: { model: Model; market: MarketSta
         </div>
         <Chart points={model.history} onScrub={setScrub} />
         <Periods periods={model.periods} />
-        <MarketNote market={market} />
       </div>
       <Cards kv={model.totalCards} />
     </>

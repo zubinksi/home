@@ -1342,7 +1342,7 @@ p {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--b1);
   background: var(--card);
-  margin: 0.25rem 0 0.625rem;
+  margin-top: 0.25rem;
 }
 .period {
   display: flex;
