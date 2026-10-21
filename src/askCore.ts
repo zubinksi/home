@@ -2,7 +2,7 @@
 // in-browser fallback (src/Ask.tsx) used when no server endpoint is available.
 
 import Anthropic from '@anthropic-ai/sdk';
-import { stateForPrompt } from './model';
+import { stateForPrompt, type LivePrices } from './model';
 
 export type Turn = { who: 'you' | 'policy'; text: string };
 
@@ -10,7 +10,13 @@ const INSTRUCTIONS = `You answer questions for Yitz and Genesha about their hous
 
 Answer in 2–4 plain sentences. Quote the governing policy line (in quotation marks) and name the sleeve it governs. Use the current state below when the question depends on numbers. If the policy does not cover the question, say so plainly and suggest raising it at the annual review rather than inventing a rule. Never suggest changing the rules during a downturn. You are not giving tax or legal advice; where the policy defers to the CPA, say so. No markdown headings or bullet lists.`;
 
-export async function askPolicy(client: Anthropic, policy: string, question: string, history: Turn[]): Promise<string> {
+export async function askPolicy(
+  client: Anthropic,
+  policy: string,
+  question: string,
+  history: Turn[],
+  live: LivePrices = {},
+): Promise<string> {
   const messages: Anthropic.Beta.BetaMessageParam[] = history
     .slice(-6)
     .map((t) => ({ role: t.who === 'you' ? ('user' as const) : ('assistant' as const), content: t.text }));
@@ -25,7 +31,7 @@ export async function askPolicy(client: Anthropic, policy: string, question: str
     system: [
       { type: 'text', text: INSTRUCTIONS },
       { type: 'text', text: `<policy>\n${policy}\n</policy>`, cache_control: { type: 'ephemeral' } },
-      { type: 'text', text: `<current_state>\n${stateForPrompt()}\n</current_state>` },
+      { type: 'text', text: `<current_state>\n${stateForPrompt(live)}\n</current_state>` },
     ],
     messages,
   });

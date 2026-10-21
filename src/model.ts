@@ -124,10 +124,38 @@ export const PORTFOLIO_RULES = [
   'No treating Evergreen or home equity as money we can spend.',
 ];
 
+// ── live market inputs ─────────────────────────────────────────────────────
+
+export type Asset = 'hype' | 'zec' | 'aapl';
+export interface Quote {
+  price: number;
+  change?: number; // fraction vs. 24h ago (crypto) or the previous close (stock)
+  at: number; // ms
+  source: string;
+}
+/** Live prices; any asset missing falls back to the latest review's price. */
+export type LivePrices = Partial<Record<Asset, Quote>>;
+/** Daily value of the liquid portfolio at market prices. */
+export type Series = { date: string; total: number }[];
+
+/** $82.37 under $1,000; $1,234 above. */
+export const priceFmt = (n: number) => (n < 1000 ? `$${n.toFixed(2)}` : `$${num(Math.round(n))}`);
+
+const changeKV = (q: Quote | undefined, label: string): Pick<KV, 'd' | 'dc'> =>
+  q?.change == null
+    ? {}
+    : { d: `${q.change >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(q.change), 1)} ${label}`, dc: q.change >= 0 ? 'green' : 'red' };
+
 // ── derivation ──────────────────────────────────────────────────────────────
 
-export function buildSleeves() {
-  const h = holdings;
+export function buildSleeves(live: LivePrices = {}, series: Series | null = null) {
+  const aaplPrice = live.aapl?.price ?? holdings.aapl.price;
+  const h = {
+    ...holdings,
+    hype: { ...holdings.hype, price: live.hype?.price ?? holdings.hype.price },
+    zec: { ...holdings.zec, price: live.zec?.price ?? holdings.zec.price },
+    aapl: { ...holdings.aapl, price: aaplPrice, value: holdings.aapl.shares * aaplPrice },
+  };
   const hype = h.hype.tokens * h.hype.price;
   const zec = h.zec.tokens * h.zec.price;
   const div = h.diversified.voo + h.diversified.vxus + h.diversified.avuv;
@@ -169,14 +197,14 @@ export function buildSleeves() {
   if (zecTrimTokens > 0)
     plan.push({
       sleeve: 'ZEC',
-      action: `Sell ${num(zecTrimTokens)} ZEC at $${num(h.zec.price)}`,
+      action: `Sell ${num(zecTrimTokens)} ZEC at ${priceFmt(h.zec.price)}`,
       amount: zecTrimTokens * h.zec.price,
       why: `ZEC is ${pct(zecShare, 1)} of liquid, past the 10% line. Trim back to 7%.`,
     });
   if (hypeTrimTokens > 0)
     plan.push({
       sleeve: 'HYPE',
-      action: `Sell ${num(hypeTrimTokens)} HYPE at $${num(h.hype.price)}`,
+      action: `Sell ${num(hypeTrimTokens)} HYPE at ${priceFmt(h.hype.price)}`,
       amount: hypeTrimTokens * h.hype.price,
       why: `HYPE + ZEC are ${pct(crypto)} of liquid, over the 45% ceiling. Trim back to 40% within 30 days.`,
     });
@@ -221,7 +249,7 @@ export function buildSleeves() {
       alloc: crypto > RULES.cryptoCeiling ? `CRYPTO ${pct(crypto)} · OVER ${pct(RULES.cryptoCeiling)} CEILING` : `CRYPTO ${pct(crypto)} OF ${pct(RULES.cryptoCeiling)} CEILING`,
       cap: { cap: RULES.cryptoCeiling, kind: 'cap' },
       kv: [
-        { k: 'PRICE', v: `$${num(h.hype.price)}`, d: `FLOOR $${RULES.hypeFloor}` },
+        { k: 'PRICE', v: priceFmt(h.hype.price), d: `FLOOR $${RULES.hypeFloor}`, ...changeKV(live.hype, '24H') },
         { k: 'TOKENS', v: num(h.hype.tokens), d: `KEEP ${num(RULES.hypeKeep)} FOREVER` },
         { k: 'BASIS', v: dash(h.hype.basis, money) },
         {
@@ -251,7 +279,7 @@ export function buildSleeves() {
       alloc: `${pct(share(h.aapl.value))} · HOLD · HARVEST IN LOW-INCOME YEARS`,
       cap: { cap: null, kind: 'frozen' },
       kv: [
-        { k: 'PRICE', v: h.aapl.shares ? `$${num(Math.round(h.aapl.value / h.aapl.shares))}` : '—' },
+        { k: 'PRICE', v: priceFmt(h.aapl.price), ...changeKV(live.aapl, 'TODAY') },
         { k: 'SHARES', v: dash(h.aapl.shares, num) },
         { k: 'BASIS', v: dash(h.aapl.basis, money) },
         {
@@ -320,7 +348,7 @@ export function buildSleeves() {
       alloc: zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
       cap: { cap: RULES.zecTrimAt, kind: 'trim' },
       kv: [
-        { k: 'PRICE', v: `$${num(h.zec.price)}` },
+        { k: 'PRICE', v: priceFmt(h.zec.price), ...changeKV(live.zec, '24H') },
         { k: 'TOKENS', v: num(h.zec.tokens) },
         { k: 'BASIS', v: dash(h.zec.basis, money) },
         {
@@ -391,24 +419,29 @@ export function buildSleeves() {
   ];
 
   // ── TOTAL
-  const first = snapshots[0];
-  const prior = snapshots.length > 1 ? snapshots[snapshots.length - 2] : first;
+  // With live prices the baseline is the market series' first day; otherwise
+  // the review snapshots as entered.
+  const today = isoDay(new Date());
+  const marketLine = series && series.length >= 2 ? series : null;
+  const history = marketLine ?? snapshots;
+  const first = history[0];
+  const prior = marketLine ? first : snapshots.length > 1 ? snapshots[snapshots.length - 2] : first;
   const sinceFirst = total / first.total - 1;
   const netDraw = household.annualSpend - household.evergreenIncome;
   const unfunded = sleeves.filter((s) => s.amount === 0);
   const sinceLast = total - prior.total;
-  const months = monthsBetween(first.date, reviewDate);
+  const months = Math.max(0, monthsBetween(first.date, marketLine ? today : reviewDate));
 
   const totalCards: KV[] = [
     { k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` },
     {
-      k: 'THIS QUARTER',
-      v: sinceLast === 0 ? '$0' : `${sinceLast > 0 ? '+' : '−'}${money(Math.abs(sinceLast))}`,
+      k: marketLine ? `SINCE ${dayMon(prior.date)}` : 'THIS QUARTER',
+      v: Math.round(sinceLast) === 0 ? '$0' : `${sinceLast > 0 ? '+' : '−'}${money(Math.abs(sinceLast))}`,
       d:
-        snapshots.length < 2
+        history.length < 2
           ? `FIRST REVIEW ${dayMon(prior.date)}`
-          : `${sinceLast >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(sinceLast) / prior.total, 1)} SINCE ${dayMon(prior.date)}`,
-      dc: snapshots.length < 2 ? undefined : sinceLast >= 0 ? 'green' : 'red',
+          : `${sinceLast >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(sinceLast) / prior.total, 1)}${marketLine ? ' AT MARKET' : ` SINCE ${dayMon(prior.date)}`}`,
+      dc: history.length < 2 ? undefined : sinceLast >= 0 ? 'green' : 'red',
     },
     {
       k: 'SLEEVES UNFUNDED',
@@ -423,10 +456,13 @@ export function buildSleeves() {
     total,
     totalCards,
     totalSub:
-      snapshots.length < 2
+      history.length < 2
         ? `FIRST REVIEW · ${dayMon(first.date)}`
-        : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
-    history: snapshots,
+        : marketLine
+          ? `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · SINCE ${dayMon(first.date)}`
+          : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
+    history,
+    marketLine: !!marketLine,
     reviewDate,
     fortressMonths,
     crypto,
@@ -435,10 +471,20 @@ export function buildSleeves() {
   };
 }
 
+/** Local calendar day as YYYY-MM-DD. */
+export function isoDay(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function monthsBetween(a: string, b: string) {
   const da = new Date(a + 'T00:00:00');
   const db = new Date(b + 'T00:00:00');
   return (db.getFullYear() - da.getFullYear()) * 12 + db.getMonth() - da.getMonth();
+}
+
+/** Today, as the masthead shows it: "OCT 21, 2026". */
+export function longDate(d: Date) {
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 /** "2026-08-01" → "AUG 1" */
@@ -447,7 +493,7 @@ export function dayMon(d: string) {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
-export function buildItems(): Item[] {
+export function buildItems(live: LivePrices = {}): Item[] {
   const out: Item[] = [];
   for (const [sleeve, list] of Object.entries(items)) {
     list.forEach((it, i) => out.push({ id: `${sleeve}:${i}`, sleeve: sleeve as Item['sleeve'], ...it }));
@@ -455,7 +501,7 @@ export function buildItems(): Item[] {
 
   // Items the policy itself calls for at this review. Ids carry the review
   // date so a new quarter's trims start unchecked.
-  const m = buildSleeves();
+  const m = buildSleeves(live);
   const wait = (n: number) => (n > 25_000 ? ', after the 48-hour wait' : '');
   m.plan.forEach((p, i) =>
     out.push({
@@ -477,10 +523,12 @@ export function buildItems(): Item[] {
 }
 
 /** Plain-text summary of the current state, for the Ask-the-Policy system prompt. */
-export function stateForPrompt(): string {
-  const m = buildSleeves();
+export function stateForPrompt(live: LivePrices = {}): string {
+  const m = buildSleeves(live);
+  const quotes = (Object.entries(live) as [Asset, Quote][]).map(([k, q]) => `${k.toUpperCase()} ${priceFmt(q.price)}`);
   const lines = [
-    `Numbers as of the ${m.reviewDate} quarterly review. Previous snapshots: ${m.history.map((h) => `${h.date} $${num(Math.round(h.total))}`).join('; ')}.`,
+    `Holdings as of the ${m.reviewDate} quarterly review. Review snapshots: ${snapshots.map((h) => `${h.date} $${num(Math.round(h.total))}`).join('; ')}.`,
+    quotes.length ? `Live prices as of ${new Date().toISOString().slice(0, 16)}Z: ${quotes.join(', ')}. Values below use them.` : 'Prices are the review prices.',
     `Total liquid: $${num(Math.round(m.total))}. Annual spend $${num(household.annualSpend)}; Evergreen ~$${num(household.evergreenIncome)}/yr; mortgage $${num(household.mortgage.balance)} at ${household.mortgage.rate}%.`,
     `Fortress coverage: ${m.fortressMonths.toFixed(1)} months. Crypto (HYPE+ZEC): ${pct(m.crypto, 1)} of liquid.`,
     '',
@@ -493,6 +541,6 @@ export function stateForPrompt(): string {
     for (const p of m.plan) lines.push(`- ${p.action}: $${num(Math.round(p.amount))}. ${p.why}`);
   }
   lines.push('', 'Open items:');
-  for (const it of buildItems()) lines.push(`- [${it.sleeve}] ${it.text} (${it.when})`);
+  for (const it of buildItems(live)) lines.push(`- [${it.sleeve}] ${it.text} (${it.when})`);
   return lines.join('\n');
 }

@@ -11,6 +11,13 @@ const PITCH = 4;
 const INK = '#33332c';
 const STIPPLE = '#57564b';
 
+/** At most five evenly spaced dates for the axis (first and last always). */
+function axisLabels<T>(points: T[]): T[] {
+  if (points.length <= 5) return points;
+  const n = 5;
+  return Array.from({ length: n }, (_, i) => points[Math.round((i * (points.length - 1)) / (n - 1))]);
+}
+
 /** Ink line with a 4×4 Bayer ordered-dither stipple beneath it. */
 export function Chart({ points }: { points: { date: string; total: number }[] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -90,7 +97,7 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
     <div className="chart">
       <canvas ref={canvas} />
       <div className="chart-axis">
-        {points.map((p, i) => (
+        {axisLabels(points).map((p, i) => (
           <span key={i}>{dayMon(p.date)}</span>
         ))}
       </div>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Chart } from './Chart';
+import type { MarketState } from './prices';
 import {
   compact,
   money,
   monYY,
   num,
+  priceFmt,
   STATUS_COLOR,
   type buildSleeves,
   type KV,
@@ -90,7 +92,7 @@ function ModuleView({ m }: { m: Module }) {
           <div className="module-foot">
             {m.next >= 0 ? (
               <span>
-                NEXT RUNG ${m.rungs[m.next].price} · +{Math.round(toNext * 100)}% FROM ${m.price}
+                NEXT RUNG ${m.rungs[m.next].price} · +{Math.round(toNext * 100)}% FROM {priceFmt(m.price)}
               </span>
             ) : (
               <span>ALL RUNGS FILLED</span>
@@ -184,7 +186,31 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
   );
 }
 
-export function TotalDetail({ model }: { model: Model }) {
+/** Where each price came from, and how fresh it is. */
+function MarketNote({ market }: { market: MarketState }) {
+  const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase();
+  const parts = (['hype', 'zec', 'aapl'] as const).map((a) => {
+    const q = market.live[a];
+    const problem = market.problems[a];
+    if (q && !problem) return { a, text: `${a.toUpperCase()} ${priceFmt(q.price)}`, ok: true };
+    if (q) return { a, text: `${a.toUpperCase()} ${priceFmt(q.price)} · LAST KNOWN`, ok: false };
+    return { a, text: `${a.toUpperCase()} AT REVIEW PRICE${problem ? ` · ${problem.toUpperCase()}` : ''}`, ok: false };
+  });
+  return (
+    <div className="market-note">
+      <span className={`market-dot ${market.at && parts.some((p) => p.ok) ? 'on' : ''}`} />
+      {market.at ? `LIVE PRICES · ${time(market.at)}` : Object.keys(market.problems).length ? 'PRICES UNAVAILABLE' : 'LOADING PRICES…'}
+      {parts.map((p) => (
+        <span key={p.a} className={p.ok ? '' : 'off'}>
+          {' · '}
+          {p.text}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function TotalDetail({ model, market }: { model: Model; market: MarketState }) {
   const values = model.history.map((h) => h.total);
   const lo = Math.min(...values, model.total);
   const hi = Math.max(...values, model.total);
@@ -203,12 +229,13 @@ export function TotalDetail({ model }: { model: Model }) {
       <Cards kv={model.totalCards} />
       <div className="module">
         <div className="module-head">
-          <span className="label">QUARTERLY REVIEWS</span>
+          <span className="label">{model.marketLine ? 'LIQUID PORTFOLIO · DAILY AT MARKET' : 'QUARTERLY REVIEWS'}</span>
           <span className="label">
             {compact(lo)} — {compact(hi)}
           </span>
         </div>
         <Chart points={model.history} />
+        <MarketNote market={market} />
       </div>
     </>
   );

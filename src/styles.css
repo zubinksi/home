@@ -1304,6 +1304,40 @@ p {
   }
 }
 
+/* ── live prices note under the portfolio chart ─────── */
+.market-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.25rem;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
+  color: var(--green);
+}
+.market-note .off {
+  color: var(--amber);
+}
+.market-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--rule);
+  margin-right: 0.25rem;
+}
+.market-dot.on {
+  background: var(--green);
+  animation: market-pulse 2.4s ease-in-out infinite;
+}
+@keyframes market-pulse {
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-dot.on {
+    animation: none;
+  }
+}
+
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
   .mast-inner {

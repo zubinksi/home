@@ -6,8 +6,9 @@ import { LockButton } from './Gate';
 import { NavBar, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
+import { useMarket } from './prices';
 import { useDrill } from './useDrill';
-import { buildItems, buildSleeves, compact, monYY, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
+import { buildItems, buildSleeves, compact, longDate, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
 const SEL_ASK = -2;
@@ -23,8 +24,9 @@ function loadDone(): string[] {
 }
 
 export function App() {
-  const model = useMemo(buildSleeves, []);
-  const allItems = useMemo(buildItems, []);
+  const market = useMarket();
+  const model = useMemo(() => buildSleeves(market.live, market.series), [market.live, market.series]);
+  const allItems = useMemo(() => buildItems(market.live), [market.live]);
 
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
@@ -89,7 +91,7 @@ export function App() {
             </div>
           </div>
           <div className="mast-right">
-            <div className="mast-title mast-date">{monYY(model.reviewDate)}</div>
+            <div className="mast-title mast-date">{longDate(new Date())}</div>
             <LockButton />
           </div>
         </div>
@@ -217,10 +219,10 @@ export function App() {
               {narrow && <MobileNav onBack={drill.back} position={drill.position} onStep={drill.step} />}
               <ErrorBoundary resetKey={sel}>
               {sel === SEL_TOTAL && (
-                <TotalDetail model={model} />
+                <TotalDetail model={model} market={market} />
               )}
               {selected && <Detail key={selected.key} sleeve={selected} />}
-              {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} />}
+              {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} live={market.live} />}
               </ErrorBoundary>
             </div>
             )}

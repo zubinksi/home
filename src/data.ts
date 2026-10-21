@@ -114,7 +114,7 @@ export const reviewDate = now.date;
 
 export const holdings = {
   hype: { tokens: now.hype.tokens, price: now.hype.price, basis: basis.hype as number | null, rungsSold: hypeRungsSold },
-  aapl: { value: now.aapl.shares * now.aapl.price, shares: now.aapl.shares as number | null, basis: basis.aapl as number | null },
+  aapl: { price: now.aapl.price, shares: now.aapl.shares, basis: basis.aapl as number | null },
   fortress: { value: now.cash, idleCash: fortressIdleCash },
   zec: { tokens: now.zec.tokens, price: now.zec.price, basis: basis.zec as number | null },
   equities: { value: now.equities, positions: equityPositions },

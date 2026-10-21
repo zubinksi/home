@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Turn } from './askCore';
-import { buildSleeves, PORTFOLIO_RULES } from './model';
+import { buildSleeves, PORTFOLIO_RULES, type LivePrices } from './model';
 
 export type ChatTurn = Turn & { pending?: boolean };
 
@@ -41,13 +41,13 @@ function closestLines(q: string): string[] {
 type ServerResult = { answer: string } | { error: string } | { unavailable: true };
 
 /** Try the local server first; it holds the key in .env.local. */
-async function askServer(question: string, history: Turn[]): Promise<ServerResult> {
+async function askServer(question: string, history: Turn[], prices: LivePrices): Promise<ServerResult> {
   let res: Response;
   try {
     res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history }),
+      body: JSON.stringify({ question, history, prices }),
     });
   } catch {
     return { unavailable: true };
@@ -60,7 +60,7 @@ async function askServer(question: string, history: Turn[]): Promise<ServerResul
 }
 
 /** Fallback: call the API straight from this browser with a key saved here. */
-async function askDirect(key: string, question: string, history: Turn[]): Promise<ServerResult> {
+async function askDirect(key: string, question: string, history: Turn[], prices: LivePrices): Promise<ServerResult> {
   const [{ default: Anthropic }, { askPolicy, describeError }, { default: policy }] = await Promise.all([
     import('@anthropic-ai/sdk'),
     import('./askCore'),
@@ -68,13 +68,13 @@ async function askDirect(key: string, question: string, history: Turn[]): Promis
   ]);
   try {
     const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
-    return { answer: await askPolicy(client, policy, question, history) };
+    return { answer: await askPolicy(client, policy, question, history, prices) };
   } catch (err) {
     return { error: describeError(err) };
   }
 }
 
-export function Ask({ chat, setChat }: { chat: ChatTurn[]; setChat: (c: ChatTurn[]) => void }) {
+export function Ask({ chat, setChat, live }: { chat: ChatTurn[]; setChat: (c: ChatTurn[]) => void; live: LivePrices }) {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(loadKey);
@@ -97,8 +97,8 @@ export function Ask({ chat, setChat }: { chat: ChatTurn[]; setChat: (c: ChatTurn
     setDraft('');
     setBusy(true);
 
-    let result = await askServer(q, history);
-    if ('unavailable' in result && apiKey) result = await askDirect(apiKey, q, history);
+    let result = await askServer(q, history, live);
+    if ('unavailable' in result && apiKey) result = await askDirect(apiKey, q, history, live);
 
     let answer: string;
     if ('answer' in result) {

@@ -32,6 +32,17 @@ code and the numbers both ship in the page's JavaScript. It keeps casual eyes
 out on a shared screen. Don't rely on it to protect a copy hosted on the
 public internet.
 
+## Live prices
+
+HYPE and ZEC prices come from CoinGecko (straight from the browser, every
+minute); AAPL comes from Yahoo Finance through the site's own server
+(`/api/stock`), so it is live only when the site runs with `npm run dev` or
+`npm run preview`. The quantities you hold, cash and equities still come from
+the latest entry in `reviews` (`src/data.ts`); only the prices are live. The
+TOTAL chart values today's holdings at each day's prices since the first
+review. Anything that can't be fetched falls back to the review price, and the
+note under the chart says which.
+
 ## On your home screen
 
 The site is set up as a home-screen app (icon: the iris from our wallpaper).

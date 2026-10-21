@@ -6,6 +6,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import Anthropic from '@anthropic-ai/sdk';
 import type { Plugin } from 'vite';
 import { askPolicy, describeError, type Turn } from '../src/askCore';
+import type { LivePrices } from '../src/model';
 
 const POLICY = readFileSync(new URL('../policy/investment-policy.md', import.meta.url), 'utf8');
 
@@ -32,9 +33,13 @@ export function askPolicyPlugin(apiKey: string | undefined): Plugin {
     if (!client) return send(res, 503, { error: 'no-key' });
 
     try {
-      const { question, history = [] } = JSON.parse(await readBody(req)) as { question: string; history?: Turn[] };
+      const { question, history = [], prices = {} } = JSON.parse(await readBody(req)) as {
+        question: string;
+        history?: Turn[];
+        prices?: LivePrices;
+      };
       if (!question?.trim()) return send(res, 400, { error: 'empty', message: 'Ask a question first.' });
-      send(res, 200, { answer: await askPolicy(client, POLICY, question, history) });
+      send(res, 200, { answer: await askPolicy(client, POLICY, question, history, prices) });
     } catch (err) {
       console.error('[ask]', err);
       send(res, 502, { error: 'upstream', message: describeError(err) });
