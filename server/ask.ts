@@ -1,12 +1,12 @@
-// "Ask the Policy" endpoint. Runs inside the Vite dev / preview server so the
-// API key stays on this machine and never reaches the browser.
+// Local copy of the Vercel function api/ask.js, for `npm run dev` / `preview`.
+// The API key comes from .env.local and never reaches the browser.
 
 import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Anthropic from '@anthropic-ai/sdk';
 import type { Plugin } from 'vite';
-import { askPolicy, describeError, type Turn } from '../src/askCore';
-import type { LivePrices } from '../src/model';
+import { answerRequest } from '../api/_lib/ask.js';
+import { send } from './send';
 
 const POLICY = readFileSync(new URL('../policy/investment-policy.md', import.meta.url), 'utf8');
 
@@ -19,31 +19,19 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-function send(res: ServerResponse, status: number, body: unknown) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(body));
-}
-
 export function askPolicyPlugin(apiKey: string | undefined): Plugin {
   const client = apiKey ? new Anthropic({ apiKey }) : null;
 
   const handler = async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     if (req.url !== '/api/ask' || req.method !== 'POST') return next();
-    if (!client) return send(res, 503, { error: 'no-key' });
-
+    let body: unknown;
     try {
-      const { question, history = [], prices = {} } = JSON.parse(await readBody(req)) as {
-        question: string;
-        history?: Turn[];
-        prices?: LivePrices;
-      };
-      if (!question?.trim()) return send(res, 400, { error: 'empty', message: 'Ask a question first.' });
-      send(res, 200, { answer: await askPolicy(client, POLICY, question, history, prices) });
-    } catch (err) {
-      console.error('[ask]', err);
-      send(res, 502, { error: 'upstream', message: describeError(err) });
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return send(res, 400, { error: 'bad-json', message: 'Bad request.' });
     }
+    const [status, out] = await answerRequest(client, POLICY, body);
+    send(res, status, out);
   };
 
   return {

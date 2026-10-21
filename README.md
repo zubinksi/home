@@ -22,6 +22,28 @@ If the site is opened without that server (a static host, or no key in
 is saved in the browser's local storage and sent directly to the Anthropic
 API, so use it only on your own devices. **FORGET** under the input removes it.
 
+## On Vercel
+
+Vercel builds the site with `npm run build` and serves `dist/`. The three
+server routes live in `api/` as Vercel functions; the local dev server runs the
+same code from `api/_lib/`.
+
+| Route | What it does | Needs |
+| --- | --- | --- |
+| `/api/stock` | AAPL price and daily closes from Yahoo Finance | nothing |
+| `/api/projects` | the live Projects sheet as CSV | the sheet shared by link |
+| `/api/ask` | Ask the Policy | `ANTHROPIC_API_KEY` in the Vercel project |
+
+**Ask the Policy on Vercel.** Without `ANTHROPIC_API_KEY` set in Vercel, the
+page asks for a key and keeps it in the browser (see above). If you set the key
+in Vercel, anyone who finds the site's URL can send questions on your key: the
+PIN only runs in the browser and doesn't protect `/api/ask`. Turn on Vercel's
+deployment protection first, or leave the key in the browser.
+
+**The PIN isn't a lock.** The portfolio numbers ship in the site's JavaScript,
+so anyone with the URL can read them without the PIN. To keep the site
+private, use Vercel's deployment protection (Settings → Deployment Protection).
+
 ## The PIN gate
 
 The site opens behind a 4-digit code (set as `CODE` in `src/Gate.tsx`). It stays

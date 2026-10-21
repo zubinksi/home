@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Turn } from './askCore';
-import { buildSleeves, PORTFOLIO_RULES, type LivePrices } from './model';
+import { buildSleeves, PORTFOLIO_RULES, stateForPrompt, type LivePrices } from './model';
 
 export type ChatTurn = Turn & { pending?: boolean };
 
@@ -40,14 +40,14 @@ function closestLines(q: string): string[] {
 
 type ServerResult = { answer: string } | { error: string } | { unavailable: true };
 
-/** Try the local server first; it holds the key in .env.local. */
-async function askServer(question: string, history: Turn[], prices: LivePrices): Promise<ServerResult> {
+/** Try the site's server first; it holds the key (.env.local, or the Vercel project's settings). */
+async function askServer(question: string, history: Turn[], state: string): Promise<ServerResult> {
   let res: Response;
   try {
     res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history, prices }),
+      body: JSON.stringify({ question, history, state }),
     });
   } catch {
     return { unavailable: true };
@@ -60,7 +60,7 @@ async function askServer(question: string, history: Turn[], prices: LivePrices):
 }
 
 /** Fallback: call the API straight from this browser with a key saved here. */
-async function askDirect(key: string, question: string, history: Turn[], prices: LivePrices): Promise<ServerResult> {
+async function askDirect(key: string, question: string, history: Turn[], state: string): Promise<ServerResult> {
   const [{ default: Anthropic }, { askPolicy, describeError }, { default: policy }] = await Promise.all([
     import('@anthropic-ai/sdk'),
     import('./askCore'),
@@ -68,7 +68,7 @@ async function askDirect(key: string, question: string, history: Turn[], prices:
   ]);
   try {
     const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
-    return { answer: await askPolicy(client, policy, question, history, prices) };
+    return { answer: await askPolicy(client, policy, question, history, state) };
   } catch (err) {
     return { error: describeError(err) };
   }
@@ -97,8 +97,9 @@ export function Ask({ chat, setChat, live }: { chat: ChatTurn[]; setChat: (c: Ch
     setDraft('');
     setBusy(true);
 
-    let result = await askServer(q, history, live);
-    if ('unavailable' in result && apiKey) result = await askDirect(apiKey, q, history, live);
+    const state = stateForPrompt(live);
+    let result = await askServer(q, history, state);
+    if ('unavailable' in result && apiKey) result = await askDirect(apiKey, q, history, state);
 
     let answer: string;
     if ('answer' in result) {
