@@ -3,6 +3,7 @@ import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
   compact,
+  longDate,
   money,
   monYY,
   num,
@@ -189,28 +190,32 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
 /** Where each price came from, and how fresh it is. */
 function MarketNote({ market }: { market: MarketState }) {
   const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase();
-  const parts = (['hype', 'zec', 'aapl'] as const).map((a) => {
-    const q = market.live[a];
-    const problem = market.problems[a];
-    if (q && !problem) return { a, text: `${a.toUpperCase()} ${priceFmt(q.price)}`, ok: true };
-    if (q) return { a, text: `${a.toUpperCase()} ${priceFmt(q.price)} · LAST KNOWN`, ok: false };
-    return { a, text: `${a.toUpperCase()} AT REVIEW PRICE${problem ? ` · ${problem.toUpperCase()}` : ''}`, ok: false };
-  });
+  const ok = (['hype', 'zec', 'aapl'] as const).some((a) => market.live[a] && !market.problems[a]);
   return (
     <div className="market-note">
-      <span className={`market-dot ${market.at && parts.some((p) => p.ok) ? 'on' : ''}`} />
+      <span className={`market-dot ${market.at && ok ? 'on' : ''}`} />
       {market.at ? `LIVE PRICES · ${time(market.at)}` : Object.keys(market.problems).length ? 'PRICES UNAVAILABLE' : 'LOADING PRICES…'}
-      {parts.map((p) => (
-        <span key={p.a} className={p.ok ? '' : 'off'}>
-          {' · '}
-          {p.text}
-        </span>
+    </div>
+  );
+}
+
+function Periods({ periods }: { periods: Model['periods'] }) {
+  return (
+    <div className="periods">
+      {periods.map((p) => (
+        <div key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
+          <span className="label">{p.label}</span>
+          <span className="period-v" style={p.change === null ? undefined : { color: STATUS_COLOR[p.change >= 0 ? 'green' : 'red'] }}>
+            {p.change === null ? '—' : `${p.change >= 0 ? '+' : '−'}${(Math.abs(p.change) * 100).toFixed(1)}%`}
+          </span>
+        </div>
       ))}
     </div>
   );
 }
 
 export function TotalDetail({ model, market }: { model: Model; market: MarketState }) {
+  const [scrub, setScrub] = useState<{ date: string; total: number } | null>(null);
   const values = model.history.map((h) => h.total);
   const lo = Math.min(...values, model.total);
   const hi = Math.max(...values, model.total);
@@ -226,17 +231,24 @@ export function TotalDetail({ model, market }: { model: Model; market: MarketSta
           {offPolicy.length ? `${offPolicy.length} SLEEVES TO WATCH` : 'ALL IN POLICY'}
         </span>
       </div>
-      <Cards kv={model.totalCards} />
       <div className="module">
-        <div className="module-head">
-          <span className="label">{model.marketLine ? 'LIQUID PORTFOLIO · DAILY AT MARKET' : 'QUARTERLY REVIEWS'}</span>
-          <span className="label">
-            {compact(lo)} — {compact(hi)}
-          </span>
+        <div className={`module-head ${scrub ? 'is-scrubbing' : ''}`}>
+          <span className="label chart-title">{model.marketLine ? 'LIQUID PORTFOLIO · DAILY AT MARKET' : 'QUARTERLY REVIEWS'}</span>
+          {scrub ? (
+            <span className="label chart-readout">
+              {longDate(new Date(scrub.date + 'T00:00:00'))} · <b>${Math.round(scrub.total).toLocaleString()}</b>
+            </span>
+          ) : (
+            <span className="label">
+              {compact(lo)} — {compact(hi)}
+            </span>
+          )}
         </div>
-        <Chart points={model.history} />
+        <Chart points={model.history} onScrub={setScrub} />
+        <Periods periods={model.periods} />
         <MarketNote market={market} />
       </div>
+      <Cards kv={model.totalCards} />
     </>
   );
 }

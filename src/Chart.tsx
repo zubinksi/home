@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { dayMon } from './model';
 
 const BAYER = [
@@ -18,10 +18,35 @@ function axisLabels<T>(points: T[]): T[] {
   return Array.from({ length: n }, (_, i) => points[Math.round((i * (points.length - 1)) / (n - 1))]);
 }
 
-/** Ink line with a 4×4 Bayer ordered-dither stipple beneath it. */
-export function Chart({ points }: { points: { date: string; total: number }[] }) {
+type Point = { date: string; total: number };
+
+/** Where each point sits on a canvas of the given size. */
+function geometry(points: Point[], width: number, height: number) {
+  const vals = points.map((p) => p.total);
+  let lo = Math.min(...vals);
+  let hi = Math.max(...vals);
+  if (hi === lo) {
+    lo *= 0.9;
+    hi *= 1.05;
+  }
+  const pad = 8;
+  const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * (width - pad * 2));
+  const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (height * 0.72 - pad);
+  /** Nearest point to a horizontal position. */
+  const indexAt = (px: number) =>
+    points.length === 1 ? 0 : Math.max(0, Math.min(points.length - 1, Math.round(((px - pad) / (width - pad * 2)) * (points.length - 1))));
+  return { vals, pad, x, y, indexAt };
+}
+
+/**
+ * Ink line with a 4×4 Bayer ordered-dither stipple beneath it. Dragging a mouse
+ * or finger across it marks a day and reports it through onScrub.
+ */
+export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Point | null) => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
+  const [scrub, setScrub] = useState<number | null>(null);
+  const g = useMemo(() => geometry(points, width, HEIGHT), [points, width, HEIGHT]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
   useEffect(() => {
@@ -44,16 +69,7 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, HEIGHT);
 
-    const vals = points.map((p) => p.total);
-    let lo = Math.min(...vals);
-    let hi = Math.max(...vals);
-    if (hi === lo) {
-      lo *= 0.9;
-      hi *= 1.05;
-    }
-    const pad = 8;
-    const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * (width - pad * 2));
-    const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (HEIGHT * 0.72 - pad);
+    const { vals, pad, x, y } = g;
     const lineAt = (px: number) => {
       if (points.length === 1) return y(vals[0]);
       const t = ((px - pad) / (width - pad * 2)) * (points.length - 1);
@@ -61,7 +77,6 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
       const f = Math.max(0, Math.min(1, t - i));
       return y(vals[i] + (vals[i + 1] - vals[i]) * f);
     };
-
     // stipple
     ctx.fillStyle = STIPPLE;
     for (let gx = 0; gx * PITCH < width; gx++) {
@@ -91,11 +106,48 @@ export function Chart({ points }: { points: { date: string; total: number }[] })
     ctx.beginPath();
     ctx.arc(x(points.length - 1), y(vals[vals.length - 1]), 3, 0, Math.PI * 2);
     ctx.fill();
-  }, [width, HEIGHT, points]);
+  }, [width, HEIGHT, points, g]);
+
+  // a new series (fresh prices) drops any stale mark
+  useEffect(() => setScrub(null), [points]);
+
+  const mark = (e: PointerEvent<HTMLDivElement>) => {
+    if (!points.length || !width) return;
+    const i = g.indexAt(e.clientX - e.currentTarget.getBoundingClientRect().left);
+    if (i !== scrub) {
+      setScrub(i);
+      onScrub?.(points[i]);
+    }
+  };
+  const clear = () => {
+    setScrub(null);
+    onScrub?.(null);
+  };
 
   return (
     <div className="chart">
-      <canvas ref={canvas} />
+      <div
+        className="chart-plot"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          mark(e);
+        }}
+        onPointerMove={(e) => (e.pointerType === 'mouse' || e.buttons ? mark(e) : undefined)}
+        onPointerUp={(e) => e.pointerType !== 'mouse' && clear()}
+        onPointerCancel={clear}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && clear()}
+        // keep a finger drag here from also swiping to the next sleeve
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
+        <canvas ref={canvas} />
+        {scrub !== null && scrub < points.length && (
+          <>
+            <span className="chart-guide" style={{ left: g.x(scrub) }} />
+            <span className="chart-mark" style={{ left: g.x(scrub), top: g.y(points[scrub].total) }} />
+          </>
+        )}
+      </div>
       <div className="chart-axis">
         {axisLabels(points).map((p, i) => (
           <span key={i}>{dayMon(p.date)}</span>

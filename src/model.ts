@@ -425,31 +425,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const marketLine = series && series.length >= 2 ? series : null;
   const history = marketLine ?? snapshots;
   const first = history[0];
-  const prior = marketLine ? first : snapshots.length > 1 ? snapshots[snapshots.length - 2] : first;
   const sinceFirst = total / first.total - 1;
   const netDraw = household.annualSpend - household.evergreenIncome;
-  const unfunded = sleeves.filter((s) => s.amount === 0);
-  const sinceLast = total - prior.total;
   const months = Math.max(0, monthsBetween(first.date, marketLine ? today : reviewDate));
 
-  const totalCards: KV[] = [
-    { k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` },
-    {
-      k: marketLine ? `SINCE ${dayMon(prior.date)}` : 'THIS QUARTER',
-      v: Math.round(sinceLast) === 0 ? '$0' : `${sinceLast > 0 ? '+' : '−'}${money(Math.abs(sinceLast))}`,
-      d:
-        history.length < 2
-          ? `FIRST REVIEW ${dayMon(prior.date)}`
-          : `${sinceLast >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(sinceLast) / prior.total, 1)}${marketLine ? ' AT MARKET' : ` SINCE ${dayMon(prior.date)}`}`,
-      dc: history.length < 2 ? undefined : sinceLast >= 0 ? 'green' : 'red',
-    },
-    {
-      k: 'SLEEVES UNFUNDED',
-      v: String(unfunded.length),
-      d: unfunded.length ? unfunded.map((s) => s.name).join(' · ') : 'ALL FUNDED',
-      dc: unfunded.length ? 'red' : 'green',
-    },
-  ];
+  const totalCards: KV[] = [{ k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` }];
 
   return {
     sleeves,
@@ -462,6 +442,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           ? `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · SINCE ${dayMon(first.date)}`
           : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
     history,
+    // the quarterly-review fallback is too coarse for day/week/month changes
+    periods: marketLine ? periodChanges(marketLine) : PERIODS.map(({ label }) => ({ label, change: null })),
     marketLine: !!marketLine,
     reviewDate,
     fortressMonths,
@@ -523,6 +505,34 @@ export function buildItems(live: LivePrices = {}): Item[] {
 }
 
 /** Plain-text summary of the current state, for the Ask-the-Policy system prompt. */
+export const PERIODS = [
+  { label: '1D', days: 1 },
+  { label: '1W', days: 7 },
+  { label: '1M', days: 30 },
+  { label: '3M', days: 91 },
+] as const;
+
+/**
+ * Change in the chart's line over each period, ending at its last day. null
+ * when the line doesn't reach back that far.
+ */
+export function periodChanges(history: { date: string; total: number }[]) {
+  const last = history[history.length - 1];
+  return PERIODS.map(({ label, days }) => {
+    if (!last) return { label, change: null };
+    const d = new Date(last.date + 'T00:00:00');
+    d.setDate(d.getDate() - days);
+    const from = isoDay(d);
+    if (history[0].date > from) return { label, change: null };
+    let base = history[0];
+    for (const h of history) {
+      if (h.date > from) break;
+      base = h;
+    }
+    return { label, change: base.total ? last.total / base.total - 1 : null };
+  });
+}
+
 export function stateForPrompt(live: LivePrices = {}): string {
   const m = buildSleeves(live);
   const quotes = (Object.entries(live) as [Asset, Quote][]).map(([k, q]) => `${k.toUpperCase()} ${priceFmt(q.price)}`);
