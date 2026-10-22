@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useLamplight } from './lamplight';
 import { dayMon } from './model';
 
 const BAYER = [
@@ -8,8 +9,6 @@ const BAYER = [
   [15, 7, 13, 5],
 ];
 const PITCH = 4;
-const INK = '#33332c';
-const STIPPLE = '#57564b';
 
 /** At most five evenly spaced dates for the axis (first and last always). */
 function axisLabels<T>(points: T[]): T[] {
@@ -46,6 +45,7 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
   const canvas = useRef<HTMLCanvasElement>(null);
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
   const [scrub, setScrub] = useState<number | null>(null);
+  const light = useLamplight();
   const g = useMemo(() => geometry(points, width, HEIGHT), [points, width, HEIGHT]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
@@ -68,6 +68,10 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
     const ctx = c.getContext('2d')!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, HEIGHT);
+    // colours follow the page's palette (day or evening)
+    const css = getComputedStyle(c);
+    const INK = css.getPropertyValue('--ink').trim();
+    const STIPPLE = css.getPropertyValue('--stipple').trim();
 
     const { vals, pad, x, y } = g;
     const lineAt = (px: number) => {
@@ -106,7 +110,7 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
     ctx.beginPath();
     ctx.arc(x(points.length - 1), y(vals[vals.length - 1]), 3, 0, Math.PI * 2);
     ctx.fill();
-  }, [width, HEIGHT, points, g]);
+  }, [width, HEIGHT, points, g, light]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);

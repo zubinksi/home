@@ -7,10 +7,10 @@ export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
 export type SleeveKey = 'HYPE' | 'AAPL' | 'FORTRESS' | 'ZEC' | 'EQUITIES' | 'DIVERSIFIED';
 
 export const STATUS_COLOR: Record<Status, string> = {
-  green: '#356b39',
-  amber: '#7d5716',
-  red: '#8f3338',
-  muted: '#61604f',
+  green: 'var(--green)',
+  amber: 'var(--amber)',
+  red: 'var(--red)',
+  muted: 'var(--muted)',
 };
 
 export const WHEN_RANK: Record<When | 'done', number> = {

@@ -8,6 +8,7 @@ import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
 import { useDrill } from './useDrill';
+import { useLamplight } from './lamplight';
 import { buildItems, buildSleeves, compact, longDate, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -31,6 +32,7 @@ export function App() {
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
   const narrow = useNarrow();
+  useLamplight();
   const [itemsOpen, setItemsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
