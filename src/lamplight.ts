@@ -1,5 +1,5 @@
-// Day or evening. By the clock, evening runs 6 pm to 6 am; the brass switch in
-// the masthead overrides that until the next 6 am / 6 pm. ?light=day or
+// Day or evening. By the clock, evening runs 6 pm to 6 am; setLight()
+// overrides that until the next 6 am / 6 pm. ?light=day or
 // ?light=evening in the URL previews either one.
 
 import { useEffect, useState } from 'react';
@@ -23,7 +23,11 @@ function nextChange(): number {
   return d.getTime();
 }
 
+// Evening only for now. To bring back day by the clock, remove this line.
+const ONLY: Light | null = 'evening';
+
 function current(): Light {
+  if (ONLY) return ONLY;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { light: Light; until: number } | null;
     if (saved && Date.now() < saved.until) return saved.light;

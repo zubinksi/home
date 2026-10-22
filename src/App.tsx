@@ -8,7 +8,6 @@ import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
 import { useDrill } from './useDrill';
-import { LightSwitch } from './LightSwitch';
 import { buildItems, buildSleeves, compact, longDate, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -93,10 +92,7 @@ export function App() {
           </div>
           <div className="mast-right">
             <div className="mast-title mast-date">{longDate(new Date())}</div>
-            <div className="mast-controls">
-              <LightSwitch />
-              <LockButton />
-            </div>
+            <LockButton />
           </div>
         </div>
       </header>
