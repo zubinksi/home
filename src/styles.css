@@ -1,9 +1,11 @@
-:root,
-.gate-card {
-  /* warm, muddy, lamplit: tobacco wall, parchment paper, brown-black ink */
-  --ground: #6a6349;
-  --mast-ink: #f1e8d4;
-  --mast-ink2: #ddd2b8;
+:root {
+  /* a warm brown wall, lighter by day; cream paper and brown-black ink in both */
+  --ground: #776550;
+  --mast-ink: #f3ead7;
+  --mast-ink2: #e0d4bb;
+  --lamp: rgba(255, 210, 140, 0.32);
+  --lamp-core: rgba(255, 236, 196, 0.55);
+  --lamp-wide: rgba(255, 200, 120, 0.16);
   --mast: #ebe2cd;
   --rule: #b3a383;
   --slab: #f1e9d8;
@@ -27,13 +29,13 @@
   /* aged brass: the hardware. --brass for lines and fills, --brass-ink for text */
   --brass: #a5833f;
   --brass-ink: #80612a;
-  --mast-brass: #dcbd7d;
+  --mast-brass: #e2c487;
   --on-brass: #fbf6ea;
   --piping: #a9805f;
   --green: #55652c;
   --amber: #8c5a17;
   --red: #7d2e2a;
-  --shadow: 0 0.25rem 1.125rem rgba(46, 32, 18, 0.24);
+  --shadow: 0 0.25rem 1.125rem rgba(46, 32, 18, 0.28);
   --tag-week: #f0d9cf;
   --tag-week-b: #c38a76;
   --tag-month: #f1e1c0;
@@ -44,54 +46,19 @@
   --tag-q1-b: #b6a686;
   --tag-done: #e2e5cb;
   --tag-done-b: #97a46a;
-  --serif: 'EB Garamond', Garamond, Georgia, serif;
+  --serif: 'Source Serif 4', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
-/* evening: after dark the house goes to lamplight (set from the clock in lamplight.ts) */
+/* evening: the wall goes dark and the lamp does the work (lamplight.ts sets this) */
 :root[data-light='evening'] {
   --ground: #29231b;
   --mast-ink: #eadcc0;
   --mast-ink2: #c9b99a;
-  --mast: #2e271e;
-  --rule: #6b5c46;
-  --slab: #3a3127;
-  --sidebar: #342c22;
-  --card: #43392d;
-  --inset: #40362a;
-  --zebra: #3e3529;
-  --hover: #4a3f31;
-  --expanded: #41372b;
-  --b1: #55493a;
-  --b2: #5a4d3c;
-  --b3: #4d4234;
-  --b4: #5e503e;
-  --underline: #6f5f48;
-  --ink: #efe3c9;
-  --ink2: #ddd0b5;
-  --ink3: #c9ba9d;
-  --ink3b: #c3b497;
-  --muted: #b1a184;
-  --stipple: #a8916f;
-  --brass: #c9a45c;
-  --brass-ink: #d8b46d;
   --mast-brass: #c9a45c;
-  --on-brass: #29231b;
-  --piping: #8a6447;
-  --green: #a7b56f;
-  --amber: #d79d4c;
-  --red: #dc8270;
-  --shadow: 0 0.25rem 1.5rem rgba(0, 0, 0, 0.45);
-  --tag-week: #4d342c;
-  --tag-week-b: #8c5a49;
-  --tag-month: #4b3d24;
-  --tag-month-b: #8d6d35;
-  --tag-fill: #46383e;
-  --tag-fill-b: #7f6170;
-  --tag-q1: #3f3529;
-  --tag-q1-b: #6b5c46;
-  --tag-done: #3b4229;
-  --tag-done-b: #6f7a45;
-  color-scheme: dark;
+  --lamp: rgba(255, 178, 92, 0.3);
+  --lamp-core: rgba(255, 220, 160, 0.55);
+  --lamp-wide: rgba(255, 170, 80, 0.13);
+  --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -140,16 +107,15 @@ p {
 }
 
 .label {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
 /* ── masthead ─────────────────────────────────────────── */
 .masthead {
-  background: var(--ground);
+  background: transparent; /* let the lamp light show through */
 }
 .mast-inner {
   max-width: 67.5rem;
@@ -162,9 +128,9 @@ p {
 .mast-title {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   line-height: 1.15;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
   color: var(--mast-ink);
 }
 .mast-line2 {
@@ -176,7 +142,7 @@ p {
 .mast-of {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1rem;
+  font-size: 0.8125rem;
   color: var(--mast-ink2);
 }
 .mast-date {
@@ -222,10 +188,9 @@ p {
   display: flex;
   align-items: center;
   gap: 0.4375rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.509rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  letter-spacing: 0.14em;
   color: var(--ink);
   width: 100%;
 }
@@ -285,25 +250,22 @@ p {
 }
 .item-text {
   font-family: var(--serif);
-  font-size: 1.125rem;
+  font-size: 1rem;
   line-height: 1.4;
   color: var(--ink);
 }
 .item-sleeve {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.006rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
   color: var(--ink3);
 }
 .tag {
   justify-self: start;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 0.9375rem;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  padding: 0.0625rem 0.5625rem 0.125rem;
+  font-family: var(--mono);
+  font-size: 0.6562rem;
+  letter-spacing: 0.03em;
+  padding: 0.1875rem 0.5625rem 0.25rem;
   border-radius: 0.1875rem;
   color: var(--ink);
   border: 1px solid;
@@ -339,17 +301,15 @@ p {
   display: flex;
   gap: 1.125rem;
   margin-top: 0.375rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .items-empty {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   color: var(--green);
   padding: 1.125rem 0.75rem 0.25rem;
 }
@@ -378,7 +338,7 @@ p {
   display: flex;
   gap: 0.625rem;
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--ink2);
   max-width: 45rem;
@@ -458,11 +418,6 @@ p {
   gap: 0.4375rem;
 }
 .side-name {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.3em;
-  letter-spacing: 0.07em;
-  line-height: 1;
   text-decoration: underline;
   text-underline-offset: 0.25rem;
   text-decoration-thickness: 1px;
@@ -489,10 +444,9 @@ p {
   color: var(--ink);
 }
 .side-sub {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--ink2);
   padding-left: 1.25rem;
 }
@@ -528,18 +482,13 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  align-items: baseline;
-}
-.d-name {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 2.5rem;
-  letter-spacing: 0.03em;
-  line-height: 1;
-}
-.d-amt {
   font-family: var(--mono);
   font-weight: 500;
+}
+.d-name {
+  font-size: 2.125rem;
+}
+.d-amt {
   font-size: 1.625rem;
 }
 .d-sub {
@@ -551,14 +500,13 @@ p {
 }
 .d-role {
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   color: var(--ink3);
 }
 .d-alloc {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -587,10 +535,9 @@ p {
 .card-d {
   margin-top: auto;
   padding-top: 0.5rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.006rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
   color: var(--muted);
 }
 
@@ -605,16 +552,15 @@ p {
   justify-content: space-between;
 }
 .module-foot {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
   letter-spacing: 0.08em;
   color: var(--ink3);
 }
 .module-note {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   color: var(--ink3);
 }
 
@@ -662,10 +608,9 @@ p {
   border-top: 1px solid var(--b2);
   padding-top: 0.4375rem;
   margin-bottom: 0.375rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--muted);
 }
 
@@ -682,10 +627,8 @@ p {
   background: var(--zebra);
 }
 .ladder-row.head {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-size: 0.5938rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .ladder-row .mark {
@@ -742,10 +685,9 @@ p {
   position: relative;
   height: 1.125rem;
   margin-top: 0.5rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--muted);
 }
 .gauge-labels span {
@@ -780,7 +722,7 @@ p {
 }
 .plan-src {
   font-family: var(--serif);
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 .plan-amt {
   font-family: var(--mono);
@@ -788,10 +730,9 @@ p {
   color: var(--brass-ink);
 }
 .plan-when {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--muted);
   text-align: right;
 }
@@ -802,7 +743,7 @@ p {
   justify-content: space-between;
   padding: 0.5rem 0.625rem;
   font-family: var(--serif);
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 .tax-row span:last-child {
   font-family: var(--mono);
@@ -826,10 +767,9 @@ p {
   background: var(--inset);
   border: 1px solid var(--b2);
   border-radius: 0.125rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   color: var(--ink);
   transition: background 0.15s;
 }
@@ -873,7 +813,7 @@ p {
 }
 .msg-text {
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   line-height: 1.55;
   max-width: 88%;
   white-space: pre-wrap;
@@ -902,7 +842,7 @@ p {
   border-radius: 0.125rem;
   padding: 0.5625rem 0.75rem;
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   color: var(--ink);
   outline: none;
 }
@@ -912,10 +852,9 @@ p {
 .ask-input button {
   background: var(--brass);
   color: var(--on-brass);
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   padding: 0 1.125rem;
   border-radius: 0.125rem;
 }
@@ -930,10 +869,9 @@ p {
 }
 .key-note {
   margin-top: -0.5rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--muted);
 }
 .key-note button {
@@ -959,10 +897,9 @@ p {
 }
 .view-error button {
   align-self: flex-start;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   color: var(--brass-ink);
 }
 
@@ -984,8 +921,7 @@ p {
 .gate-card {
   width: 100%;
   max-width: 21rem;
-  background: #f4f1ea; /* the iris image's own background, day or evening */
-  color: var(--ink);
+  background: #f4f1ea; /* the iris image's own background */
   box-shadow: var(--shadow);
   padding: 2rem;
   display: flex;
@@ -1009,10 +945,9 @@ p {
 }
 .gate-label {
   margin-top: 1.75rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
   color: var(--muted);
 }
 .gate-label.is-wrong {
@@ -1083,12 +1018,10 @@ p {
   outline-offset: 1px;
 }
 .key-fn {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
   background: transparent;
   border-color: transparent;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .key-fn:last-child {
@@ -1187,10 +1120,9 @@ p {
   align-items: baseline;
   gap: 0.375rem;
   padding: 0.5rem 0;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.308rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
   color: var(--ink3b);
   transition: opacity 0.15s;
 }
@@ -1242,10 +1174,9 @@ p {
   align-items: center;
   gap: 0.4375rem;
   padding: 0.25rem 0 0.25rem 0.5rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.006rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
   transition: color 0.15s;
 }
@@ -1286,17 +1217,15 @@ p {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.5rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.006rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .proj-toggle {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.107rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
   color: var(--ink3b);
 }
 .proj-toggle .on {
@@ -1310,15 +1239,14 @@ p {
 }
 .proj-hint {
   font-family: var(--serif);
-  font-variant-caps: normal;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   letter-spacing: 0;
   line-height: 1.45;
   color: var(--ink3);
   max-width: 18rem;
 }
 .proj-sheet {
-  font-size: 0.95rem;
+  font-size: 0.6875rem;
   color: var(--brass-ink);
   text-decoration: underline;
   text-underline-offset: 0.25rem;
@@ -1330,7 +1258,7 @@ p {
 }
 .proj-note {
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--ink3);
   max-width: 45rem;
@@ -1357,7 +1285,7 @@ p {
 }
 .pitem-text {
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   line-height: 1.4;
   color: var(--ink);
 }
@@ -1376,10 +1304,9 @@ p {
   text-decoration: line-through;
 }
 .pitem-kind {
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .pitem-cost {
@@ -1400,10 +1327,9 @@ p {
   align-items: center;
   justify-content: space-between;
   margin: -0.25rem 0 -0.25rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 1.208rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 .mnav-back {
@@ -1486,10 +1412,9 @@ p {
   flex-wrap: wrap;
   align-items: center;
   gap: 0 0.25rem;
-  font-family: var(--serif);
-  font-variant-caps: all-small-caps;
-  font-size: 0.956rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
   color: var(--green);
 }
 .market-note .off {
@@ -1577,7 +1502,7 @@ p {
     min-height: 32.5rem;
   }
   .d-name {
-    font-size: 2rem;
+    font-size: 1.625rem;
   }
   .d-amt {
     font-size: 1.25rem;
@@ -1608,5 +1533,124 @@ p {
   .plan-when {
     grid-column: 1 / -1;
     text-align: left;
+  }
+}
+
+/* ── the lamp overhead: warm light pooling from the top centre ─── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: min(80rem, 180vw);
+  height: min(46rem, 90vh);
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse 14% 18% at 50% 0%, var(--lamp-core), transparent 100%),
+    radial-gradient(ellipse 30% 42% at 50% 0%, var(--lamp), transparent 100%),
+    radial-gradient(ellipse 55% 80% at 50% 0%, var(--lamp-wide), transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* the same light falling softly across the paper */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: min(80rem, 180vw);
+  height: min(46rem, 90vh);
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 70% at 50% 0%, rgba(255, 200, 120, 0.22), transparent 100%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 5;
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── brass light switch (masthead) ─────────────────── */
+.mast-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+.switch {
+  position: relative;
+  width: 1.75rem;
+  height: 2.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3125rem 0;
+  border-radius: 0.125rem;
+  /* aged, brushed brass */
+  background:
+    repeating-linear-gradient(97deg, rgba(255, 240, 200, 0.07) 0 1px, transparent 1px 3px),
+    linear-gradient(150deg, #c9a862 0%, #a7843f 38%, #c6a35e 58%, #8f7034 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 190, 0.55),
+    inset 0 -1px 0 rgba(60, 40, 10, 0.35),
+    0 0.125rem 0.3125rem rgba(20, 12, 4, 0.45);
+  transition: filter 0.15s;
+}
+.switch:hover {
+  filter: brightness(1.06);
+}
+.switch:focus-visible {
+  outline: 2px solid var(--mast-ink);
+  outline-offset: 2px;
+}
+.switch-screw {
+  position: relative;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ecd497, #9b7a38 70%);
+  box-shadow: 0 0 0 0.5px rgba(60, 40, 10, 0.5);
+}
+.switch-screw::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0.5px;
+  background: rgba(50, 32, 8, 0.8);
+  transform: rotate(-35deg);
+}
+.switch-slot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.9375rem;
+  border-radius: 0.0625rem;
+  background: #16110b;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 0.5px rgba(255, 238, 190, 0.35);
+}
+/* knurled lever: grows up out of the slot for day, down for evening */
+.switch-lever {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 0.3125rem;
+  height: 0.875rem;
+  margin-left: -0.15625rem;
+  border-radius: 0.15625rem 0.15625rem 0.0625rem 0.0625rem;
+  background:
+    repeating-linear-gradient(0deg, rgba(50, 32, 8, 0.5) 0 1px, transparent 1px 2.5px),
+    linear-gradient(90deg, #7c5f28, #f6e2a8 42%, #c6a35a 68%, #6f5422);
+  box-shadow: 0.0625rem 0.125rem 0.1875rem rgba(20, 12, 4, 0.6);
+  transform-origin: 50% 100%;
+  transition: transform 0.16s cubic-bezier(0.5, 0, 0.3, 1.4);
+}
+.switch.is-down .switch-lever {
+  transform: scaleY(-1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .switch-lever {
+    transition: none;
   }
 }

@@ -8,7 +8,7 @@ import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
 import { useDrill } from './useDrill';
-import { useLamplight } from './lamplight';
+import { LightSwitch } from './LightSwitch';
 import { buildItems, buildSleeves, compact, longDate, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
@@ -32,7 +32,6 @@ export function App() {
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
   const narrow = useNarrow();
-  useLamplight();
   const [itemsOpen, setItemsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
@@ -94,7 +93,10 @@ export function App() {
           </div>
           <div className="mast-right">
             <div className="mast-title mast-date">{longDate(new Date())}</div>
-            <LockButton />
+            <div className="mast-controls">
+              <LightSwitch />
+              <LockButton />
+            </div>
           </div>
         </div>
       </header>

@@ -1,39 +1,77 @@
-// Evening mode: from 6 pm to 6 am the site switches to its lamplight palette
-// (styles.css, :root[data-light='evening']). Add ?light=day or ?light=evening
-// to the URL to preview either one.
+// Day or evening. By the clock, evening runs 6 pm to 6 am; the brass switch in
+// the masthead overrides that until the next 6 am / 6 pm. ?light=day or
+// ?light=evening in the URL previews either one.
 
 import { useEffect, useState } from 'react';
 
 export type Light = 'day' | 'evening';
 
-function current(): Light {
-  const forced = new URLSearchParams(location.search).get('light');
-  if (forced === 'day' || forced === 'evening') return forced;
+const KEY = 'browns.light.v1';
+const listeners = new Set<() => void>();
+
+function byClock(): Light {
   const h = new Date().getHours();
   return h >= 18 || h < 6 ? 'evening' : 'day';
 }
 
-function apply(light: Light) {
+/** The next 6 am or 6 pm, when the clock takes over again. */
+function nextChange(): number {
+  const d = new Date();
+  const h = d.getHours();
+  if (h >= 18) d.setDate(d.getDate() + 1);
+  d.setHours(h >= 6 && h < 18 ? 18 : 6, 0, 0, 0);
+  return d.getTime();
+}
+
+function current(): Light {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { light: Light; until: number } | null;
+    if (saved && Date.now() < saved.until) return saved.light;
+  } catch {
+    /* no storage: follow the clock */
+  }
+  const forced = new URLSearchParams(location.search).get('light');
+  if (forced === 'day' || forced === 'evening') return forced;
+  return byClock();
+}
+
+function refresh() {
+  const light = current();
   document.documentElement.dataset.light = light;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light === 'evening' ? '#29231b' : '#6a6349');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light === 'evening' ? '#29231b' : '#776550');
+  listeners.forEach((f) => f());
 }
 
-/** Sets the light once at startup, before anything renders (the PIN pad included). */
+/** Sets the light at startup, before anything renders, then rechecks each minute. */
 export function applyLamplight() {
-  apply(current());
+  refresh();
+  setInterval(refresh, 60_000);
 }
 
-/** The current light, rechecked each minute; also sets it on <html>. */
+/** Flip the switch: holds until the clock's next change. */
+export function setLight(light: Light) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ light, until: nextChange() }));
+  } catch {
+    /* private mode: this visit only */
+  }
+  const forced = new URL(location.href);
+  if (forced.searchParams.has('light')) {
+    forced.searchParams.delete('light');
+    history.replaceState(history.state, '', forced);
+  }
+  refresh();
+}
+
+/** The current light; re-renders when it changes. */
 export function useLamplight(): Light {
-  const [light, setLight] = useState<Light>(current);
+  const [light, set] = useState<Light>(current);
   useEffect(() => {
-    // set <html> before re-rendering, so the chart redraws with the new colours
-    const t = setInterval(() => {
-      const next = current();
-      apply(next);
-      setLight(next);
-    }, 60_000);
-    return () => clearInterval(t);
+    const f = () => set(current());
+    listeners.add(f);
+    return () => {
+      listeners.delete(f);
+    };
   }, []);
   return light;
 }
