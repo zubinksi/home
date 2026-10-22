@@ -3,9 +3,6 @@
   --ground: #776550;
   --mast-ink: #f3ead7;
   --mast-ink2: #e0d4bb;
-  --lamp: rgba(255, 210, 140, 0.32);
-  --lamp-core: rgba(255, 236, 196, 0.55);
-  --lamp-wide: rgba(255, 200, 120, 0.16);
   --mast: #ebe2cd;
   --rule: #b3a383;
   --slab: #f1e9d8;
@@ -49,15 +46,12 @@
   --serif: 'Source Serif 4', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
-/* evening: the wall goes dark and the lamp does the work (lamplight.ts sets this) */
+/* evening: the dark brown wall (lamplight.ts sets this) */
 :root[data-light='evening'] {
   --ground: #29231b;
   --mast-ink: #eadcc0;
   --mast-ink2: #c9b99a;
   --mast-brass: #c9a45c;
-  --lamp: rgba(255, 178, 92, 0.16);
-  --lamp-core: rgba(255, 220, 160, 0.28);
-  --lamp-wide: rgba(255, 170, 80, 0.08);
   --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
 }
 
@@ -115,7 +109,7 @@ p {
 
 /* ── masthead ─────────────────────────────────────────── */
 .masthead {
-  background: transparent; /* let the lamp light show through */
+  background: var(--ground);
 }
 .mast-inner {
   max-width: 67.5rem;
@@ -144,9 +138,6 @@ p {
   font-style: italic;
   font-size: 0.8125rem;
   color: var(--mast-ink2);
-}
-.mast-date {
-  text-align: right;
 }
 
 /* ── body + slabs ─────────────────────────────────────── */
@@ -460,14 +451,6 @@ p {
   height: 0.3125rem;
   border-radius: 50%;
   display: inline-block;
-}
-.side-row.ask {
-  margin-top: auto;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-}
-.ask-arrow {
-  color: var(--brass-ink);
 }
 
 /* ── detail ───────────────────────────────────────────── */
@@ -1028,14 +1011,9 @@ p {
   font-size: 1.125rem;
   letter-spacing: 0;
 }
-.mast-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
 .mast-lock {
   display: inline-flex;
+  margin-top: 0.1875rem; /* sits on the title's first line */
   padding: 0.125rem;
   color: var(--mast-brass);
   transition: opacity 0.15s, color 0.2s;
@@ -1113,40 +1091,58 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3rem;
+  gap: 1.5rem;
 }
 .tab {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.375rem;
-  padding: 0.5rem 0;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 0.875rem;
+  border-radius: 1.25rem;
   font-family: var(--mono);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   color: var(--ink3b);
-  transition: opacity 0.15s;
+  transition: background 0.2s, color 0.2s, opacity 0.15s;
 }
 .tab:hover {
   opacity: 0.7;
 }
-.tab-caret {
-  color: var(--brass-ink);
-  visibility: hidden;
+.tab.is-sel:hover {
+  opacity: 1;
 }
+.tab-icon {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* unselected tabs are just the icon; the selected one also says its name */
 .tab-name {
-  text-decoration: underline;
-  text-underline-offset: 0.3125rem;
-  text-decoration-thickness: 1px;
-  text-decoration-color: var(--underline);
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width 0.25s ease, opacity 0.2s;
 }
 .tab.is-sel {
-  color: var(--ink);
-}
-.tab.is-sel .tab-caret {
-  visibility: visible;
+  background: var(--inset);
+  color: var(--brass-ink);
 }
 .tab.is-sel .tab-name {
-  text-decoration-color: var(--brass-ink);
+  max-width: 12rem;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .tab-name {
+    transition: none;
+  }
 }
 
 /* ── projects ───────────────────────────────────────── */
@@ -1443,6 +1439,7 @@ p {
 /* ── narrow screens (the design is 1080 wide; keep it usable on a phone) ── */
 @media (max-width: 860px) {
   .mast-inner {
+    padding-top: max(2.25rem, calc(env(safe-area-inset-top) + 1.25rem));
     padding-left: 1rem;
     padding-right: 1rem;
   }
@@ -1487,9 +1484,6 @@ p {
   }
   .sleeves {
     overflow: hidden; /* clip the slide transitions */
-  }
-  .side-row.ask {
-    margin-top: 0.75rem;
   }
   .detail {
     padding: 1.25rem 0.875rem 1.5rem;
@@ -1536,38 +1530,4 @@ p {
   }
 }
 
-/* ── the lamp overhead: warm light pooling from the top centre ─── */
-body::before {
-  content: '';
-  position: fixed;
-  top: -16rem; /* the lamp sits above the page; only the edge of its light shows */
-  left: 50%;
-  width: min(80rem, 180vw);
-  height: min(46rem, 90vh);
-  transform: translateX(-50%);
-  background:
-    radial-gradient(ellipse 14% 18% at 50% 0%, var(--lamp-core), transparent 100%),
-    radial-gradient(ellipse 30% 42% at 50% 0%, var(--lamp), transparent 100%),
-    radial-gradient(ellipse 55% 80% at 50% 0%, var(--lamp-wide), transparent 100%);
-  pointer-events: none;
-  z-index: 0;
-}
-/* the same light falling softly across the paper */
-body::after {
-  content: '';
-  position: fixed;
-  top: -16rem;
-  left: 50%;
-  width: min(80rem, 180vw);
-  height: min(46rem, 90vh);
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse 50% 70% at 50% 0%, rgba(255, 200, 120, 0.1), transparent 100%);
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 5;
-}
-#root {
-  position: relative;
-  z-index: 1;
-}
 

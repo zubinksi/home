@@ -8,10 +8,9 @@ import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
 import { useDrill } from './useDrill';
-import { buildItems, buildSleeves, compact, longDate, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
+import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
-const SEL_ASK = -2;
 const DONE_KEY = 'browns.done.v1';
 
 function loadDone(): string[] {
@@ -38,18 +37,17 @@ export function App() {
   const sleevesRef = useRef<HTMLElement>(null);
 
   // ── phones: the list is the home view; a row opens its detail as its own page
-  const subOf = (i: number) => (i === SEL_TOTAL ? 'total' : i === SEL_ASK ? 'ask' : model.sleeves[i].key.toLowerCase());
+  const subOf = (i: number) => (i === SEL_TOTAL ? 'total' : model.sleeves[i].key.toLowerCase());
   const selOf = (key: string) => {
     if (key === 'total') return SEL_TOTAL;
-    if (key === 'ask') return SEL_ASK;
     return model.sleeves.findIndex((s) => s.key.toLowerCase() === key);
   };
-  // next / previous run through TOTAL and the sleeves (Ask is separate)
+  // next / previous run through TOTAL and the sleeves
   const sequence = ['total', ...model.sleeves.map((s) => s.key.toLowerCase())];
   const drill = useDrill({
     narrow,
     sub: tab === 'investments' ? route.sub : null,
-    keys: [...sequence, 'ask'],
+    keys: sequence,
     sequence,
     defaultKey: 'total',
     openSub,
@@ -90,10 +88,7 @@ export function App() {
               <span className="mast-title">THE BROWNS</span>
             </div>
           </div>
-          <div className="mast-right">
-            <div className="mast-title mast-date">{longDate(new Date())}</div>
-            <LockButton />
-          </div>
+          <LockButton />
         </div>
       </header>
       <div className="doc">
@@ -204,13 +199,6 @@ export function App() {
                   <span className="side-amt">{compact(s.amount)}</span>
                 </button>
               ))}
-
-              <button className={`side-row ask ${!narrow && sel === SEL_ASK ? 'is-sel' : ''}`} onClick={() => select(SEL_ASK)}>
-                <span className="side-caret">&gt;</span>
-                <span className="side-name">ASK THE POLICY</span>
-                <span />
-                <span className="ask-arrow">→</span>
-              </button>
             </nav>
             )}
 
@@ -222,13 +210,23 @@ export function App() {
                 <TotalDetail model={model} market={market} />
               )}
               {selected && <Detail key={selected.key} sleeve={selected} />}
-              {sel === SEL_ASK && <Ask chat={chat} setChat={setChat} live={market.live} />}
               </ErrorBoundary>
             </div>
             )}
           </div>
         </section>
       </main>
+      )}
+      {tab === 'ask' && (
+        <main className="body">
+          <section className="slab ask-page">
+            <div className="detail">
+              <ErrorBoundary resetKey="ask">
+                <Ask chat={chat} setChat={setChat} live={market.live} />
+              </ErrorBoundary>
+            </div>
+          </section>
+        </main>
       )}
       </div>
       <NavBar tab={tab} onChange={goTab} />

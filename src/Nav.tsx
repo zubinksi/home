@@ -3,7 +3,34 @@ import { useCallback, useEffect, useState } from 'react';
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
   { id: 'projects', label: 'PROJECTS' },
+  { id: 'ask', label: 'ASK THE POLICY' },
 ] as const;
+
+/** Line icons for the tab bar, drawn on a 20×20 grid. */
+const ICONS: Record<TabId, JSX.Element> = {
+  // a rising line on an axis
+  investments: (
+    <>
+      <path d="M3 3v14h14" />
+      <path d="M6 13l3.5-4 3 2.5L17 6" />
+    </>
+  ),
+  // a house
+  projects: (
+    <>
+      <path d="M3 9.5L10 3.5l7 6" />
+      <path d="M5 8v8.5h10V8" />
+      <path d="M8.5 16.5v-4.5h3v4.5" />
+    </>
+  ),
+  // a speech bubble
+  ask: (
+    <>
+      <path d="M3.5 4.5h13v9h-7l-4 3v-3h-2z" />
+      <path d="M7 7.75h6M7 10.25h4" />
+    </>
+  ),
+};
 
 export type TabId = (typeof TABS)[number]['id'];
 
@@ -86,10 +113,16 @@ export function NavBar({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => 
             key={t.id}
             className={`tab ${tab === t.id ? 'is-sel' : ''}`}
             aria-current={tab === t.id ? 'page' : undefined}
+            aria-label={t.label}
+            title={t.label}
             onClick={() => onChange(t.id)}
           >
-            <span className="tab-caret">&gt;</span>
-            <span className="tab-name">{t.label}</span>
+            <svg className="tab-icon" viewBox="0 0 20 20" aria-hidden>
+              {ICONS[t.id]}
+            </svg>
+            <span className="tab-name" aria-hidden>
+              {t.label}
+            </span>
           </button>
         ))}
       </div>
