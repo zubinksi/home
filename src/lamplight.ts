@@ -23,8 +23,8 @@ function nextChange(): number {
   return d.getTime();
 }
 
-// Evening only for now. To bring back day by the clock, remove this line.
-const ONLY: Light | null = 'evening';
+// Day colours only for now (soft gray wall). To follow the clock again, set this to null.
+const ONLY: Light | null = 'day';
 
 function current(): Light {
   if (ONLY) return ONLY;
@@ -42,7 +42,7 @@ function current(): Light {
 function refresh() {
   const light = current();
   document.documentElement.dataset.light = light;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light === 'evening' ? '#29231b' : '#776550');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light === 'evening' ? '#29231b' : '#8f9186');
   listeners.forEach((f) => f());
 }
 

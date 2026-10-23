@@ -120,8 +120,8 @@ export function NavBar({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => 
             <svg className="tab-icon" viewBox="0 0 20 20" aria-hidden>
               {ICONS[t.id]}
             </svg>
-            <span className="tab-name" aria-hidden>
-              {t.label}
+            <span className="tab-label" aria-hidden>
+              <span className="tab-name">{t.label}</span>
             </span>
           </button>
         ))}
