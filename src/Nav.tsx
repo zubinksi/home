@@ -1,36 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
   { id: 'projects', label: 'PROJECTS' },
-  { id: 'ask', label: 'ASK THE POLICY' },
+  { id: 'ask', label: 'POLICY' },
 ] as const;
-
-/** Line icons for the tab bar, drawn on a 20×20 grid. */
-const ICONS: Record<TabId, JSX.Element> = {
-  // a rising line on an axis
-  investments: (
-    <>
-      <path d="M3 3v14h14" />
-      <path d="M6 13l3.5-4 3 2.5L17 6" />
-    </>
-  ),
-  // a house
-  projects: (
-    <>
-      <path d="M3 9.5L10 3.5l7 6" />
-      <path d="M5 8v8.5h10V8" />
-      <path d="M8.5 16.5v-4.5h3v4.5" />
-    </>
-  ),
-  // a speech bubble
-  ask: (
-    <>
-      <path d="M3.5 4.5h13v9h-7l-4 3v-3h-2z" />
-      <path d="M7 7.75h6M7 10.25h4" />
-    </>
-  ),
-};
 
 export type TabId = (typeof TABS)[number]['id'];
 
@@ -104,28 +78,84 @@ export function useNarrow(query = '(max-width: 860px)') {
   return narrow;
 }
 
-export function NavBar({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
+/**
+ * The masthead title doubles as the site's navigation: "INVESTMENTS of THE
+ * BROWNS", where the first line opens a menu of the other sections.
+ */
+export function SectionMenu({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const current = TABS.find((t) => t.id === tab)!;
+  const others = TABS.filter((t) => t.id !== tab);
+
+  // close on a click outside or Escape
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        button.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  // up / down move between the choices
+  const onMenuKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...(e.currentTarget.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)];
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+  };
+
   return (
-    <nav className="tabbar" aria-label="Sections">
-      <div className="tabbar-inner">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={`tab ${tab === t.id ? 'is-sel' : ''}`}
-            aria-current={tab === t.id ? 'page' : undefined}
-            aria-label={t.label}
-            title={t.label}
-            onClick={() => onChange(t.id)}
-          >
-            <svg className="tab-icon" viewBox="0 0 20 20" aria-hidden>
-              {ICONS[t.id]}
-            </svg>
-            <span className="tab-label" aria-hidden>
-              <span className="tab-name">{t.label}</span>
-            </span>
-          </button>
-        ))}
+    <div className="section-menu" ref={wrap}>
+      <button
+        ref={button}
+        className={`mast-title section-current ${open ? 'is-open' : ''}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' && !open) {
+            e.preventDefault();
+            setOpen(true);
+            setTimeout(() => wrap.current?.querySelector<HTMLButtonElement>('.section-menu-list button')?.focus(), 0);
+          }
+        }}
+      >
+        {current.label}
+        <span className="section-caret" aria-hidden />
+      </button>
+      {/* the other sections unfold as rows beneath, pushing "of THE BROWNS" down */}
+      <div className={`section-menu-fold ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+        <div className="section-menu-list" role="menu" aria-label="Sections" onKeyDown={onMenuKey}>
+          {others.map((t) => (
+            <button
+              key={t.id}
+              role="menuitem"
+              className="mast-title"
+              tabIndex={open ? 0 : -1}
+              onClick={() => {
+                setOpen(false);
+                onChange(t.id);
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
-    </nav>
+    </div>
   );
 }

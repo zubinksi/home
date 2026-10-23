@@ -3,7 +3,7 @@ import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LockButton } from './Gate';
-import { NavBar, useNarrow, useRoute } from './Nav';
+import { SectionMenu, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
@@ -82,7 +82,7 @@ export function App() {
       <header className="masthead">
         <div className="mast-inner">
           <div>
-            <div className="mast-title">THE HOUSEHOLD</div>
+            <SectionMenu tab={tab} onChange={goTab} />
             <div className="mast-line2">
               <span className="mast-of">of</span>
               <span className="mast-title">THE BROWNS</span>
@@ -229,7 +229,6 @@ export function App() {
         </main>
       )}
       </div>
-      <NavBar tab={tab} onChange={goTab} />
     </>
   );
 }
