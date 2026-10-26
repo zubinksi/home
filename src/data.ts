@@ -39,11 +39,11 @@ export const reviews: Review[] = [
   },
   {
     date: '2026-11-01',
-    hype: { tokens: 6_500, price: 82 },
-    zec: { tokens: 100, price: 1_200 },
+    hype: { tokens: 6_400, price: 82 },
+    zec: { tokens: 95, price: 1_200 },
     aapl: { shares: 927, price: 340 },
     equities: 30_000,
-    cash: 190_000,
+    cash: 205_000,
     diversified: { voo: 0, vxus: 0, avuv: 0 },
   },
 ];

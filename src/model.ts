@@ -95,8 +95,8 @@ export function monYY(d: Date | string): string {
 export const RULES = {
   fortressTargetMonths: 30,
   austerityMonths: 18,
-  cryptoCeiling: 0.45,
-  cryptoTrimTo: 0.4,
+  hypeCeiling: 0.45,
+  hypeTrimTo: 0.4,
   zecTrimAt: 0.1,
   zecTrimTo: 0.07,
   diversifiedGoal: 0.3,
@@ -164,10 +164,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
 
   const burn = household.annualSpend / 12;
   const fortressMonths = Math.round((h.fortress.value / burn) * 100) / 100;
-  const crypto = share(hype) + share(zec);
+  const hypeShare = share(hype);
+  const crypto = hypeShare + share(zec);
 
-  // ── HYPE
-  const hypeStatus: Status = crypto >= RULES.cryptoCeiling ? 'red' : crypto >= RULES.cryptoCeiling - 0.05 ? 'amber' : 'green';
+  // ── HYPE: the 45% ceiling is HYPE's alone; ZEC has its own 10% line
+  const hypeStatus: Status = hypeShare >= RULES.hypeCeiling ? 'red' : hypeShare >= RULES.hypeCeiling - 0.05 ? 'amber' : 'green';
   const ladderTotal = LADDER.reduce((s, r) => s + r.price * r.tokens, 0);
   const nextRung = h.hype.rungsSold < LADDER.length ? h.hype.rungsSold : -1;
   const hypeGain = h.hype.basis == null ? null : hype - h.hype.basis;
@@ -188,11 +189,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   // ── THIS REVIEW: trims and refills the policy calls for (§2, §3, §4, §5)
   const plan: PlanStep[] = [];
   const zecTrimTokens = zecShare > RULES.zecTrimAt ? Math.ceil((zec - RULES.zecTrimTo * total) / h.zec.price) : 0;
-  const zecAfter = zec - zecTrimTokens * h.zec.price;
-  const cryptoTarget = RULES.cryptoTrimTo * total;
   const hypeTrimTokens =
-    crypto > RULES.cryptoCeiling
-      ? Math.min(h.hype.tokens - RULES.hypeKeep, Math.max(0, Math.ceil((hype + zecAfter - cryptoTarget) / h.hype.price)))
+    hypeShare > RULES.hypeCeiling
+      ? Math.min(h.hype.tokens - RULES.hypeKeep, Math.max(0, Math.ceil((hype - RULES.hypeTrimTo * total) / h.hype.price)))
       : 0;
   if (zecTrimTokens > 0)
     plan.push({
@@ -206,12 +205,31 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       sleeve: 'HYPE',
       action: `Sell ${num(hypeTrimTokens)} HYPE at ${priceFmt(h.hype.price)}`,
       amount: hypeTrimTokens * h.hype.price,
-      why: `HYPE + ZEC are ${pct(crypto)} of liquid, over the 45% ceiling. Trim back to 40% within 30 days.`,
+      why: `HYPE is ${pct(hypeShare)} of liquid, over the 45% ceiling. Trim back to 40% within 30 days.`,
+    });
+  // §2 refill: if the Fortress is still short after any trims, sell what is up,
+  // HYPE first, enough to cover the gap after the 30% tax set-aside.
+  const fortressGap = Math.max(0, RULES.fortressTargetMonths * burn - h.fortress.value);
+  const trimNet = plan.reduce((s, p) => s + p.amount, 0) * (1 - RULES.taxSetAside);
+  const stillShort = fortressGap - trimNet;
+  const hypeIsUp = h.hype.basis != null && h.hype.price * h.hype.tokens > h.hype.basis;
+  const hypeRefillTokens =
+    stillShort > 0 && hypeIsUp && h.hype.price >= RULES.hypeFloor
+      ? Math.min(
+          h.hype.tokens - RULES.hypeKeep - hypeTrimTokens,
+          Math.ceil(stillShort / (1 - RULES.taxSetAside) / h.hype.price),
+        )
+      : 0;
+  if (hypeRefillTokens > 0)
+    plan.push({
+      sleeve: 'HYPE',
+      action: `Sell ${num(hypeRefillTokens)} HYPE at ${priceFmt(h.hype.price)} to refill the Fortress`,
+      amount: hypeRefillTokens * h.hype.price,
+      why: `The Fortress covers ${Math.floor(fortressMonths)} of 30 months. Refill from what is up, HYPE first; this covers the ${money(stillShort)} gap after the 30% tax set-aside.`,
     });
   const proceeds = plan.reduce((s, p) => s + p.amount, 0);
   const taxReserve = proceeds * RULES.taxSetAside;
   const toWork = proceeds - taxReserve;
-  const fortressGap = Math.max(0, RULES.fortressTargetMonths * burn - h.fortress.value);
   const toFortress = Math.min(toWork, fortressGap);
   const toDiversified = toWork - toFortress;
   if (taxReserve > 0)
@@ -223,10 +241,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       amount: toFortress,
       why: `The Fortress covers ${Math.floor(fortressMonths)} months. Refill from what is up, HYPE proceeds first.`,
     });
-  if (toDiversified > 0)
+  // rounding up whole tokens leaves a few dollars over; only a real surplus goes on
+  if (toDiversified >= 1_000)
     plan.push({ sleeve: 'DIVERSIFIED', action: 'Fund Diversified: VOO 55 · VXUS 30 · AVUV 15', amount: toDiversified, why: 'Anything above the Fortress target goes to the Diversified sleeve. Over $100K goes in in thirds.' });
-  const hypeTokensAfter = h.hype.tokens - hypeTrimTokens;
-  const cryptoAfter = (hype - hypeTrimTokens * h.hype.price + zecAfter) / total;
+  const hypeTokensAfter = h.hype.tokens - hypeTrimTokens - hypeRefillTokens;
+  const hypeShareAfter = (hypeTokensAfter * h.hype.price) / total;
   const fortressMonthsAfter = (h.fortress.value + toFortress) / burn;
 
   // ── DIVERSIFIED
@@ -246,8 +265,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       pct: share(hype),
       roleTitle: `Our biggest bet — ${num(h.hype.tokens)} tokens, skimmed on the way up`,
       status: hypeStatus,
-      alloc: crypto > RULES.cryptoCeiling ? `CRYPTO ${pct(crypto)} · OVER ${pct(RULES.cryptoCeiling)} CEILING` : `CRYPTO ${pct(crypto)} OF ${pct(RULES.cryptoCeiling)} CEILING`,
-      cap: { cap: RULES.cryptoCeiling, kind: 'cap' },
+      alloc: hypeShare > RULES.hypeCeiling ? `${pct(hypeShare, 1)} · OVER ${pct(RULES.hypeCeiling)} CEILING` : `${pct(hypeShare, 1)} OF ${pct(RULES.hypeCeiling)} CEILING`,
+      cap: { cap: RULES.hypeCeiling, kind: 'cap' },
       kv: [
         { k: 'PRICE', v: priceFmt(h.hype.price), d: `FLOOR $${RULES.hypeFloor}`, ...changeKV(live.hype, '24H') },
         { k: 'TOKENS', v: num(h.hype.tokens), d: `KEEP ${num(RULES.hypeKeep)} FOREVER` },
@@ -260,7 +279,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         },
       ],
       policy: [
-        'HYPE + ZEC can’t exceed 45% of liquid assets (checked quarterly). If it does, we trim back to 40% within 30 days.',
+        'HYPE can’t exceed 45% of liquid assets (checked quarterly). If it does, we trim back to 40% within 30 days.',
         'The sell ladder is pre-committed. When the price hits the number, we sell. No skipping a rung because it “obviously” has further to run.',
         'We keep 750 tokens forever, at any price — our oldest, cheapest-basis tokens.',
         'Below $40 we never sell HYPE to pay for living expenses. Period.',
@@ -345,7 +364,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       pct: zecShare,
       roleTitle: `Small bet on purpose — ${num(h.zec.tokens)} tokens`,
       status: zecStatus,
-      alloc: zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
+      alloc: zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare, 1)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
       cap: { cap: RULES.zecTrimAt, kind: 'trim' },
       kv: [
         { k: 'PRICE', v: priceFmt(h.zec.price), ...changeKV(live.zec, '24H') },
@@ -361,7 +380,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       policy: [
         'If ZEC grows past 10% of liquid assets at a quarterly review, trim back to 7%.',
         'No price ladder — this thesis isn’t about a price target.',
-        'ZEC counts inside the same 45% crypto ceiling as HYPE. It falls in the same crash.',
+        'ZEC has its own 10% line and doesn’t count toward HYPE’s 45% ceiling. It still falls in the same crypto crash.',
         'We only add with spare money, never by selling something else to buy it.',
       ],
     },
@@ -408,7 +427,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         goal: divGoal,
         goalDate: diversifiedGoalDate,
         rows: [
-          ...(toDiversified > 0 ? [{ source: 'This review’s trim, after the Fortress refill', amount: money(toDiversified), when: 'THIS MONTH' }] : []),
+          ...(toDiversified >= 1_000 ? [{ source: 'This review’s trim, after the Fortress refill', amount: money(toDiversified), when: 'THIS MONTH' }] : []),
           { source: 'Flexible equities bucket', amount: money(h.equities.value), when: 'THIS MONTH' },
           { source: 'HYPE ladder, after 30% tax set-aside', amount: money(ladderTotal * (1 - RULES.taxSetAside)), when: 'AS RUNGS FILL' },
           { source: 'Evergreen above the Fortress target', amount: 'VARIES', when: 'AS RECEIVED' },
@@ -448,8 +467,10 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
     reviewDate,
     fortressMonths,
     crypto,
+    hypeShare,
+    zecShare,
     plan,
-    after: { crypto: cryptoAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve },
+    after: { hypeShare: hypeShareAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve },
   };
 }
 
@@ -498,7 +519,7 @@ export function buildItems(live: LivePrices = {}): Item[] {
     out.push({
       id: `HYPE:ladder@${m.reviewDate}`,
       sleeve: 'HYPE',
-      text: `After the trim we hold ${num(m.after.hypeTokens)} HYPE, fewer than the ${num(laddered)} the ladder and the 750-token keep assume. Write down how the rungs scale at the annual review`,
+      text: `${m.after.hypeTokens < holdings.hype.tokens ? 'After this review’s sales we hold' : 'We hold'} ${num(m.after.hypeTokens)} HYPE, fewer than the ${num(laddered)} the ladder and the 750-token keep assume. Write down how the rungs scale at the annual review`,
       when: 'q1 review',
     });
   return out;
@@ -540,7 +561,7 @@ export function stateForPrompt(live: LivePrices = {}): string {
     `Holdings as of the ${m.reviewDate} quarterly review. Review snapshots: ${snapshots.map((h) => `${h.date} $${num(Math.round(h.total))}`).join('; ')}.`,
     quotes.length ? `Live prices as of ${new Date().toISOString().slice(0, 16)}Z: ${quotes.join(', ')}. Values below use them.` : 'Prices are the review prices.',
     `Total liquid: $${num(Math.round(m.total))}. Annual spend $${num(household.annualSpend)}; Evergreen ~$${num(household.evergreenIncome)}/yr; mortgage $${num(household.mortgage.balance)} at ${household.mortgage.rate}%.`,
-    `Fortress coverage: ${m.fortressMonths.toFixed(1)} months. Crypto (HYPE+ZEC): ${pct(m.crypto, 1)} of liquid.`,
+    `Fortress coverage: ${m.fortressMonths.toFixed(1)} months. HYPE: ${pct(m.hypeShare, 1)} of liquid (45% ceiling, HYPE alone). ZEC: ${pct(m.zecShare, 1)} (10% line). Crypto together: ${pct(m.crypto, 1)}.`,
     '',
   ];
   for (const s of m.sleeves) {

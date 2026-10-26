@@ -92,7 +92,7 @@ We like the thesis, but it's small on purpose — and there's a rule ready for w
 
 - **If ZEC grows past 10% of liquid assets** at a quarterly review, trim back to 7%.
 - No price ladder — this thesis isn't about a price target.
-- ZEC counts inside the same **45% crypto ceiling** as HYPE. It doesn't protect us from a crypto crash; it falls in the same one.
+- ZEC has its own 10% line and **doesn't count toward HYPE's 45% ceiling**. It still doesn't protect us from a crypto crash; it falls in the same one.
 - We only add with spare money, never by selling something else to buy it.
 
 ## 6. AAPL — the 20-year holding

@@ -105,7 +105,7 @@ The page relies on these sheet conventions:
    amounts and prices (the latest entry is treated as "now").
 2. Update `basis` after any buy or sell, and `hypeRungsSold` when a rung fills.
 3. Open the site. The TOTAL view lists **what the policy calls for this
-   review** (trims over the 45% crypto ceiling or the 10% ZEC line, the 30% tax
+   review** (trims over HYPE's 45% ceiling or the 10% ZEC line, the 30% tax
    set-aside, the Fortress refill to 30 months, the overflow to Diversified),
    and those steps appear as open items automatically.
 4. Check off items as you do them. Checked-off items are remembered in this
