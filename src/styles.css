@@ -133,6 +133,18 @@ p {
   gap: 0.4375rem;
   margin-top: 0.125rem;
 }
+.mast-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+.mast-iris {
+  display: block;
+  width: auto;
+  height: 2.625rem; /* about the height of the two title lines */
+  margin-top: 0.0625rem;
+  opacity: 0.92;
+}
 .mast-of {
   font-family: var(--serif);
   font-style: italic;
@@ -1027,34 +1039,17 @@ p {
 .mast-lock.is-locking {
   cursor: default;
 }
-/* recessed bronze channel */
+/* a channel recessed a step darker than the wall */
 .lock-track {
   position: relative;
   width: 2.875rem;
   height: 1.625rem;
   border-radius: 0.8125rem;
-  background:
-    repeating-linear-gradient(96deg, rgba(255, 236, 200, 0.05) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, #4c3a1f, #6b522c 55%, #7a5f35);
+  background: #7d7f74;
   box-shadow:
-    inset 0 0.0625rem 0.1875rem rgba(20, 12, 4, 0.7),
-    inset 0 -0.0625rem 0 rgba(255, 226, 170, 0.25),
-    0 0 0 0.0625rem rgba(40, 28, 12, 0.35),
-    0 0.0625rem 0 rgba(255, 255, 255, 0.18);
-}
-/* the warm, polished side the knob slides over */
-.lock-lit {
-  position: absolute;
-  top: 0.1875rem;
-  right: 0.1875rem;
-  bottom: 0.1875rem;
-  width: 1.75rem;
-  border-radius: 0.625rem;
-  background:
-    repeating-linear-gradient(96deg, rgba(255, 240, 205, 0.08) 0 1px, transparent 1px 2.5px),
-    linear-gradient(180deg, #e2c27f, #b88d47 60%, #9c763a);
-  box-shadow: inset 0 0.0625rem 0.125rem rgba(60, 38, 10, 0.45);
-  transition: opacity 0.3s;
+    inset 0 0.0625rem 0.1875rem rgba(30, 30, 24, 0.45),
+    inset 0 -0.0625rem 0 rgba(255, 255, 255, 0.12),
+    0 0.0625rem 0 rgba(255, 255, 255, 0.16);
 }
 /* turned bronze knob with concentric machining and a centre dimple */
 .lock-knob {
@@ -1077,12 +1072,8 @@ p {
 .mast-lock.is-locking .lock-knob {
   transform: translateX(1.25rem) rotate(150deg);
 }
-.mast-lock.is-locking .lock-lit {
-  opacity: 0.35;
-}
 @media (prefers-reduced-motion: reduce) {
-  .lock-knob,
-  .lock-lit {
+  .lock-knob {
     transition: none;
   }
 }

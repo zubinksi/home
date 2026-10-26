@@ -46,7 +46,6 @@ export function LockButton() {
     >
       {/* a bronze toggle: the knob slides across to lock */}
       <span className="lock-track" aria-hidden>
-        <span className="lock-lit" />
         <span className="lock-knob" />
       </span>
     </button>

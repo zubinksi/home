@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
+import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
 import { SectionMenu, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
@@ -81,12 +82,16 @@ export function App() {
     <>
       <header className="masthead">
         <div className="mast-inner">
-          <div>
-            <SectionMenu tab={tab} onChange={goTab} />
-            <div className="mast-line2">
-              <span className="mast-of">of</span>
-              <span className="mast-title">THE BROWNS</span>
+          <div className="mast-brand">
+            <div>
+              <SectionMenu tab={tab} onChange={goTab} />
+              <div className="mast-line2">
+                <span className="mast-of">of</span>
+                <span className="mast-title">THE BROWNS</span>
+              </div>
             </div>
+            {/* the iris from our mudroom wallpaper */}
+            <img className="mast-iris" src={irisWhite} alt="" />
           </div>
           <LockButton />
         </div>
