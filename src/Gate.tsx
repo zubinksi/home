@@ -44,12 +44,11 @@ export function LockButton() {
         timer.current = setTimeout(lock, 560);
       }}
     >
-      <svg viewBox="0 0 16 19" width="16" height="19" aria-hidden>
-        {/* left leg runs down behind the body so it stays attached when the shackle lifts */}
-        <path className="lock-shackle" d="M4.5 12V6a3.5 3.5 0 0 1 7 0v3.5" />
-        <rect className="lock-body" x="1.5" y="9" width="13" height="9.5" rx="1.5" />
-        <circle className="lock-hole" cx="8" cy="13.25" r="1.25" />
-      </svg>
+      {/* a bronze toggle: the knob slides across to lock */}
+      <span className="lock-track" aria-hidden>
+        <span className="lock-lit" />
+        <span className="lock-knob" />
+      </span>
     </button>
   );
 }
