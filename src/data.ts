@@ -88,9 +88,6 @@ export const items: Record<string, { text: string; when: When }[]> = {
     { text: 'Place the $100 rung: sell 250 tokens when it hits', when: 'before fill' },
     { text: 'Set up the 30% tax set-aside line inside the Fortress', when: 'this month' },
   ],
-  AAPL: [
-    { text: 'CPA session: 0% / 15% bracket room for harvesting, and how Evergreen is taxed', when: 'q1 review' },
-  ],
   EQUITIES: [
     { text: 'Write a thesis in our own words for every Ascent position', when: 'q1 review' },
   ],

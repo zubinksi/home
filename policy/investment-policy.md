@@ -67,7 +67,7 @@ We keep it, but we sell pieces on the way up automatically, so a big win turns i
 | $200 | 1,500 | $300k |
 | $225 | 1,000 | $225k |
 
-**We keep 750 tokens forever, at any price.** These are our oldest, cheapest-basis tokens — never selling them avoids the tax entirely and keeps us in the story if HYPE goes somewhere extraordinary.
+**We keep 650 tokens forever, at any price.** These are our oldest, cheapest-basis tokens — never selling them avoids the tax entirely and keeps us in the story if HYPE goes somewhere extraordinary.
 
 Selling all six rungs brings in about **$1.025M** before tax.
 

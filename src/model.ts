@@ -104,7 +104,7 @@ export const RULES = {
   maxPosition: 0.05,
   taxSetAside: 0.3,
   hypeFloor: 40,
-  hypeKeep: 750,
+  hypeKeep: 650,
 };
 
 export const LADDER: Rung[] = [
@@ -264,7 +264,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       policy: [
         'HYPE can’t exceed 45% of liquid assets (checked quarterly). If it does, we trim back to 40% within 30 days.',
         'The sell ladder is pre-committed. When the price hits the number, we sell. No skipping a rung because it “obviously” has further to run.',
-        'We keep 750 tokens forever, at any price — our oldest, cheapest-basis tokens.',
+        'We keep 650 tokens forever, at any price — our oldest, cheapest-basis tokens.',
         'Below $40 we never sell HYPE to pay for living expenses. Period.',
         'We never buy more HYPE with Fortress or Diversified money. Gains get skimmed; dips get held, not bought.',
         'Set aside 30% of every sale into the Fortress for taxes. The ladder always wins over tax optimization.',
@@ -453,7 +453,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
     hypeShare,
     zecShare,
     plan,
-    after: { hypeShare: hypeShareAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve, fortressShort: fortressGap - toFortress },
+    after: { hypeShare: hypeShareAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve },
   };
 }
 
@@ -497,19 +497,12 @@ export function buildItems(live: LivePrices = {}): Item[] {
       when: 'this month',
     }),
   );
-  if (m.after.fortressShort >= 1_000)
-    out.push({
-      id: `FORTRESS:short@${m.reviewDate}`,
-      sleeve: 'FORTRESS',
-      text: `The Fortress is ${money(m.after.fortressShort)} short of 30 months${m.plan.length ? ' even after this review’s sale proceeds' : ' with no HYPE sale proceeds this quarter'}. Decide whether to refill from the flexible bucket or AAPL (§2), or wait for the next HYPE rung`,
-      when: 'this month',
-    });
   const laddered = LADDER.reduce((s, r) => s + r.tokens, 0) + RULES.hypeKeep;
   if (m.after.hypeTokens < laddered)
     out.push({
       id: `HYPE:ladder@${m.reviewDate}`,
       sleeve: 'HYPE',
-      text: `${m.after.hypeTokens < holdings.hype.tokens ? 'After this review’s sales we hold' : 'We hold'} ${num(m.after.hypeTokens)} HYPE, fewer than the ${num(laddered)} the ladder and the 750-token keep assume. Write down how the rungs scale at the annual review`,
+      text: `${m.after.hypeTokens < holdings.hype.tokens ? 'After this review’s sales we hold' : 'We hold'} ${num(m.after.hypeTokens)} HYPE, fewer than the ${num(laddered)} the ladder and the ${num(RULES.hypeKeep)}-token keep assume. Write down how the rungs scale at the annual review`,
       when: 'q1 review',
     });
   return out;
