@@ -23,11 +23,11 @@
   --ink3b: #66574a;
   --muted: #6e5f4b;
   --stipple: #7a6650;
-  /* aged brass: the hardware. --brass for lines and fills, --brass-ink for text */
-  --brass: #a5833f;
-  --brass-ink: #80612a;
-  --mast-brass: #ecd496;
-  --on-brass: #fbf6ea;
+  /* indigo accent: --accent for lines and fills, --accent-ink for text */
+  --accent: #4348a8;
+  --accent-ink: #4348a8;
+  --mast-accent: #d3d1c8;
+  --on-accent: #f2f1ec;
   --piping: #a9805f;
   --green: #55652c;
   --amber: #8c5a17;
@@ -51,7 +51,7 @@
   --ground: #29231b;
   --mast-ink: #eadcc0;
   --mast-ink2: #c9b99a;
-  --mast-brass: #c9a45c;
+  --mast-accent: #c9b99a;
   --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
 }
 
@@ -237,7 +237,7 @@ p {
   transition: border-color 0.15s;
 }
 .check:hover {
-  border-color: var(--brass-ink);
+  border-color: var(--accent-ink);
 }
 .item-text {
   font-family: var(--serif);
@@ -384,7 +384,7 @@ p {
   background: var(--ink3b);
 }
 .side-row.is-sel .side-bar span {
-  background: var(--brass);
+  background: var(--accent);
 }
 .side-pct {
   padding-right: 0.625rem;
@@ -397,7 +397,7 @@ p {
   text-align: right;
 }
 .side-caret {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
   visibility: hidden;
 }
 .side-row.is-sel .side-caret {
@@ -418,7 +418,7 @@ p {
   color: var(--ink);
 }
 .side-row.is-sel .side-name {
-  text-decoration-color: var(--brass-ink);
+  text-decoration-color: var(--accent-ink);
 }
 .side-amt {
   color: var(--ink2);
@@ -621,7 +621,7 @@ p {
   color: var(--ink);
 }
 .ladder-row.next .mark {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 .ladder-row.sold {
   color: var(--muted);
@@ -651,7 +651,7 @@ p {
 .gauge-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--brass);
+  background: var(--accent);
 }
 .gauge-tick {
   position: absolute;
@@ -710,7 +710,7 @@ p {
 .plan-amt {
   font-family: var(--mono);
   font-size: 0.8125rem;
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 .plan-when {
   font-family: var(--mono);
@@ -792,7 +792,7 @@ p {
   gap: 0.3125rem;
 }
 .msg.policy .label {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 .msg-text {
   font-family: var(--serif);
@@ -830,11 +830,11 @@ p {
   outline: none;
 }
 .ask-input input:focus {
-  border-color: var(--brass-ink);
+  border-color: var(--accent-ink);
 }
 .ask-input button {
-  background: var(--brass);
-  color: var(--on-brass);
+  background: var(--accent);
+  color: var(--on-accent);
   font-family: var(--mono);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
@@ -842,7 +842,7 @@ p {
   border-radius: 0.125rem;
 }
 .ask-input button.busy {
-  background: var(--brass);
+  background: var(--accent);
   opacity: 0.55;
   cursor: default;
 }
@@ -858,7 +858,7 @@ p {
   color: var(--muted);
 }
 .key-note button {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 0.1875rem;
 }
@@ -883,7 +883,7 @@ p {
   font-family: var(--mono);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 
 /* ── pin gate ─────────────────────────────────────────── */
@@ -952,8 +952,8 @@ p {
   transition: background 0.12s, border-color 0.12s;
 }
 .gate-slot.filled {
-  background: var(--brass);
-  border-color: var(--brass-ink);
+  background: var(--accent);
+  border-color: var(--accent-ink);
 }
 .gate-slot.wrong {
   background: var(--red);
@@ -994,10 +994,10 @@ p {
 }
 .key:active {
   background: var(--card);
-  border-color: var(--brass-ink);
+  border-color: var(--accent-ink);
 }
 .key:focus-visible {
-  outline: 2px solid var(--brass);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 .key-fn {
@@ -1015,7 +1015,7 @@ p {
   display: inline-flex;
   margin-top: 0.1875rem; /* sits on the title's first line */
   padding: 0.125rem;
-  color: var(--mast-brass);
+  color: var(--mast-accent);
   transition: opacity 0.15s, color 0.2s;
 }
 .mast-lock:hover {
@@ -1045,7 +1045,7 @@ p {
 }
 .mast-lock.is-locking {
   opacity: 1;
-  color: var(--mast-brass);
+  color: var(--mast-accent);
   cursor: default;
 }
 .mast-lock.is-locking .lock-shackle {
@@ -1180,7 +1180,7 @@ p {
 }
 .proj-sort:hover,
 .proj-sort.on {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 .side-row + .side-section {
   margin-top: 1rem;
@@ -1219,7 +1219,7 @@ p {
   color: var(--ink3b);
 }
 .proj-toggle .on {
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 .proj-source.live {
   color: var(--green);
@@ -1237,7 +1237,7 @@ p {
 }
 .proj-sheet {
   font-size: 0.6875rem;
-  color: var(--brass-ink);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 0.25rem;
   text-decoration-color: var(--underline);
@@ -1327,7 +1327,7 @@ p {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem 0.5rem 0;
-  color: var(--brass-ink);
+  color: var(--accent-ink);
   letter-spacing: 0.12em;
 }
 .mnav-back span {
@@ -1343,7 +1343,7 @@ p {
   height: 2.25rem;
   text-align: center;
   font-size: 1.25rem;
-  color: var(--brass-ink);
+  color: var(--accent-ink);
 }
 @keyframes slide-from-right {
   from { transform: translateX(100%); opacity: 0.4; }
