@@ -180,7 +180,7 @@ export function App() {
             {drill.showList && (
             <nav className={`sidebar ${drill.listClass}`}>
               <button className={`side-row total ${!narrow && sel === SEL_TOTAL ? 'is-sel' : ''}`} onClick={() => select(SEL_TOTAL)}>
-                <span className="side-caret">&gt;</span>
+                <span className="side-caret" aria-hidden />
                 <span className="side-name">TOTAL</span>
                 <span />
                 <span className="side-amt">{compact(model.total)}</span>
@@ -190,12 +190,9 @@ export function App() {
 
               {model.sleeves.map((s, i) => (
                 <button key={s.key} className={`side-row sleeve ${!narrow && sel === i ? 'is-sel' : ''}`} onClick={() => select(i)} title={s.alloc}>
-                  <span className="side-caret">&gt;</span>
+                  <span className="side-caret" aria-hidden />
                   <span className="side-name-wrap">
                     <span className="side-name">{s.name}</span>
-                    {(s.status === 'amber' || s.status === 'red') && (
-                      <span className="dot" style={{ background: STATUS_COLOR[s.status] }} title={s.alloc} />
-                    )}
                   </span>
                   <span className="side-bar">
                     <span style={{ width: `${Math.min(1, s.pct) * 100}%` }} />

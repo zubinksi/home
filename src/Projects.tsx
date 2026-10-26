@@ -167,7 +167,7 @@ export function Projects(props: {
         className={`side-row proj-row ${!props.narrow && activeKey === a.key ? 'is-sel' : ''}`}
         onClick={() => drill.select(a.key)}
       >
-        <span className="side-caret">&gt;</span>
+        <span className="side-caret" aria-hidden />
         <span className="side-name">{a.name}</span>
         <span className="side-bar" title={`${s.done} of ${s.total} done`}>
           <span style={{ width: `${s.total ? (s.done / s.total) * 100 : 0}%` }} />

@@ -28,6 +28,7 @@
   --accent-ink: #4348a8;
   --mast-accent: #d3d1c8;
   --on-accent: #f2f1ec;
+  --iris-blue: #6f9fd6;
   --piping: #a9805f;
   --green: #55652c;
   --amber: #8c5a17;
@@ -384,7 +385,7 @@ p {
   transition: opacity 0.15s;
 }
 .side-row:hover {
-  opacity: 0.7;
+  color: var(--ink);
 }
 .side-row.sleeve {
   grid-template-columns: 1.25rem 7.375rem 1fr 2.75rem 2.75rem;
@@ -414,12 +415,26 @@ p {
 .side-row.sleeve .side-amt {
   text-align: right;
 }
+/* the selected row is marked with a small iris from our wallpaper */
 .side-caret {
-  color: var(--accent-ink);
-  visibility: hidden;
+  justify-self: start;
+  align-self: center;
+  width: 1rem;
+  aspect-ratio: 256 / 233;
+  background: var(--iris-blue);
+  mask: url('./assets/iris-white.png') center / contain no-repeat;
+  -webkit-mask: url('./assets/iris-white.png') center / contain no-repeat;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 .side-row.is-sel .side-caret {
-  visibility: visible;
+  opacity: 1;
+}
+/* hovering an unselected row shows a faint iris where it would go */
+@media (hover: hover) {
+  .side-row:not(.is-sel):not(.static):hover .side-caret {
+    opacity: 0.3;
+  }
 }
 .side-name-wrap {
   display: inline-flex;
@@ -451,12 +466,6 @@ p {
   height: 1px;
   background: var(--b2);
   margin: 1rem 0 0.625rem;
-}
-.dot {
-  width: 0.3125rem;
-  height: 0.3125rem;
-  border-radius: 50%;
-  display: inline-block;
 }
 
 /* ── detail ───────────────────────────────────────────── */
