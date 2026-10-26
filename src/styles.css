@@ -1416,6 +1416,28 @@ p {
 .period + .period {
   border-left: 1px solid var(--b1);
 }
+.period-since {
+  white-space: nowrap;
+}
+.period-since-dash {
+  display: none;
+}
+@media (max-width: 860px) {
+  /* not enough room beside 3M on a phone; it moves under the label */
+  .period-since {
+    display: block;
+    margin-top: 0.125rem;
+  }
+  .period-since-word {
+    display: none;
+  }
+  .period-since-dash {
+    display: inline;
+  }
+  .period-sep {
+    display: none;
+  }
+}
 .period-v {
   font-family: var(--mono);
   font-size: 0.9375rem;

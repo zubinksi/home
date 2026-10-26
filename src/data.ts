@@ -65,6 +65,9 @@ export const fortressIdleCash: number | null = null;
 /** Number of positions in the flexible / Equities bucket. */
 export const equityPositions: number | null = null;
 
+/** Reviews at which we've agreed to skip the ZEC 10% trim (by review date). */
+export const zecTrimWaived: string[] = ['2026-11-01'];
+
 /** Date the 3-year Diversified goal (30% of liquid) is due. */
 export const diversifiedGoalDate = '2029-08-01';
 

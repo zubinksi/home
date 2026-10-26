@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, holdings, household, items, reviewDate, snapshots } from './data';
+import { diversifiedGoalDate, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -175,7 +175,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
 
   // ── ZEC
   const zecShare = share(zec);
-  const zecStatus: Status = zecShare > RULES.zecTrimAt ? 'red' : zecShare > RULES.zecTrimAt - 0.02 ? 'amber' : 'green';
+  // we agreed to skip the ZEC trim for this review
+  const zecWaived = zecTrimWaived.includes(reviewDate);
+  const zecStatus: Status = zecWaived ? 'muted' : zecShare > RULES.zecTrimAt ? 'red' : zecShare > RULES.zecTrimAt - 0.02 ? 'amber' : 'green';
   const zecGain = h.zec.basis == null ? null : zec - h.zec.basis;
 
   // ── AAPL
@@ -188,7 +190,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
 
   // ── THIS REVIEW: trims and refills the policy calls for (§2, §3, §4, §5)
   const plan: PlanStep[] = [];
-  const zecTrimTokens = zecShare > RULES.zecTrimAt ? Math.ceil((zec - RULES.zecTrimTo * total) / h.zec.price) : 0;
+  const zecTrimTokens = !zecWaived && zecShare > RULES.zecTrimAt ? Math.ceil((zec - RULES.zecTrimTo * total) / h.zec.price) : 0;
   const hypeTrimTokens =
     hypeShare > RULES.hypeCeiling
       ? Math.min(h.hype.tokens - RULES.hypeKeep, Math.max(0, Math.ceil((hype - RULES.hypeTrimTo * total) / h.hype.price)))
@@ -347,7 +349,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       pct: zecShare,
       roleTitle: `Small bet on purpose — ${num(h.zec.tokens)} tokens`,
       status: zecStatus,
-      alloc: zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare, 1)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
+      alloc: zecWaived
+        ? `${pct(zecShare, 1)} · 10% TRIM WAIVED THIS QUARTER`
+        : zecShare > RULES.zecTrimAt ? `${pct(zecShare, 1)} · OVER 10% · TRIM TO 7%` : `${pct(zecShare, 1)} · TRIM AT ${pct(RULES.zecTrimAt)}`,
       cap: { cap: RULES.zecTrimAt, kind: 'trim' },
       kv: [
         { k: 'PRICE', v: priceFmt(h.zec.price), ...changeKV(live.zec, '24H') },
@@ -445,7 +449,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
     history,
     // the quarterly-review fallback is too coarse for day/week/month changes
-    periods: marketLine ? periodChanges(marketLine) : PERIODS.map(({ label }) => ({ label, change: null })),
+    periods: marketLine ? periodChanges(marketLine) : PERIODS.map(({ label }) => ({ label, change: null as number | null, since: undefined as string | undefined })),
     marketLine: !!marketLine,
     reviewDate,
     fortressMonths,
@@ -518,16 +522,21 @@ export const PERIODS = [
 
 /**
  * Change in the chart's line over each period, ending at its last day. null
- * when the line doesn't reach back that far.
+ * when the line doesn't reach back that far, except the longest period, which
+ * shows the change since the line began (`since`) until it has full history.
  */
-export function periodChanges(history: { date: string; total: number }[]) {
+export function periodChanges(history: { date: string; total: number }[]): { label: string; change: number | null; since?: string }[] {
   const last = history[history.length - 1];
-  return PERIODS.map(({ label, days }) => {
+  return PERIODS.map(({ label, days }, i) => {
     if (!last) return { label, change: null };
     const d = new Date(last.date + 'T00:00:00');
     d.setDate(d.getDate() - days);
     const from = isoDay(d);
-    if (history[0].date > from) return { label, change: null };
+    if (history[0].date > from) {
+      if (i < PERIODS.length - 1 || history.length < 2) return { label, change: null };
+      const first = history[0];
+      return { label, change: first.total ? last.total / first.total - 1 : null, since: first.date };
+    }
     let base = history[0];
     for (const h of history) {
       if (h.date > from) break;

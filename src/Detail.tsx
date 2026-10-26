@@ -3,6 +3,7 @@ import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
   compact,
+  dayMon,
   longDate,
   money,
   monYY,
@@ -204,7 +205,19 @@ function Periods({ periods }: { periods: Model['periods'] }) {
     <div className="periods">
       {periods.map((p) => (
         <div key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
-          <span className="label">{p.label}</span>
+          <span className="label">
+            {p.label}
+            {p.since && (
+              <>
+                <span className="period-sep"> · </span>
+                <span className="period-since">
+                  <span className="period-since-word">SINCE </span>
+                  {dayMon(p.since)}
+                  <span className="period-since-dash">–</span>
+                </span>
+              </>
+            )}
+          </span>
           <span className="period-v" style={p.change === null ? undefined : { color: STATUS_COLOR[p.change >= 0 ? 'green' : 'red'] }}>
             {p.change === null ? '—' : `${p.change >= 0 ? '+' : '−'}${(Math.abs(p.change) * 100).toFixed(1)}%`}
           </span>
