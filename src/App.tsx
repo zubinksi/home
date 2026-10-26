@@ -83,6 +83,8 @@ export function App() {
       <header className="masthead">
         <div className="mast-inner">
           <div className="mast-brand">
+            {/* the iris from our mudroom wallpaper, in the title's colour */}
+            <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
             <div>
               <SectionMenu tab={tab} onChange={goTab} />
               <div className="mast-line2">
@@ -90,8 +92,6 @@ export function App() {
                 <span className="mast-title">THE BROWNS</span>
               </div>
             </div>
-            {/* the iris from our mudroom wallpaper */}
-            <img className="mast-iris" src={irisWhite} alt="" />
           </div>
           <LockButton />
         </div>

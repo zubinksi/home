@@ -139,11 +139,17 @@ p {
   gap: 0.875rem;
 }
 .mast-iris {
+  flex: none;
   display: block;
-  width: auto;
   height: 2.625rem; /* about the height of the two title lines */
+  aspect-ratio: 256 / 233;
   margin-top: 0.0625rem;
-  opacity: 0.92;
+  /* the white cut-out is used as a mask, so it takes the title's exact colour */
+  background: var(--mast-ink);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
 }
 .mast-of {
   font-family: var(--serif);
