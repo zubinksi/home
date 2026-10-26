@@ -922,7 +922,7 @@ p {
 .gate-card {
   width: 100%;
   max-width: 21rem;
-  background: #f4f1ea; /* the iris image's own background */
+  background: var(--slab); /* the same paper as the slabs inside */
   box-shadow: var(--shadow);
   padding: 2rem;
   display: flex;
