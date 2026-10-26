@@ -4,6 +4,7 @@ import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
+import { Seal } from './Seal';
 import { SectionMenu, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
@@ -158,7 +159,18 @@ export function App() {
               </div>
             </div>
           </div>
-          <LockButton />
+          <div className="mast-controls">
+            {/* open items: a burgundy wax seal; it opens the list in the sleeves panel */}
+            <button
+              className={`seal ${tab === 'investments' && sel === SEL_ITEMS ? 'is-sel' : ''}`}
+              onClick={() => (tab === 'investments' ? select(SEL_ITEMS) : (location.hash = '/investments/items'))}
+              aria-label={`${open.length} open item${open.length === 1 ? '' : 's'}`}
+              title="Open items"
+            >
+              <Seal count={open.length} />
+            </button>
+            <LockButton />
+          </div>
         </div>
       </header>
       <div className="doc">
@@ -169,15 +181,6 @@ export function App() {
       <main className="body">
         {/* ── Sleeves ────────────────────────────────────────────────── */}
         <section className="slab sleeves" ref={sleevesRef}>
-          {/* open items: a burgundy wax seal pressed on the slab's corner */}
-          <button
-            className={`seal ${sel === SEL_ITEMS ? 'is-sel' : ''}`}
-            onClick={() => select(SEL_ITEMS)}
-            aria-label={`${open.length} open item${open.length === 1 ? '' : 's'}`}
-            title="Open items"
-          >
-            <span className="seal-count">{open.length || '✓'}</span>
-          </button>
           <div className={`sleeves-grid ${drill.gridClass}`}>
             {drill.showList && (
             <nav className={`sidebar ${drill.listClass}`}>
@@ -218,7 +221,6 @@ export function App() {
                 <>
                   <div className="d-title">
                     <span className="d-name">OPEN ITEMS</span>
-                    <span className="d-amt">{open.length}</span>
                   </div>
                   {itemsList}
                 </>
