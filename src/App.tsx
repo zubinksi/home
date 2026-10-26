@@ -12,6 +12,7 @@ import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
+const SEL_ITEMS = -2;
 const DONE_KEY = 'browns.done.v1';
 
 function loadDone(): string[] {
@@ -31,24 +32,24 @@ export function App() {
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
   const narrow = useNarrow();
-  const [itemsOpen, setItemsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
   const [chat, setChat] = useState<ChatTurn[]>([]);
   const sleevesRef = useRef<HTMLElement>(null);
 
   // ── phones: the list is the home view; a row opens its detail as its own page
-  const subOf = (i: number) => (i === SEL_TOTAL ? 'total' : model.sleeves[i].key.toLowerCase());
+  const subOf = (i: number) => (i === SEL_TOTAL ? 'total' : i === SEL_ITEMS ? 'items' : model.sleeves[i].key.toLowerCase());
   const selOf = (key: string) => {
     if (key === 'total') return SEL_TOTAL;
+    if (key === 'items') return SEL_ITEMS;
     return model.sleeves.findIndex((s) => s.key.toLowerCase() === key);
   };
-  // next / previous run through TOTAL and the sleeves
+  // next / previous run through TOTAL and the sleeves (open items sit apart, behind the seal)
   const sequence = ['total', ...model.sleeves.map((s) => s.key.toLowerCase())];
   const drill = useDrill({
     narrow,
     sub: tab === 'investments' ? route.sub : null,
-    keys: sequence,
+    keys: [...sequence, 'items'],
     sequence,
     defaultKey: 'total',
     openSub,
@@ -78,6 +79,70 @@ export function App() {
 
   const selected = sel >= 0 ? model.sleeves[sel] : null;
 
+  const itemsList = (
+    <div className="items-body">
+      {open.length === 0 && <div className="items-empty">NOTHING OPEN. THE POLICY STANDS AS WRITTEN UNTIL THE Q1 REVIEW.</div>}
+
+      {open.map((item) => {
+        const isExp = expanded.includes(item.id);
+        const sleeve = model.sleeves.find((s) => s.key === item.sleeve);
+        return (
+          <div key={item.id} className={`item ${isExp ? 'is-expanded' : ''}`}>
+            <div className="item-row" onClick={() => setExpanded(toggle(expanded, item.id))}>
+              <button
+                className="check"
+                aria-label="Mark done"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDone([...done, item.id]);
+                  setExpanded(expanded.filter((x) => x !== item.id));
+                }}
+              />
+              <span className="item-text">{item.text}</span>
+              <span className="item-sleeve">{item.sleeve}</span>
+              <span className={`tag tag-${item.when.replace(' ', '-')}`}>{item.when}</span>
+              <span className={`caret small ${isExp ? '' : 'closed'}`} aria-hidden />
+            </div>
+            {isExp && (
+              <div className="item-why">
+                <div className="label">WHY THIS IS ON THE LIST</div>
+                {policyFor(item).map((line, i) => (
+                  <p key={i} className="policy-line">
+                    <span className="sect">§</span>
+                    {line}
+                  </p>
+                ))}
+                {sleeve && (
+                  <div className="item-foot">
+                    <span>SLEEVE VALUE ${compact(sleeve.amount)}</span>
+                    <span style={{ color: STATUS_COLOR[sleeve.status] }}>{sleeve.alloc}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {closed.length > 0 && (
+        <div className="closed-list">
+          <div className="label closed-label">[{closed.length}] RECENTLY CLOSED · CLICK TO REOPEN</div>
+          {closed.map((item) => (
+            <div key={item.id} className="item is-closed">
+              <div className="item-row" onClick={() => setDone(done.filter((x) => x !== item.id))}>
+                <span className="tick">✓</span>
+                <span className="item-text">{item.text}</span>
+                <span className="item-sleeve">{item.sleeve}</span>
+                <span className="tag tag-done">done</span>
+                <span />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <header className="masthead">
@@ -102,80 +167,17 @@ export function App() {
       )}
       {tab === 'investments' && (
       <main className="body">
-        {/* ── Open items ─────────────────────────────────────────────── */}
-        <section className={`slab items ${itemsOpen ? 'is-open' : ''}`}>
-          <button className="items-head" onClick={() => setItemsOpen(!itemsOpen)} aria-expanded={itemsOpen}>
-            <span className={`caret ${itemsOpen ? '' : 'closed'}`} aria-hidden />
-            <span>{open.length} OPEN ITEMS</span>
-          </button>
-
-          {itemsOpen && (
-            <div className="items-body">
-              {open.length === 0 && <div className="items-empty">NOTHING OPEN. THE POLICY STANDS AS WRITTEN UNTIL THE Q1 REVIEW.</div>}
-
-              {open.map((item) => {
-                const isExp = expanded.includes(item.id);
-                const sleeve = model.sleeves.find((s) => s.key === item.sleeve);
-                return (
-                  <div key={item.id} className={`item ${isExp ? 'is-expanded' : ''}`}>
-                    <div className="item-row" onClick={() => setExpanded(toggle(expanded, item.id))}>
-                      <button
-                        className="check"
-                        aria-label="Mark done"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDone([...done, item.id]);
-                          setExpanded(expanded.filter((x) => x !== item.id));
-                        }}
-                      />
-                      <span className="item-text">{item.text}</span>
-                      <span className="item-sleeve">{item.sleeve}</span>
-                      <span className={`tag tag-${item.when.replace(' ', '-')}`}>{item.when}</span>
-                      <span className={`caret small ${isExp ? '' : 'closed'}`} aria-hidden />
-                    </div>
-                    {isExp && (
-                      <div className="item-why">
-                        <div className="label">WHY THIS IS ON THE LIST</div>
-                        {policyFor(item).map((line, i) => (
-                          <p key={i} className="policy-line">
-                            <span className="sect">§</span>
-                            {line}
-                          </p>
-                        ))}
-                        {sleeve && (
-                          <div className="item-foot">
-                            <span>SLEEVE VALUE ${compact(sleeve.amount)}</span>
-                            <span style={{ color: STATUS_COLOR[sleeve.status] }}>{sleeve.alloc}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {closed.length > 0 && (
-                <div className="closed-list">
-                  <div className="label closed-label">[{closed.length}] RECENTLY CLOSED · CLICK TO REOPEN</div>
-                  {closed.map((item) => (
-                    <div key={item.id} className="item is-closed">
-                      <div className="item-row" onClick={() => setDone(done.filter((x) => x !== item.id))}>
-                        <span className="tick">✓</span>
-                        <span className="item-text">{item.text}</span>
-                        <span className="item-sleeve">{item.sleeve}</span>
-                        <span className="tag tag-done">done</span>
-                        <span />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-
         {/* ── Sleeves ────────────────────────────────────────────────── */}
         <section className="slab sleeves" ref={sleevesRef}>
+          {/* open items: a burgundy wax seal pressed on the slab's corner */}
+          <button
+            className={`seal ${sel === SEL_ITEMS ? 'is-sel' : ''}`}
+            onClick={() => select(SEL_ITEMS)}
+            aria-label={`${open.length} open item${open.length === 1 ? '' : 's'}`}
+            title="Open items"
+          >
+            <span className="seal-count">{open.length || '✓'}</span>
+          </button>
           <div className={`sleeves-grid ${drill.gridClass}`}>
             {drill.showList && (
             <nav className={`sidebar ${drill.listClass}`}>
@@ -212,6 +214,15 @@ export function App() {
                 <TotalDetail model={model} market={market} />
               )}
               {selected && <Detail key={selected.key} sleeve={selected} />}
+              {sel === SEL_ITEMS && (
+                <>
+                  <div className="d-title">
+                    <span className="d-name">OPEN ITEMS</span>
+                    <span className="d-amt">{open.length}</span>
+                  </div>
+                  {itemsList}
+                </>
+              )}
               </ErrorBoundary>
             </div>
             )}
