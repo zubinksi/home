@@ -115,7 +115,7 @@ This is the part of the portfolio that isn't a bet. It's what protects us, and e
 - **One thing to watch at each annual review:** the Fortress is a fixed dollar amount, so if the portfolio grows a lot it becomes a smaller share of what we own. If the Fortress ever drops below **15% of our liquid assets**, we revisit whether this sleeve should hold some bonds. Until then, the Fortress is our safety and this sleeve is our growth.
 - When a big lump arrives: invest it within 30 days; if it's over $100k, in thirds.
 
-## 8. Ascent sleeve — researched bets, capped
+## 8. Equities sleeve — researched bets, capped
 
 A small, walled-off space for investing in themes Yitz researches — capped so it can never hurt us.
 

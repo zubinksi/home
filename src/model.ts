@@ -236,7 +236,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const divGoal = total * RULES.diversifiedGoal;
   const divStatus: Status = div === 0 ? 'red' : divShare >= RULES.diversifiedGoal ? 'green' : 'amber';
 
-  // ── EQUITIES (flexible bucket / Ascent)
+  // ── EQUITIES (flexible bucket / researched bets)
   const eqShare = share(h.equities.value);
   const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : div === 0 && h.equities.value > 0 ? 'amber' : 'green';
 
@@ -372,7 +372,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       name: 'EQUITIES',
       amount: h.equities.value,
       pct: eqShare,
-      roleTitle: 'Flexible bucket — seeds Diversified; Ascent bets capped at 10%',
+      roleTitle: 'Flexible bucket — seeds Diversified; Equities bets capped at 10%',
       status: eqStatus,
       alloc: div === 0 ? `${pct(eqShare)} · SLATED FOR DIVERSIFIED` : `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
@@ -382,7 +382,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       ],
       policy: [
         'The current $100k flexible bucket is the start of the Diversified sleeve.',
-        'Ascent cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',
+        'Equities cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',
         'Funded only with spare money — never from the Fortress or the Diversified sleeve.',
         'Every position needs a written thesis in our own words. If the thesis breaks, we sell regardless of price.',
         'Changes only at quarterly reviews. Research arrives weekly; we don’t trade weekly.',
@@ -400,7 +400,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       kv: [],
       policy: [
         'Goal: at least 30% of liquid assets within 3 years. Every dollar of new money goes here first.',
-        'Nothing exciting lives here — no themes, no sectors, no crypto. If it moves with tech, it belongs in Ascent.',
+        'Nothing exciting lives here — no themes, no sectors, no crypto. If it moves with tech, it belongs in Equities.',
         'Three funds, all equities: VOO 55% · VXUS 30% · AVUV 15%. The Fortress is our fixed income.',
         'Rebalance with new money, not by selling. When a big lump arrives, invest within 30 days; over $100k, in thirds.',
         'If the Fortress ever drops below 15% of liquid assets, revisit whether this sleeve should hold bonds.',

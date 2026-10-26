@@ -22,7 +22,7 @@ export interface Review {
   hype: { tokens: number; price: number };
   zec: { tokens: number; price: number };
   aapl: { shares: number; price: number };
-  equities: number; // flexible bucket: seeds Diversified; Ascent bets live here too
+  equities: number; // flexible bucket: seeds Diversified; Equities bets live here too
   cash: number; // the Fortress
   diversified: { voo: number; vxus: number; avuv: number };
 }
@@ -62,7 +62,7 @@ export const hypeRungsSold = 0;
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
 export const fortressIdleCash: number | null = null;
 
-/** Number of positions in the flexible / Ascent bucket. */
+/** Number of positions in the flexible / Equities bucket. */
 export const equityPositions: number | null = null;
 
 /** Date the 3-year Diversified goal (30% of liquid) is due. */
@@ -74,9 +74,6 @@ export const diversifiedGoalDate = '2029-08-01';
  * refills the policy requires are added automatically by src/model.ts.
  */
 export const items: Record<string, { text: string; when: When }[]> = {
-  POLICY: [
-    { text: 'Both of us sign and date the policy statement', when: 'this week' },
-  ],
   FORTRESS: [
     { text: 'Move the idle USAA cash into T-bills or SGOV', when: 'this week' },
     { text: 'Confirm real spending now that 90 days have passed (expect ~$100K / yr)', when: 'this week' },
@@ -89,7 +86,7 @@ export const items: Record<string, { text: string; when: When }[]> = {
     { text: 'Set up the 30% tax set-aside line inside the Fortress', when: 'this month' },
   ],
   EQUITIES: [
-    { text: 'Write a thesis in our own words for every Ascent position', when: 'q1 review' },
+    { text: 'Write a thesis in our own words for every Equities position', when: 'q1 review' },
   ],
 };
 
