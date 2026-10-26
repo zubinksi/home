@@ -426,17 +426,8 @@ p {
   align-items: center;
   gap: 0.4375rem;
 }
-.side-name {
-  text-decoration: underline;
-  text-underline-offset: 0.25rem;
-  text-decoration-thickness: 1px;
-  text-decoration-color: var(--underline);
-}
 .side-row.is-sel {
   color: var(--ink);
-}
-.side-row.is-sel .side-name {
-  text-decoration-color: var(--accent-ink);
 }
 .side-amt {
   color: var(--ink2);
@@ -445,9 +436,6 @@ p {
   font-size: 1.1875rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-}
-.side-row.total .side-name {
-  text-underline-offset: 0.3125rem;
 }
 .side-row.total .side-amt {
   color: var(--ink);
