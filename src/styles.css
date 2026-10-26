@@ -28,7 +28,7 @@
   --accent-ink: #4348a8;
   --mast-accent: #d3d1c8;
   --on-accent: #f2f1ec;
-  --iris-blue: #6f9fd6;
+  --iris: #8d4041; /* the iris's own burgundy */
   --piping: #a9805f;
   --green: #55652c;
   --amber: #8c5a17;
@@ -421,7 +421,9 @@ p {
   align-self: center;
   width: 1rem;
   aspect-ratio: 256 / 233;
-  background: var(--iris-blue);
+  /* nudged left into the margin for more room before the name */
+  margin-left: -0.375rem;
+  background: var(--iris);
   mask: url('./assets/iris-white.png') center / contain no-repeat;
   -webkit-mask: url('./assets/iris-white.png') center / contain no-repeat;
   opacity: 0;
