@@ -1573,48 +1573,24 @@ p {
 
 
 
-/* ── open items: a burgundy wax seal on the sleeves slab's corner (Seal.tsx) ─── */
-.mast-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  margin-top: -0.625rem; /* centre the seal on the lock and the title's first line */
+/* ── open items: a line at the foot of the sleeve list ─── */
+.side-foot {
+  margin-top: auto;
+  padding-top: 1.5rem;
 }
-.seal {
-  flex: none;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  transform: rotate(-10deg);
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+.side-foot .side-rule {
+  margin-top: 0;
 }
-.seal-svg {
-  display: block;
+.side-foot .items-row {
   width: 100%;
-  height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 0.125rem 0.1875rem rgba(40, 10, 10, 0.45)) drop-shadow(0 0.0625rem 0.0625rem rgba(40, 10, 10, 0.4));
 }
-.seal-num text {
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 38px;
+.items-count {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--iris);
 }
-.seal:hover {
-  transform: rotate(-6deg) scale(1.04);
-}
-.seal.is-sel {
-  transform: rotate(-10deg) scale(0.96);
-}
-.seal.is-sel .seal-svg {
-  filter: drop-shadow(0 0.0625rem 0.125rem rgba(40, 10, 10, 0.45)) brightness(0.93);
-}
-.seal:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .seal {
-    transition: none;
+@media (max-width: 860px) {
+  .side-foot {
+    padding-top: 0.5rem;
   }
 }

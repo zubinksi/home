@@ -4,7 +4,6 @@ import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
-import { Seal } from './Seal';
 import { SectionMenu, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
@@ -45,7 +44,7 @@ export function App() {
     if (key === 'items') return SEL_ITEMS;
     return model.sleeves.findIndex((s) => s.key.toLowerCase() === key);
   };
-  // next / previous run through TOTAL and the sleeves (open items sit apart, behind the seal)
+  // next / previous run through TOTAL and the sleeves (open items sit apart, at the foot of the list)
   const sequence = ['total', ...model.sleeves.map((s) => s.key.toLowerCase())];
   const drill = useDrill({
     narrow,
@@ -159,18 +158,7 @@ export function App() {
               </div>
             </div>
           </div>
-          <div className="mast-controls">
-            {/* open items: a burgundy wax seal; it opens the list in the sleeves panel */}
-            <button
-              className={`seal ${tab === 'investments' && sel === SEL_ITEMS ? 'is-sel' : ''}`}
-              onClick={() => (tab === 'investments' ? select(SEL_ITEMS) : (location.hash = '/investments/items'))}
-              aria-label={`${open.length} open item${open.length === 1 ? '' : 's'}`}
-              title="Open items"
-            >
-              <Seal count={open.length} />
-            </button>
-            <LockButton />
-          </div>
+          <LockButton />
         </div>
       </header>
       <div className="doc">
@@ -206,6 +194,17 @@ export function App() {
                   <span className="side-amt">{compact(s.amount)}</span>
                 </button>
               ))}
+
+              {/* open items, set apart at the foot of the list */}
+              <div className="side-foot">
+                <div className="side-rule" />
+                <button className={`side-row items-row ${!narrow && sel === SEL_ITEMS ? 'is-sel' : ''}`} onClick={() => select(SEL_ITEMS)}>
+                  <span className="side-caret" aria-hidden />
+                  <span className="side-name">OPEN ITEMS</span>
+                  <span />
+                  <span className="items-count">{open.length}</span>
+                </button>
+              </div>
             </nav>
             )}
 
