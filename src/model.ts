@@ -207,26 +207,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       amount: hypeTrimTokens * h.hype.price,
       why: `HYPE is ${pct(hypeShare)} of liquid, over the 45% ceiling. Trim back to 40% within 30 days.`,
     });
-  // §2 refill: if the Fortress is still short after any trims, sell what is up,
-  // HYPE first, enough to cover the gap after the 30% tax set-aside.
+  // §2 refill draws on HYPE *sale proceeds* (ladder rungs, ceiling trims), never
+  // a sale made just to refill. Whatever is still short is left for us to decide.
   const fortressGap = Math.max(0, RULES.fortressTargetMonths * burn - h.fortress.value);
-  const trimNet = plan.reduce((s, p) => s + p.amount, 0) * (1 - RULES.taxSetAside);
-  const stillShort = fortressGap - trimNet;
-  const hypeIsUp = h.hype.basis != null && h.hype.price * h.hype.tokens > h.hype.basis;
-  const hypeRefillTokens =
-    stillShort > 0 && hypeIsUp && h.hype.price >= RULES.hypeFloor
-      ? Math.min(
-          h.hype.tokens - RULES.hypeKeep - hypeTrimTokens,
-          Math.ceil(stillShort / (1 - RULES.taxSetAside) / h.hype.price),
-        )
-      : 0;
-  if (hypeRefillTokens > 0)
-    plan.push({
-      sleeve: 'HYPE',
-      action: `Sell ${num(hypeRefillTokens)} HYPE at ${priceFmt(h.hype.price)} to refill the Fortress`,
-      amount: hypeRefillTokens * h.hype.price,
-      why: `The Fortress covers ${Math.floor(fortressMonths)} of 30 months. Refill from what is up, HYPE first; this covers the ${money(stillShort)} gap after the 30% tax set-aside.`,
-    });
   const proceeds = plan.reduce((s, p) => s + p.amount, 0);
   const taxReserve = proceeds * RULES.taxSetAside;
   const toWork = proceeds - taxReserve;
@@ -244,7 +227,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   // rounding up whole tokens leaves a few dollars over; only a real surplus goes on
   if (toDiversified >= 1_000)
     plan.push({ sleeve: 'DIVERSIFIED', action: 'Fund Diversified: VOO 55 · VXUS 30 · AVUV 15', amount: toDiversified, why: 'Anything above the Fortress target goes to the Diversified sleeve. Over $100K goes in in thirds.' });
-  const hypeTokensAfter = h.hype.tokens - hypeTrimTokens - hypeRefillTokens;
+  const hypeTokensAfter = h.hype.tokens - hypeTrimTokens;
   const hypeShareAfter = (hypeTokensAfter * h.hype.price) / total;
   const fortressMonthsAfter = (h.fortress.value + toFortress) / burn;
 
@@ -470,7 +453,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
     hypeShare,
     zecShare,
     plan,
-    after: { hypeShare: hypeShareAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve },
+    after: { hypeShare: hypeShareAfter, fortressMonths: fortressMonthsAfter, hypeTokens: hypeTokensAfter, taxReserve, fortressShort: fortressGap - toFortress },
   };
 }
 
@@ -514,6 +497,13 @@ export function buildItems(live: LivePrices = {}): Item[] {
       when: 'this month',
     }),
   );
+  if (m.after.fortressShort >= 1_000)
+    out.push({
+      id: `FORTRESS:short@${m.reviewDate}`,
+      sleeve: 'FORTRESS',
+      text: `The Fortress is ${money(m.after.fortressShort)} short of 30 months${m.plan.length ? ' even after this review’s sale proceeds' : ' with no HYPE sale proceeds this quarter'}. Decide whether to refill from the flexible bucket or AAPL (§2), or wait for the next HYPE rung`,
+      when: 'this month',
+    });
   const laddered = LADDER.reduce((s, r) => s + r.tokens, 0) + RULES.hypeKeep;
   if (m.after.hypeTokens < laddered)
     out.push({
