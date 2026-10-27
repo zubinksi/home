@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
@@ -206,6 +206,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         </>
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.key === 'ZEC' && <ZecBtc history={market.zecBtc} />}
       {s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
@@ -353,6 +354,67 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * ZEC priced in bitcoin over the last 90 days, with its 20-day moving average:
+ * is ZEC gaining or losing ground against crypto as a whole?
+ */
+function ZecBtc({ history }: { history?: [string, number][] }) {
+  const [scrub, setScrub] = useState<number>(-1);
+  const SHOW = 90;
+  const AVG = 20;
+  const { points, avg } = useMemo(() => {
+    const h = history ?? [];
+    const ma = h.map((_, i) => (i + 1 >= AVG ? h.slice(i + 1 - AVG, i + 1).reduce((t, [, v]) => t + v, 0) / AVG : null));
+    const from = Math.max(0, h.length - SHOW);
+    return {
+      points: h.slice(from).map(([date, total]) => ({ date, total })),
+      avg: ma.slice(from),
+    };
+  }, [history]);
+  if (points.length < 2) {
+    return (
+      <div className="module">
+        <div className="module-head">
+          <span className="label">ZEC / BTC · DAILY</span>
+        </div>
+        <div className="module-note">The ZEC / BTC price isn’t available right now.</div>
+      </div>
+    );
+  }
+  const fmt = (v: number) => v.toPrecision(4);
+  const i = scrub >= 0 ? scrub : points.length - 1;
+  const now = points[i].total;
+  const ma = avg[i];
+  const vsAvg = ma ? now / ma - 1 : null;
+  return (
+    <div className="module">
+      <div className="module-head">
+        <span className="label">
+          {scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : 'ZEC / BTC · DAILY'}
+        </span>
+        <span className="label zecbtc-now">
+          <b>{fmt(now)} BTC</b>
+          {vsAvg != null && (
+            <span style={{ color: STATUS_COLOR[vsAvg >= 0 ? 'green' : 'red'] }}>
+              {' · '}
+              {(Math.abs(vsAvg) * 100).toFixed(1)}% {vsAvg >= 0 ? 'ABOVE' : 'BELOW'} 20D
+            </span>
+          )}
+        </span>
+      </div>
+      <Chart points={points} overlay={avg} onScrub={(_, at) => setScrub(at)} />
+      <div className="runway-key">
+        <span>
+          <i className="key-earning" /> ZEC IN BTC
+        </span>
+        <span>
+          <i className="key-avg" /> 20-DAY AVERAGE
+        </span>
+      </div>
     </div>
   );
 }

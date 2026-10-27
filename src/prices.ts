@@ -23,6 +23,8 @@ export interface MarketState {
   histories: Histories;
   problems: Partial<Record<Asset, string>>;
   at: number | null; // last successful quote refresh
+  /** ZEC priced in BTC, daily, for the ZEC sleeve's ratio chart (a little over 100 days, for the 20-day average) */
+  zecBtc?: History;
 }
 
 const firstDay = reviews[0].date;
@@ -58,6 +60,14 @@ async function cryptoHistory(asset: 'hype' | 'zec'): Promise<History> {
   const data = await json(
     `${COINGECKO}/coins/${COIN_IDS[asset]}/market_chart?vs_currency=usd&days=${Math.min(365, daysSince(firstDay))}&interval=daily`,
   );
+  const byDay = new Map<string, number>();
+  for (const [ms, price] of (data?.prices ?? []) as [number, number][]) byDay.set(isoDay(new Date(ms)), price);
+  return [...byDay.entries()].sort();
+}
+
+/** ZEC's daily price in bitcoin, straight from CoinGecko. */
+async function zecInBtc(): Promise<History> {
+  const data = await json(`${COINGECKO}/coins/zcash/market_chart?vs_currency=btc&days=120&interval=daily`);
   const byDay = new Map<string, number>();
   for (const [ms, price] of (data?.prices ?? []) as [number, number][]) byDay.set(isoDay(new Date(ms)), price);
   return [...byDay.entries()].sort();
@@ -175,9 +185,10 @@ export function useMarket() {
     };
 
     const refreshHistory = async () => {
-      const [h, z] = await Promise.allSettled([cryptoHistory('hype'), cryptoHistory('zec')]);
+      const [h, z, zb] = await Promise.allSettled([cryptoHistory('hype'), cryptoHistory('zec'), zecInBtc()]);
       merge((s) => ({
         ...s,
+        ...(zb.status === 'fulfilled' && zb.value.length ? { zecBtc: zb.value } : {}),
         histories: {
           ...s.histories,
           ...(h.status === 'fulfilled' && h.value.length ? { hype: h.value } : {}),

@@ -1802,3 +1802,12 @@ p {
     color: var(--muted);
   }
 }
+
+/* ZEC / BTC chart */
+.zecbtc-now b {
+  font-weight: 500;
+  color: var(--ink);
+}
+.runway-key i.key-avg {
+  border-top: 1.25px solid var(--accent);
+}

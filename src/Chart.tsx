@@ -12,10 +12,11 @@ function axisLabels<T>(points: T[]): T[] {
 type Point = { date: string; total: number };
 
 /** Where each point sits on a canvas of the given size. */
-function geometry(points: Point[], width: number, height: number) {
+function geometry(points: Point[], width: number, height: number, overlay: (number | null)[] = []) {
   const vals = points.map((p) => p.total);
-  let lo = Math.min(...vals);
-  let hi = Math.max(...vals);
+  const all = [...vals, ...overlay.filter((v): v is number => v != null)];
+  let lo = Math.min(...all);
+  let hi = Math.max(...all);
   if (hi === lo) {
     lo *= 0.9;
     hi *= 1.05;
@@ -33,12 +34,21 @@ function geometry(points: Point[], width: number, height: number) {
  * Ink line with a linen-weave shading beneath it. Dragging a mouse
  * or finger across it marks a day and reports it through onScrub.
  */
-export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Point | null) => void }) {
+export function Chart({
+  points,
+  overlay,
+  onScrub,
+}: {
+  points: Point[];
+  /** a second line on the same scale, one value per point (e.g. a moving average) */
+  overlay?: (number | null)[];
+  onScrub?: (p: Point | null, i: number) => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
   const [scrub, setScrub] = useState<number | null>(null);
   const light = useLamplight();
-  const g = useMemo(() => geometry(points, width, HEIGHT), [points, width, HEIGHT]);
+  const g = useMemo(() => geometry(points, width, HEIGHT, overlay), [points, width, HEIGHT, overlay]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
   useEffect(() => {
@@ -126,7 +136,22 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
     ctx.beginPath();
     ctx.arc(x(points.length - 1), y(vals[vals.length - 1]), 3, 0, Math.PI * 2);
     ctx.fill();
-  }, [width, HEIGHT, points, g, light]);
+
+    // overlay line (e.g. a moving average) in the accent colour
+    if (overlay?.some((v) => v != null)) {
+      ctx.strokeStyle = css.getPropertyValue('--accent').trim();
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      let started = false;
+      overlay.forEach((v, i) => {
+        if (v == null) return;
+        if (started) ctx.lineTo(x(i), y(v));
+        else ctx.moveTo(x(i), y(v));
+        started = true;
+      });
+      ctx.stroke();
+    }
+  }, [width, HEIGHT, points, overlay, g, light]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);
@@ -136,12 +161,12 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
     const i = g.indexAt(e.clientX - e.currentTarget.getBoundingClientRect().left);
     if (i !== scrub) {
       setScrub(i);
-      onScrub?.(points[i]);
+      onScrub?.(points[i], i);
     }
   };
   const clear = () => {
     setScrub(null);
-    onScrub?.(null);
+    onScrub?.(null, -1);
   };
 
   return (
