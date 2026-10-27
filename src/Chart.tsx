@@ -9,6 +9,22 @@ function axisLabels<T>(points: T[]): T[] {
   return Array.from({ length: n }, (_, i) => points[Math.round((i * (points.length - 1)) / (n - 1))]);
 }
 
+/** Round values (1, 2, 2.5 or 5 × a power of ten) for the y-axis lines: the widest step giving at least three. */
+function yTicks(lo: number, hi: number): number[] {
+  if (!(hi > lo)) return [];
+  const at = (step: number) => {
+    const out: number[] = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+    return out;
+  };
+  const mag = 10 ** Math.floor(Math.log10(hi - lo));
+  for (const step of [5, 2.5, 2, 1, 0.5, 0.25, 0.2, 0.1].map((m) => m * mag)) {
+    const ticks = at(step);
+    if (ticks.length >= 3) return ticks;
+  }
+  return at(0.05 * mag);
+}
+
 type Point = { date: string; total: number };
 
 /** Where each point sits on a canvas of the given size. */
@@ -36,9 +52,11 @@ function geometry(points: Point[], width: number, height: number, overlays: Over
   const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * (width - pad * 2));
   const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (height * 0.72 - pad);
   /** Nearest point to a horizontal position. */
+  /** The value at a height on the canvas (the inverse of y). */
+  const valueAt = (py: number) => lo + (1 - (py - pad) / (height * 0.72 - pad)) * (hi - lo);
   const indexAt = (px: number) =>
     points.length === 1 ? 0 : Math.max(0, Math.min(points.length - 1, Math.round(((px - pad) / (width - pad * 2)) * (points.length - 1))));
-  return { vals, pad, x, y, indexAt };
+  return { vals, hi, pad, x, y, valueAt, indexAt };
 }
 
 /**
@@ -49,8 +67,11 @@ export function Chart({
   points,
   overlays,
   onScrub,
+  yFormat,
 }: {
   points: Point[];
+  /** how the y-axis values read, e.g. "$1.2M" */
+  yFormat: (v: number) => string;
   /** more lines on the same scale, one value per point (e.g. moving averages); colour is a CSS variable */
   overlays?: Overlay[];
   onScrub?: (p: Point | null, i: number) => void;
@@ -137,6 +158,35 @@ export function Chart({
     ctx.fillRect(0, 0, width, HEIGHT);
     ctx.restore();
 
+    // a minimal y axis: faint dotted rules at a few round values, labelled at the left
+    const MUTED = css.getPropertyValue('--muted').trim();
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    ctx.font = `400 ${Math.round(0.5938 * rem * 10) / 10}px ${css.getPropertyValue('--mono')}`;
+    if ('letterSpacing' in ctx) (ctx as { letterSpacing: string }).letterSpacing = '0.06em';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = MUTED;
+    ctx.strokeStyle = MUTED;
+    ctx.lineWidth = 0.75;
+    ctx.setLineDash([1, 3]);
+    // down to just above the axis, since the shading runs below the lowest point
+    const levels = (overlays ?? []).filter((o) => o.label).map((o) => o.values[0]);
+    for (const v of yTicks(g.valueAt(HEIGHT - 14), g.hi)) {
+      const ty = Math.round(y(v)) + 0.5;
+      if (ty < 14) continue; // no room for its label at the very top
+      // a sell rung already draws its own line at this value
+      if (!levels.some((l) => l != null && Math.abs(y(l) - ty) < 1)) {
+        ctx.globalAlpha = 0.45;
+        ctx.beginPath();
+        ctx.moveTo(0, ty);
+        ctx.lineTo(width, ty);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillText(yFormat(v), 0, ty - 2);
+    }
+    ctx.setLineDash([]);
+
     // line + end dot
     ctx.strokeStyle = INK;
     ctx.lineWidth = 1;
@@ -180,7 +230,7 @@ export function Chart({
         ctx.fillText(o.label, flat ? width : width - pad, y(last) - 3);
       }
     }
-  }, [width, HEIGHT, points, overlays, g, light]);
+  }, [width, HEIGHT, points, overlays, g, light, yFormat]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);

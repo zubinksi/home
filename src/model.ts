@@ -26,6 +26,8 @@ export interface KV {
   v: string;
   d?: string;
   dc?: Status;
+  /** colour for the value itself */
+  vc?: Status;
 }
 
 export interface Rung {
@@ -502,7 +504,10 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const fortressInterest = Math.max(0, h.fortress.value - (h.fortress.idleCash ?? 10_000)) * fortressYield;
   const netDraw = household.annualSpend - household.evergreenIncome - fortressInterest;
 
-  const totalCards: KV[] = [{ k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` }];
+  const drawRate = netDraw / total;
+  // under 4% is sustainable; 4–5% is worth watching; over 5% is drawing too fast
+  const drawStatus: Status = drawRate < 0.04 ? 'green' : drawRate <= 0.05 ? 'amber' : 'red';
+  const totalCards: KV[] = [{ k: 'NET DRAW', v: pct(drawRate, 1), vc: drawStatus, d: `${money(netDraw)} / YR FROM PORTFOLIO` }];
 
   return {
     sleeves,
