@@ -384,7 +384,7 @@ function PriceChart({
 }
 
 const ZEC_AVERAGES = [20];
-const HYPE_AVERAGES = [20, 100];
+const HYPE_AVERAGES = [100];
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
 function Periods({ periods }: { periods: Model['periods'] }) {
