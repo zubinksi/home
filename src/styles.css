@@ -1716,9 +1716,6 @@ p {
   font-weight: 500;
   color: var(--green);
 }
-.refill.past {
-  color: var(--muted);
-}
 @media (max-width: 860px) {
   /* refills stay on one line; the cash split stacks its note underneath */
   .refill {

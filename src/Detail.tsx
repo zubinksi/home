@@ -216,25 +216,19 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
 /**
  * The Fortress: months of expenses covered against the 18-month austerity
  * line and the 30-month target; where the cash sits (T-bills or idle) and what
- * it earns; then the sales waiting to refill it.
+ * it earns; then the next sales that would refill it, in months of bills.
  */
 function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   const invested = Math.max(0, r.balance - r.idle);
   const share = r.balance ? invested / r.balance : 0;
   const tilde = r.idleKnown ? '' : '~';
 
-  // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
-  // back at 30 months, then on to Diversified (§2); listed until it's full again,
-  // plus the first that would go on to Diversified
-  let gap = Math.max(0, r.target - r.balance);
-  const refills: { label: string; net: number; months: number }[] = [];
-  for (const x of r.refills) {
+  // refills waiting: the next few sales, after tax, and how many months of the
+  // Fortress each would add on its own
+  const refills = r.refills.slice(0, 3).map((x) => {
     const net = x.gross * (1 - r.tax);
-    const toFortress = Math.min(net, gap);
-    gap -= toFortress;
-    refills.push({ label: x.label, net, months: toFortress / r.burn });
-    if (toFortress <= 0) break;
-  }
+    return { label: x.label, net, months: net / r.burn };
+  });
 
   const covered = r.balance / r.burn;
   const target = r.target / r.burn;
@@ -304,10 +298,10 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
         <div className="refills">
           <div className="label">REFILLS WAITING · AFTER TAX</div>
           {refills.map((x) => (
-            <div key={x.label} className={`refill ${x.months <= 0 ? 'past' : ''}`}>
+            <div key={x.label} className="refill">
               <span>{x.label}</span>
               <span>+{money(x.net)}</span>
-              <span className={x.months > 0 ? 'gain' : undefined}>{x.months > 0 ? `+${x.months.toFixed(1)} MO` : 'TO DIVERSIFIED'}</span>
+              <span className="gain">+{x.months.toFixed(1)} MO</span>
             </div>
           ))}
         </div>
