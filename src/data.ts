@@ -60,7 +60,7 @@ export const basis = {
 export const hypeRungsSold = 0;
 
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
-export const fortressIdleCash: number | null = null;
+export const fortressIdleCash: number | null = 82_000; // ~40% of the $205K isn't earning yet (Oct 2026)
 
 /** Evergreen distributions received, as they arrive. Add one line each time. */
 export const evergreenReceived: { date: string; amount: number }[] = [];
