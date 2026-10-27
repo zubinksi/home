@@ -46,6 +46,16 @@ export function LockButton() {
     >
       {/* a bronze toggle: the knob slides across to lock */}
       <span className="lock-track" aria-hidden>
+        {/* the knob rests left, showing the open lock; locking slides it over
+            the open lock and uncovers the closed one beneath where it sat */}
+        <svg className="lock-icon lock-icon-closed" viewBox="0 0 12 14">
+          <path d="M3.5 6.5V4.5a2.5 2.5 0 0 1 5 0v2" />
+          <rect x="2" y="6.5" width="8" height="6" rx="1.2" />
+        </svg>
+        <svg className="lock-icon lock-icon-open" viewBox="0 0 12 14">
+          <path d="M3.5 6.5V4.5a2.5 2.5 0 0 1 5 0" />
+          <rect x="2" y="6.5" width="8" height="6" rx="1.2" />
+        </svg>
         <span className="lock-knob" />
       </span>
     </button>
@@ -111,10 +121,9 @@ export function Gate({ children }: { children: ReactNode }) {
       <div className="gate-card">
         <div className="gate-mast">
           <img className="gate-iris" src={irisUrl} alt="" />
-          <div className="mast-title">THE HOUSEHOLD</div>
           <div className="mast-line2">
-            <span className="mast-of">of</span>
-            <span className="mast-title">THE BROWNS</span>
+            <span className="mast-of">the</span>
+            <span className="mast-title">BROWNS</span>
           </div>
         </div>
 
