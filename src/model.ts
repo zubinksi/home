@@ -498,7 +498,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const history = marketLine ?? snapshots;
   const first = history[0];
   const ninety = trailingChange(history, 90, total);
-  const netDraw = household.annualSpend - household.evergreenIncome;
+  // interest only on what's in T-bills today (as on the Fortress page), not the idle cash
+  const fortressInterest = Math.max(0, h.fortress.value - (h.fortress.idleCash ?? 10_000)) * fortressYield;
+  const netDraw = household.annualSpend - household.evergreenIncome - fortressInterest;
 
   const totalCards: KV[] = [{ k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` }];
 
