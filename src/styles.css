@@ -1145,70 +1145,44 @@ p {
   margin: 0 auto 0.875rem;
 }
 
-/* ── section menu: the masthead title is the navigation ─── */
-.section-menu {
-  position: relative;
+/* ── iris switch: the flower flips between the two pages ─── */
+.mast-iris-btn {
+  flex: none;
+  display: block;
+  border-radius: 0.25rem;
 }
-.section-current {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 0.125rem;
-  transition: opacity 0.15s;
+.mast-iris-btn .mast-iris {
+  /* one full turn per tap, so the flower always comes to rest upright */
+  transform: rotate(calc(var(--turns, 0) * 360deg));
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @media (hover: hover) {
-  .section-current:hover {
-    opacity: 0.85;
+  .mast-iris-btn:hover .mast-iris {
+    transform: rotate(calc(var(--turns, 0) * 360deg - 10deg));
   }
 }
-.section-current:focus-visible,
-.section-menu-list button:focus-visible {
+.mast-iris-btn:focus-visible {
   outline: 2px solid var(--mast-ink2);
   outline-offset: 3px;
 }
-.section-caret {
-  width: 0;
-  height: 0;
-  border-left: 0.3125rem solid transparent;
-  border-right: 0.3125rem solid transparent;
-  border-top: 0.375rem solid currentColor;
-  opacity: 0.75;
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.section-current.is-open .section-caret {
-  transform: rotate(180deg);
-}
-.section-menu-fold {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.18s;
-}
-.section-menu-fold.is-open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-.section-menu-list {
-  min-height: 0;
+.section-title {
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
 }
-.section-menu-list button {
-  padding: 0.125rem 0;
-  color: var(--mast-ink2);
-  opacity: 0.7;
-  transition: opacity 0.15s;
+.section-title span {
+  display: block;
+  animation: title-roll 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.section-menu-list button:hover {
-  opacity: 1;
+@keyframes title-roll {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .section-menu-fold {
+  .mast-iris-btn .mast-iris,
+  .section-title span {
     transition: none;
+    animation: none;
   }
 }
 
@@ -1285,14 +1259,24 @@ p {
   letter-spacing: 0.12em;
   color: var(--muted);
 }
-.proj-toggle {
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
-  color: var(--ink3b);
+.proj-foot-row {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  white-space: nowrap;
 }
-.proj-toggle .on {
-  color: var(--accent-ink);
+.projects .sidebar {
+  min-width: 0; /* a long footer line truncates instead of widening the list */
+}
+.proj-foot-row .proj-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proj-foot-row .proj-sheet {
+  flex: none;
 }
 .proj-source.live {
   color: var(--green);

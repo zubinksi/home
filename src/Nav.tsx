@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
@@ -79,83 +79,36 @@ export function useNarrow(query = '(max-width: 860px)') {
 }
 
 /**
- * The masthead title doubles as the site's navigation: "INVESTMENTS of THE
- * BROWNS", where the first line opens a menu of the other sections.
+ * The iris is the site's navigation: tapping it turns the flower and flips
+ * the title between "INVESTMENTS of THE BROWNS" and "PROJECTS of THE BROWNS".
  */
-export function SectionMenu({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
-  const [open, setOpen] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
-  const button = useRef<HTMLButtonElement>(null);
-  const current = TABS.find((t) => t.id === tab)!;
-  const others = TABS.filter((t) => t.id !== tab);
-
-  // close on a click outside or Escape
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        button.current?.focus();
-      }
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  // up / down move between the choices
-  const onMenuKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
-    const items = [...(e.currentTarget.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)];
-    const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
-  };
-
+export function IrisSwitch({ tab, onChange, icon }: { tab: TabId; onChange: (t: TabId) => void; icon: string }) {
+  const [turns, setTurns] = useState(0);
+  const other = TABS.find((t) => t.id !== tab)!;
   return (
-    <div className="section-menu" ref={wrap}>
-      <button
-        ref={button}
-        className={`mast-title section-current ${open ? 'is-open' : ''}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowDown' && !open) {
-            e.preventDefault();
-            setOpen(true);
-            setTimeout(() => wrap.current?.querySelector<HTMLButtonElement>('.section-menu-list button')?.focus(), 0);
-          }
-        }}
-      >
-        {current.label}
-        <span className="section-caret" aria-hidden />
-      </button>
-      {/* the other sections unfold as rows beneath, pushing "of THE BROWNS" down */}
-      <div className={`section-menu-fold ${open ? 'is-open' : ''}`} aria-hidden={!open}>
-        <div className="section-menu-list" role="menu" aria-label="Sections" onKeyDown={onMenuKey}>
-          {others.map((t) => (
-            <button
-              key={t.id}
-              role="menuitem"
-              className="mast-title"
-              tabIndex={open ? 0 : -1}
-              onClick={() => {
-                setOpen(false);
-                onChange(t.id);
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <button
+      className="mast-iris-btn"
+      aria-label={`Go to ${other.label.toLowerCase()}`}
+      title={other.label}
+      onClick={() => {
+        setTurns((n) => n + 1);
+        onChange(other.id);
+      }}
+    >
+      <span
+        className="mast-iris"
+        style={{ maskImage: `url(${icon})`, WebkitMaskImage: `url(${icon})`, ['--turns' as string]: turns }}
+        aria-hidden
+      />
+    </button>
+  );
+}
+
+/** The page's name, rolling in from below whenever it changes. */
+export function SectionTitle({ tab }: { tab: TabId }) {
+  return (
+    <div className="mast-title section-title" aria-live="polite">
+      <span key={tab}>{TABS.find((t) => t.id === tab)!.label}</span>
     </div>
   );
 }

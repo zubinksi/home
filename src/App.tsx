@@ -3,7 +3,7 @@ import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
-import { SectionMenu, useNarrow, useRoute } from './Nav';
+import { IrisSwitch, SectionTitle, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
@@ -147,9 +147,9 @@ export function App() {
         <div className="mast-inner">
           <div className="mast-brand">
             {/* the iris from our mudroom wallpaper, in the title's colour */}
-            <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
+            <IrisSwitch tab={tab} onChange={goTab} icon={irisWhite} />
             <div>
-              <SectionMenu tab={tab} onChange={goTab} />
+              <SectionTitle tab={tab} />
               <div className="mast-line2">
                 <span className="mast-of">of</span>
                 <span className="mast-title">THE BROWNS</span>

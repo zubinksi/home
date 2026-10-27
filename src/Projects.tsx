@@ -6,7 +6,6 @@ import { areaStats, parseCsv, parseProjects, totals, type Area, type ProjectItem
 import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
 import { useDrill } from './useDrill';
 
-const OPTIONAL_KEY = 'browns.projects.optional.v1';
 const SORT_KEY = 'browns.projects.sort.v1';
 
 type SortMode = 'listed' | 'spend';
@@ -96,14 +95,6 @@ function useProjects() {
   return { areas, source };
 }
 
-function loadOptional() {
-  try {
-    return localStorage.getItem(OPTIONAL_KEY) !== '0';
-  } catch {
-    return true;
-  }
-}
-
 export function Projects(props: {
   narrow: boolean;
   sub: string | null;
@@ -112,17 +103,8 @@ export function Projects(props: {
   closeSub: () => void;
 }) {
   const { areas, source } = useProjects();
-  const [showOptional, setShowOptional] = useState(loadOptional);
   const [sort, setSort] = useState<SortMode>(loadSort);
   const panelRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(OPTIONAL_KEY, showOptional ? '1' : '0');
-    } catch {
-      /* fine */
-    }
-  }, [showOptional]);
 
   useEffect(() => {
     try {
@@ -157,10 +139,9 @@ export function Projects(props: {
   // on wide screens an area is always showing: the chosen one, else the first in order
   const activeKey = sequence.includes(drill.selKey) ? drill.selKey : sequence[0];
   const area = areas.find((a) => a.key === activeKey) ?? null;
-  const counted = showOptional ? t.items : t.items - t.openOptional;
 
   const row = (a: Area) => {
-    const s = areaStats(a, showOptional);
+    const s = areaStats(a);
     return (
       <button
         key={a.key}
@@ -193,7 +174,7 @@ export function Projects(props: {
                 <span className="side-amt">{compact(t.spent)}</span>
               </div>
               <div className="side-sub">
-                {t.done} OF {counted} DONE · {t.openNeeded} TO DO
+                {t.done} OF {t.items} DONE · {t.openNeeded} TO DO
               </div>
               <div className="side-rule" />
 
@@ -222,19 +203,18 @@ export function Projects(props: {
               )}
 
               <div className="proj-foot">
-                <button className="proj-toggle" onClick={() => setShowOptional(!showOptional)} aria-pressed={showOptional}>
-                  OPTIONAL · <span className={showOptional ? 'on' : ''}>{showOptional ? 'SHOWN' : 'HIDDEN'}</span>
-                </button>
-                <div className={`proj-source ${source.kind}`}>
-                  {source.kind === 'live' &&
-                    `LIVE FROM THE SHEET · ${new Date(source.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`}
-                  {source.kind === 'saved' && 'LOADING THE SHEET…'}
-                  {source.kind === 'error' && `SAVED COPY · ${source.message.toUpperCase()}`}
+                <div className="proj-foot-row">
+                  <div className={`proj-source ${source.kind}`}>
+                    {source.kind === 'live' &&
+                      `LIVE · ${new Date(source.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`}
+                    {source.kind === 'saved' && 'LOADING THE SHEET…'}
+                    {source.kind === 'error' && `SAVED COPY · ${source.message.toUpperCase()}`}
+                  </div>
+                  <a className="proj-sheet" href={PROJECTS_SHEET_URL} target="_blank" rel="noreferrer">
+                    OPEN THE SHEET <span aria-hidden>↗</span>
+                  </a>
                 </div>
                 {source.kind === 'error' && <div className="proj-hint">{source.hint}</div>}
-                <a className="proj-sheet" href={PROJECTS_SHEET_URL} target="_blank" rel="noreferrer">
-                  OPEN THE SHEET <span aria-hidden>↗</span>
-                </a>
               </div>
             </nav>
           )}
@@ -242,7 +222,7 @@ export function Projects(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              {area && <AreaDetail area={area} showOptional={showOptional} />}
+              {area && <AreaDetail area={area} />}
             </div>
           )}
         </div>
@@ -262,8 +242,8 @@ function ItemRow({ item }: { item: ProjectItem }) {
   );
 }
 
-function AreaDetail({ area, showOptional }: { area: Area; showOptional: boolean }) {
-  const s = areaStats(area, showOptional);
+function AreaDetail({ area }: { area: Area }) {
+  const s = areaStats(area);
   const live = area.items.filter((i) => !i.closed);
   const todo = live.filter((i) => !i.done && !i.optional);
   const optional = live.filter((i) => !i.done && i.optional);
@@ -301,10 +281,10 @@ function AreaDetail({ area, showOptional }: { area: Area; showOptional: boolean 
       </div>
       {area.note && <p className="proj-note">{area.note}</p>}
       {group('TO DO', todo)}
-      {showOptional && group('OPTIONAL', optional)}
+      {group('OPTIONAL', optional)}
       {group('DONE', done, s.spent ? `SPENT ${money(s.spent)}` : undefined)}
       {group('CLOSED', closed)}
-      {todo.length === 0 && (!showOptional || optional.length === 0) && done.length === 0 && (
+      {todo.length === 0 && optional.length === 0 && done.length === 0 && (
         <div className="module-note">Nothing listed here yet.</div>
       )}
     </>
