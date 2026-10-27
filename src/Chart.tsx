@@ -2,14 +2,6 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useLamplight } from './lamplight';
 import { dayMon } from './model';
 
-const BAYER = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-];
-const PITCH = 4;
-
 /** At most five evenly spaced dates for the axis (first and last always). */
 function axisLabels<T>(points: T[]): T[] {
   if (points.length <= 5) return points;
@@ -38,7 +30,7 @@ function geometry(points: Point[], width: number, height: number) {
 }
 
 /**
- * Ink line with a 4×4 Bayer ordered-dither stipple beneath it. Dragging a mouse
+ * Ink line with a linen-weave shading beneath it. Dragging a mouse
  * or finger across it marks a day and reports it through onScrub.
  */
 export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Point | null) => void }) {
@@ -81,24 +73,48 @@ export function Chart({ points, onScrub }: { points: Point[]; onScrub?: (p: Poin
       const f = Math.max(0, Math.min(1, t - i));
       return y(vals[i] + (vals[i + 1] - vals[i]) * f);
     };
-    // stipple
-    ctx.fillStyle = STIPPLE;
-    for (let gx = 0; gx * PITCH < width; gx++) {
-      const px = gx * PITCH + PITCH / 2;
-      if (px < x(0) || px > x(points.length - 1)) continue;
-      const top = lineAt(px) + 3;
-      for (let gy = 0; gy * PITCH < HEIGHT; gy++) {
-        const py = gy * PITCH + PITCH / 2;
-        if (py < top) continue;
-        const depth = (py - top) / (HEIGHT - top);
-        const density = Math.sqrt(1 - depth) * 0.8;
-        if ((BAYER[gy % 4][gx % 4] + 0.5) / 16 < density) {
-          ctx.beginPath();
-          ctx.arc(px, py, 1.7 / 2, 0, Math.PI * 2);
-          ctx.fill();
+    // linen: fine crossing threads of uneven weight, with slubs and breaks,
+    // clipped just under the line and fading toward the bottom
+    const x0 = x(0);
+    const x1 = x(points.length - 1);
+    let seed = 11; // fixed, so the weave doesn't shimmer as prices update
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x0, HEIGHT);
+    for (let px = x0; px <= x1; px += 1) ctx.lineTo(px, lineAt(px) + 3);
+    ctx.lineTo(x1, HEIGHT);
+    ctx.closePath();
+    ctx.clip();
+    ctx.strokeStyle = STIPPLE;
+    ctx.lineWidth = 0.8;
+    const thread = (horizontal: boolean, at: number, len: number) => {
+      let p = -rnd() * 30;
+      while (p < len) {
+        const seg = 12 + rnd() * 50;
+        ctx.globalAlpha = 0.18 + rnd() * 0.32;
+        ctx.beginPath();
+        if (horizontal) {
+          ctx.moveTo(p, at);
+          ctx.lineTo(p + seg, at);
+        } else {
+          ctx.moveTo(at, p);
+          ctx.lineTo(at, p + seg);
         }
+        ctx.stroke();
+        p += seg + rnd() * 2.5;
       }
-    }
+    };
+    for (let y = 0.5; y < HEIGHT; y += 2) thread(true, y + (rnd() - 0.5) * 0.4, width);
+    for (let xx = Math.floor(x0) + 0.5; xx < x1; xx += 2) thread(false, xx, HEIGHT);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'destination-out';
+    const fade = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    fade.addColorStop(0, 'rgba(0,0,0,0.05)');
+    fade.addColorStop(1, 'rgba(0,0,0,0.8)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, width, HEIGHT);
+    ctx.restore();
 
     // line + end dot
     ctx.strokeStyle = INK;
