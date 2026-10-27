@@ -79,11 +79,11 @@ export function useNarrow(query = '(max-width: 860px)') {
 }
 
 /**
- * The iris is the site's navigation: tapping it turns the flower and flips
+ * The iris is the site's navigation: tapping it nods the flower and flips
  * the title between "INVESTMENTS of THE BROWNS" and "PROJECTS of THE BROWNS".
  */
 export function IrisSwitch({ tab, onChange, icon }: { tab: TabId; onChange: (t: TabId) => void; icon: string }) {
-  const [turns, setTurns] = useState(0);
+  const [taps, setTaps] = useState(0);
   const other = TABS.find((t) => t.id !== tab)!;
   return (
     <button
@@ -91,13 +91,15 @@ export function IrisSwitch({ tab, onChange, icon }: { tab: TabId; onChange: (t: 
       aria-label={`Go to ${other.label.toLowerCase()}`}
       title={other.label}
       onClick={() => {
-        setTurns((n) => n + 1);
+        setTaps((n) => n + 1);
         onChange(other.id);
       }}
     >
+      {/* keyed by tap, so every tap replays the nod */}
       <span
-        className="mast-iris"
-        style={{ maskImage: `url(${icon})`, WebkitMaskImage: `url(${icon})`, ['--turns' as string]: turns }}
+        key={taps}
+        className={`mast-iris ${taps ? 'is-nod' : ''}`}
+        style={{ maskImage: `url(${icon})`, WebkitMaskImage: `url(${icon})` }}
         aria-hidden
       />
     </button>
