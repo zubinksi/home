@@ -175,19 +175,32 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
         <span className="d-name">{s.name}</span>
         <span className="d-amt">${compact(s.amount)}</span>
       </div>
-      <div className="d-sub">
-        <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
-          {s.alloc}
-        </span>
-      </div>
-      <Cards kv={s.kv} />
+      {s.position ? (
+        // held assets: what we hold at what price, and how it's done
+        <div className="d-pos">
+          <span>
+            {s.position.holding}
+            {s.position.change && <span style={{ color: STATUS_COLOR[s.position.change.color] }}> · {s.position.change.text}</span>}
+          </span>
+          {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
+        </div>
+      ) : (
+        <>
+          <div className="d-sub">
+            <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
+              {s.alloc}
+            </span>
+          </div>
+          <Cards kv={s.kv} />
+        </>
+      )}
       {s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
   );
 }
 
-/** Where each price came from, and how fresh it is. */
+/** Change in the line over 1D / 1W / 1M / 3M. */
 function Periods({ periods }: { periods: Model['periods'] }) {
   return (
     <div className="periods">
