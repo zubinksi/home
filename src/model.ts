@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
+import { diversifiedGoalDate, fortressYield, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -49,8 +49,12 @@ export interface Sleeve {
   alloc: string;
   cap: { cap: number | null; kind: 'cap' | 'trim' | 'goal' | 'target' | 'frozen' };
   kv: KV[];
-  /** Held assets (HYPE, AAPL, ZEC): price, day's change and gain under the name, in place of the stat boxes. */
-  position?: { holding: string; change?: { text: string; color: Status }; gain?: { text: string; color: Status } };
+  /** Held assets (HYPE, AAPL, ZEC): holding, price and gain under the name, in place of the stat boxes. */
+  position?: { holding: string; gain?: { text: string; color: Status } };
+  /** The asset whose price history feeds this sleeve's 1D / 1W / 1M / 3M row. */
+  asset?: Asset;
+  /** Fortress: what the runway chart needs. */
+  runway?: { balance: number; burn: number; idle: number; yield: number; target: number; floor: number };
   policy: string[];
   module?: Module;
 }
@@ -149,12 +153,10 @@ const changeKV = (q: Quote | undefined, label: string): Pick<KV, 'd' | 'dc'> =>
     ? {}
     : { d: `${q.change >= 0 ? '▲ +' : '▼ −'}${pct(Math.abs(q.change), 1)} ${label}`, dc: q.change >= 0 ? 'green' : 'red' };
 
-/** "6,400 @ $82.00" with the day's change, and the gain on basis, for a held asset's header. */
-function positionLine(qty: number, price: number, q: Quote | undefined, label: string, gain: number | null) {
-  const change = changeKV(q, label);
+/** "6,400 HYPE @ $82.00" and the gain on basis, for a held asset's header. */
+function positionLine(qty: string, price: number, gain: number | null) {
   return {
-    holding: `${num(qty)} @ ${priceFmt(price)}`,
-    change: change.d ? { text: change.d, color: change.dc as Status } : undefined,
+    holding: `${qty} @ ${priceFmt(price)}`,
     gain:
       gain == null
         ? undefined
@@ -282,7 +284,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           dc: hypeGain == null ? undefined : hypeGain >= 0 ? 'green' : 'red',
         },
       ],
-      position: positionLine(h.hype.tokens, h.hype.price, live.hype, '24H', hypeGain),
+      position: positionLine(`${num(h.hype.tokens)} HYPE`, h.hype.price, hypeGain),
+      asset: 'hype',
       policy: [
         'HYPE can’t exceed 45% of liquid assets (checked quarterly). If it does, we trim back to 40% within 30 days.',
         'The sell ladder is pre-committed. When the price hits the number, we sell. No skipping a rung because it “obviously” has further to run.',
@@ -313,7 +316,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           dc: aaplGain == null ? undefined : aaplGain >= 0 ? 'green' : 'red',
         },
       ],
-      position: positionLine(h.aapl.shares, h.aapl.price, live.aapl, 'TODAY', aaplGain),
+      position: positionLine(`${num(h.aapl.shares)} SHARES`, h.aapl.price, aaplGain),
+      asset: 'aapl',
       policy: [
         'We don’t sell it to fund spending unless the refill rule (§2) calls for it — and it comes last in the refill order.',
         'In low-income years we can sell and rebuy or diversify up to the top of the 0% or 15% bracket. The CPA tells us how much room we have.',
@@ -354,6 +358,14 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           dc: h.fortress.idleCash === 0 ? 'green' : 'red',
         },
       ],
+      runway: {
+        balance: h.fortress.value,
+        burn,
+        idle: h.fortress.idleCash ?? 10_000,
+        yield: fortressYield,
+        target: RULES.fortressTargetMonths * burn,
+        floor: RULES.austerityMonths * burn,
+      },
       policy: [
         'Target: 30 months of expenses, held in T-bills or SGOV — not idle cash. All spending comes out of here.',
         'Every Evergreen distribution goes here first. Anything above target flows to the Diversified sleeve.',
@@ -385,7 +397,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
           dc: zecGain == null ? undefined : zecGain >= 0 ? 'green' : 'red',
         },
       ],
-      position: positionLine(h.zec.tokens, h.zec.price, live.zec, '24H', zecGain),
+      position: positionLine(`${num(h.zec.tokens)} ZEC`, h.zec.price, zecGain),
+      asset: 'zec',
       policy: [
         'If ZEC grows past 10% of liquid assets at a quarterly review, trim back to 7%.',
         'No price ladder — this thesis isn’t about a price target.',

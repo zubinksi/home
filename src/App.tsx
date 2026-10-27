@@ -215,7 +215,7 @@ export function App() {
               {sel === SEL_TOTAL && (
                 <TotalDetail model={model} />
               )}
-              {selected && <Detail key={selected.key} sleeve={selected} />}
+              {selected && <Detail key={selected.key} sleeve={selected} market={market} />}
               {sel === SEL_ITEMS && (
                 <>
                   <div className="d-title">

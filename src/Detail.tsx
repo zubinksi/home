@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Chart } from './Chart';
+import type { MarketState } from './prices';
 import {
   compact,
   longDate,
   money,
   monYY,
   num,
+  periodChanges,
+  isoDay,
   priceFmt,
   RULES,
   STATUS_COLOR,
@@ -168,7 +171,18 @@ function ModuleView({ m }: { m: Module }) {
   }
 }
 
-export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
+/** 1D / 1W / 1M / 3M for one asset's price, from the market history plus today's live price. */
+function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) {
+  const history = market.histories[asset];
+  if (!history?.length) return periodChanges([]);
+  const today = isoDay(new Date());
+  const points = history.filter(([d]) => d < today).map(([date, total]) => ({ date, total }));
+  const live = market.live[asset]?.price ?? history[history.length - 1][1];
+  points.push({ date: today, total: live });
+  return periodChanges(points);
+}
+
+export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   return (
     <>
       <div className="d-title">
@@ -178,10 +192,7 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
       {s.position ? (
         // held assets: what we hold at what price, and how it's done
         <div className="d-pos">
-          <span>
-            {s.position.holding}
-            {s.position.change && <span style={{ color: STATUS_COLOR[s.position.change.color] }}> · {s.position.change.text}</span>}
-          </span>
+          <span>{s.position.holding}</span>
           {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
         </div>
       ) : (
@@ -191,12 +202,103 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
               {s.alloc}
             </span>
           </div>
-          <Cards kv={s.kv} />
+          {s.runway ? <Runway r={s.runway} /> : <Cards kv={s.kv} />}
         </>
       )}
+      {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
+  );
+}
+
+/**
+ * The Fortress runway: today's balance drawn down by monthly spending, with and
+ * without T-bill yield, against the 30-month target and the 18-month austerity
+ * line. Where a line meets zero is how long the Fortress lasts on its own.
+ */
+function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
+  const MONTHS = 36;
+  const plain: number[] = [];
+  const earning: number[] = []; // may go below zero; the drawing stops where it crosses
+  let b = r.balance;
+  for (let m = 0; m <= MONTHS; m++) {
+    plain.push(r.balance - r.burn * m);
+    earning.push(b);
+    // idle cash earns nothing; the rest earns the T-bill yield
+    b = b + Math.max(0, b - r.idle) * (r.yield / 12) - r.burn;
+  }
+  /** Months until a line reaches zero, between whole months; null if it doesn't within the chart. */
+  const lasts = (series: number[]) => {
+    const i = series.findIndex((v) => v <= 0);
+    if (i < 1) return null;
+    const prev = series[i - 1];
+    return i - 1 + prev / (prev - series[i]);
+  };
+  const outPlain = r.balance / r.burn;
+  const outEarning = lasts(earning);
+  const top = Math.max(r.balance, r.target) * 1.12;
+  const X = (m: number) => (m / MONTHS) * 100;
+  const Y = (v: number) => (1 - v / top) * 100;
+  // draw each line only until it reaches zero, ending exactly where it crosses
+  const path = (series: number[], out: number | null) => {
+    const pts: string[] = [];
+    for (let m = 0; m < series.length; m++) {
+      if (out != null && m > out) {
+        pts.push(`L${X(out)},${Y(0)}`);
+        break;
+      }
+      pts.push(`${m ? 'L' : 'M'}${X(m)},${Y(series[m])}`);
+    }
+    return pts.join(' ');
+  };
+  const when = (months: number) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + Math.floor(months));
+    return `${monYY(isoDay(d)).replace(' ', ' ’')}`;
+  };
+  return (
+    <div className="module runway">
+      <div className="module-head">
+        <span className="label">BURN {money(r.burn)} / MO</span>
+        <span className="label">
+          LASTS {outPlain.toFixed(1)}
+          {outEarning != null && <>–{outEarning.toFixed(1)}</>} MO
+        </span>
+      </div>
+      <div className="runway-plot">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+          <path className="runway-area" d={`${path(earning, outEarning)} L${X(outEarning ?? MONTHS)},100 L0,100 Z`} />
+          <line className="runway-target" x1="0" x2="100" y1={Y(r.target)} y2={Y(r.target)} />
+          <line className="runway-floor" x1="0" x2="100" y1={Y(r.floor)} y2={Y(r.floor)} />
+          <path className="runway-plain" d={path(plain, outPlain)} />
+          <path className="runway-earning" d={path(earning, outEarning)} />
+        </svg>
+        <span className="runway-tag" style={{ top: `${Y(r.target)}%` }}>
+          30 MO TARGET
+        </span>
+        <span className="runway-tag floor" style={{ top: `${Y(r.floor)}%` }}>
+          18 MO AUSTERITY
+        </span>
+        <span className="runway-now" style={{ top: `${Y(r.balance)}%` }}>
+          {money(r.balance)}
+        </span>
+      </div>
+      <div className="chart-axis">
+        <span>NOW</span>
+        <span>{when(12)}</span>
+        <span>{when(24)}</span>
+        <span>{when(36)}</span>
+      </div>
+      <div className="runway-key">
+        <span>
+          <i className="key-earning" /> IN T-BILLS AT {(r.yield * 100).toFixed(1)}%
+        </span>
+        <span>
+          <i className="key-plain" /> AS CASH
+        </span>
+      </div>
+    </div>
   );
 }
 

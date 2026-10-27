@@ -1659,3 +1659,82 @@ p {
 .mini-tick.floor {
   background: var(--red);
 }
+
+/* ── Fortress runway chart ─────────────────────────── */
+.runway-plot {
+  position: relative;
+  height: 12rem;
+}
+.runway-plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.runway-plot path,
+.runway-plot line {
+  vector-effect: non-scaling-stroke;
+  fill: none;
+}
+.runway-area {
+  fill: var(--ink) !important;
+  opacity: 0.06;
+}
+.runway-earning {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.runway-plain {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.runway-target {
+  stroke: var(--ink3);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+.runway-floor {
+  stroke: var(--red);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+.runway-tag,
+.runway-now {
+  position: absolute;
+  right: 0;
+  transform: translateY(-120%);
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
+  color: var(--ink3);
+  background: var(--slab);
+  padding: 0 0.25rem;
+}
+.runway-tag.floor {
+  color: var(--red);
+}
+.runway-now {
+  left: 0;
+  right: auto;
+  color: var(--ink);
+}
+.runway-key {
+  display: flex;
+  gap: 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.runway-key i {
+  display: inline-block;
+  width: 1rem;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  border-top: 1.5px solid var(--ink);
+}
+.runway-key i.key-plain {
+  border-top: 1px dashed var(--muted);
+}
