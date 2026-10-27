@@ -491,7 +491,10 @@ p {
   font-size: 2.125rem;
 }
 .d-amt {
-  font-size: 1.625rem;
+  font-size: 2.125rem; /* the same size as the name beside it */
+}
+.d-name.proj-name ~ .d-amt {
+  font-size: 1.75rem;
 }
 .d-sub {
   display: flex;
@@ -1555,7 +1558,10 @@ p {
     font-size: 1.625rem;
   }
   .d-amt {
-    font-size: 1.25rem;
+    font-size: 1.625rem;
+  }
+  .d-name.proj-name ~ .d-amt {
+    font-size: 1.375rem;
   }
   .d-sub {
     flex-direction: column;
