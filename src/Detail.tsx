@@ -207,26 +207,24 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <ZecBtc history={market.zecBtc} />}
-      {s.module && <ModuleView m={s.module} />}
-      {s.runway && <FortressBars r={s.runway} />}
+      {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
   );
 }
 
 /**
- * Two more Fortress bars, in the same form as Months Covered: how much of the
- * cash is earning interest, and this year's Evergreen distributions against
- * what we expect. Then the sales waiting to refill it.
+ * The Fortress in one bar: months of expenses covered, split into what's in
+ * T-bills and what's idle, with expected Evergreen hatched beyond it, against
+ * the 18-month austerity line and the 30-month target. Then the sales waiting
+ * to refill it.
  */
 function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   const invested = Math.max(0, r.balance - r.idle);
-  const share = r.balance ? invested / r.balance : 0;
   const tilde = r.idleKnown ? '' : '~';
   const start = new Date(new Date().getFullYear(), 0, 1).getTime();
   const elapsed = (Date.now() - start) / (365.25 * 86_400_000);
   const pace = r.evergreen * elapsed;
-  const at = (v: number, max: number) => `${(Math.min(v, max) / max) * 100}%`;
 
   // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
   // back at 30 months, then on to Diversified (§2); listed until it's full again,
@@ -241,51 +239,57 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
     if (toFortress <= 0) break;
   }
 
+  const covered = r.balance / r.burn;
+  const earning = invested / r.burn;
+  const expected = Math.max(0, r.evergreen - r.evergreenYTD) / r.burn;
+  const target = r.target / r.burn;
+  const floor = r.floor / r.burn;
+  const MAX = 36;
+  const m = (v: number) => `${(Math.min(Math.max(v, 0), MAX) / MAX) * 100}%`;
+
   return (
     <>
+      {/* one bar: months covered, split into what's earning and what's idle, with
+          expected Evergreen hatched beyond, against austerity and the target */}
       <div className="module">
-        <div className="label">CASH EARNING INTEREST</div>
+        <div className="label">MONTHS OF EXPENSES COVERED</div>
         <div className="gauge-big">
-          <span className="gauge-now">
-            {tilde}
-            {Math.round(share * 100)}%
-          </span>
-          <span className="label">
-            IN T-BILLS · {tilde}
-            {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
-          </span>
+          <span className="gauge-now">{covered.toFixed(1)}</span>
+          <span className="label">OF {Math.round(target)} TARGET</span>
         </div>
         <div className="gauge">
           <div className="gauge-track">
-            <div className="gauge-fill" style={{ width: `${share * 100}%` }} />
-          </div>
-          <div className="gauge-labels">
-            <span style={{ left: '0%' }}>
-              {tilde}
-              {money(r.idle)} IDLE
-            </span>
-            <span style={{ left: '100%' }}>{money(r.balance)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="module">
-        <div className="label">EVERGREEN DISTRIBUTIONS · {new Date().getFullYear()}</div>
-        <div className="gauge-big">
-          <span className="gauge-now">{money(r.evergreenYTD)}</span>
-          <span className="label">OF ~{money(r.evergreen)} EXPECTED</span>
-        </div>
-        <div className="gauge">
-          <div className="gauge-track">
-            <div className="gauge-fill" style={{ width: at(r.evergreenYTD, r.evergreen) }} />
-            <div className="gauge-tick target" style={{ left: at(pace, r.evergreen) }} />
+            <div className="gauge-fill" style={{ width: m(earning) }} />
+            <div className="gauge-fill idle" style={{ left: m(earning), width: m(covered - earning) }} />
+            <div className="gauge-fill evergreen" style={{ left: m(covered), width: m(expected) }} />
+            <div className="gauge-tick floor" style={{ left: m(floor) }} />
+            <div className="gauge-tick target" style={{ left: m(target) }} />
           </div>
           <div className="gauge-labels">
             <span style={{ left: '0%' }}>0</span>
-            <span style={{ left: at(pace, r.evergreen) }}>PACE {money(pace)}</span>
+            <span className="floor" style={{ left: m(floor) }}>
+              {Math.round(floor)} AUSTERITY
+            </span>
+            <span style={{ left: m(target) }}>{Math.round(target)} TARGET</span>
+            <span style={{ left: '100%' }}>{MAX}</span>
           </div>
         </div>
-        {r.evergreenCount === 0 && <div className="module-note">None recorded yet this year. Add each one to evergreenReceived in src/data.ts.</div>}
+        <div className="gauge-key">
+          <span>
+            <i /> T-BILLS {tilde}
+            {earning.toFixed(1)} · {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
+          </span>
+          <span>
+            <i className="idle" /> IDLE {tilde}
+            {(covered - earning).toFixed(1)}
+          </span>
+          <span>
+            <i className="evergreen" /> EVERGREEN ~{expected.toFixed(1)} / YR
+          </span>
+        </div>
+        <div className="gauge-note">
+          EVERGREEN {new Date().getFullYear()}: {money(r.evergreenYTD)} RECEIVED · PACE {money(pace)}
+        </div>
       </div>
 
       {refills.length > 0 && (
