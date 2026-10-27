@@ -30,7 +30,7 @@ export interface Review {
 export const reviews: Review[] = [
   {
     date: '2026-08-01',
-    hype: { tokens: 6_500, price: 67 },
+    hype: { tokens: 6_400, price: 67 },
     zec: { tokens: 100, price: 450 },
     aapl: { shares: 927, price: 300 },
     equities: 30_000,
@@ -40,10 +40,10 @@ export const reviews: Review[] = [
   {
     date: '2026-11-01',
     hype: { tokens: 6_400, price: 82 },
-    zec: { tokens: 95, price: 1_200 },
+    zec: { tokens: 100, price: 1_200 },
     aapl: { shares: 927, price: 340 },
     equities: 30_000,
-    cash: 205_000,
+    cash: 200_000,
     diversified: { voo: 0, vxus: 0, avuv: 0 },
   },
 ];
@@ -60,7 +60,7 @@ export const basis = {
 export const hypeRungsSold = 0;
 
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
-export const fortressIdleCash: number | null = 82_000; // ~40% of the $205K isn't earning yet (Oct 2026)
+export const fortressIdleCash: number | null = 82_000; // ~40% of the $200K isn't earning yet (Oct 2026)
 
 /** Evergreen distributions received, as they arrive. Add one line each time. */
 export const evergreenReceived: { date: string; amount: number }[] = [];
