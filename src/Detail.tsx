@@ -214,17 +214,13 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
 }
 
 /**
- * The Fortress in one bar: months of expenses covered, split into what's in
- * T-bills and what's idle, with expected Evergreen hatched beyond it, against
- * the 18-month austerity line and the 30-month target. Then the sales waiting
- * to refill it.
+ * The Fortress: months of expenses covered against the 18-month austerity
+ * line and the 30-month target; where the cash sits (T-bills or idle) and what
+ * it earns; then the sales waiting to refill it.
  */
 function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   const invested = Math.max(0, r.balance - r.idle);
   const tilde = r.idleKnown ? '' : '~';
-  const start = new Date(new Date().getFullYear(), 0, 1).getTime();
-  const elapsed = (Date.now() - start) / (365.25 * 86_400_000);
-  const pace = r.evergreen * elapsed;
 
   // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
   // back at 30 months, then on to Diversified (§2); listed until it's full again,
@@ -240,8 +236,6 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   }
 
   const covered = r.balance / r.burn;
-  const earning = invested / r.burn;
-  const expected = Math.max(0, r.evergreen - r.evergreenYTD) / r.burn;
   const target = r.target / r.burn;
   const floor = r.floor / r.burn;
   const MAX = 36;
@@ -259,9 +253,7 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
         </div>
         <div className="gauge">
           <div className="gauge-track">
-            <div className="gauge-fill" style={{ width: m(earning) }} />
-            <div className="gauge-fill idle" style={{ left: m(earning), width: m(covered - earning) }} />
-            <div className="gauge-fill evergreen" style={{ left: m(covered), width: m(expected) }} />
+            <div className="gauge-fill" style={{ width: m(covered) }} />
             <div className="gauge-tick floor" style={{ left: m(floor) }} />
             <div className="gauge-tick target" style={{ left: m(target) }} />
           </div>
@@ -274,21 +266,28 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
             <span style={{ left: '100%' }}>{MAX}</span>
           </div>
         </div>
-        <div className="gauge-key">
+      </div>
+
+      {/* where the cash sits, and what it earns */}
+      <div className="refills cash-split">
+        <div className="label">WHERE IT SITS</div>
+        <div className="refill">
+          <span>IN T-BILLS · {Math.round((invested / (r.balance || 1)) * 100)}%</span>
           <span>
-            <i /> T-BILLS {tilde}
-            {earning.toFixed(1)} · {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
+            {tilde}
+            {money(invested)}
           </span>
           <span>
-            <i className="idle" /> IDLE {tilde}
-            {(covered - earning).toFixed(1)}
-          </span>
-          <span>
-            <i className="evergreen" /> EVERGREEN ~{expected.toFixed(1)} / YR
+            EARNING {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
           </span>
         </div>
-        <div className="gauge-note">
-          EVERGREEN {new Date().getFullYear()}: {money(r.evergreenYTD)} RECEIVED · PACE {money(pace)}
+        <div className="refill">
+          <span>IDLE CASH · {Math.round((r.idle / (r.balance || 1)) * 100)}%</span>
+          <span>
+            {tilde}
+            {money(r.idle)}
+          </span>
+          <span>{r.idle > 0 ? <b className="warn">+{money(r.idle * r.yield)} / YR IF MOVED</b> : 'NONE'}</span>
         </div>
       </div>
 
