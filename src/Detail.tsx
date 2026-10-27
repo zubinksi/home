@@ -269,7 +269,6 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
       <div className="refills cash-split">
         <div className="module-head">
           <span className="label">WHERE IT SITS · {(r.yield * 100).toFixed(1)}%</span>
-          {r.idle > 0 && <span className="label warn">IF MOVED +{money(r.idle * r.yield)} / YR</span>}
         </div>
         <div className="refill">
           <span>T-BILLS</span>

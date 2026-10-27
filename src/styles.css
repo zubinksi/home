@@ -1692,7 +1692,8 @@ p {
 }
 .refill {
   display: grid;
-  grid-template-columns: 1fr auto 9.5rem;
+  /* fixed columns, so the amounts and months line up from row to row */
+  grid-template-columns: 1fr 5.5rem 7rem;
   gap: 0.75rem;
   padding: 0.4375rem 0.625rem;
   font-family: var(--mono);
@@ -1719,7 +1720,7 @@ p {
 @media (max-width: 860px) {
   /* refills stay on one line; the cash split stacks its note underneath */
   .refill {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr 4.25rem 4.75rem;
     font-size: 0.6875rem;
     gap: 0.625rem;
   }

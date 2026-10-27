@@ -391,7 +391,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         idleKnown: h.fortress.idleCash != null,
         refills: [
           ...(zecTrimTokens > 0 ? [{ label: `ZEC TRIM · ${num(zecTrimTokens)}`, gross: zecTrimTokens * h.zec.price }] : []),
-          ...LADDER.slice(h.hype.rungsSold).map((r) => ({ label: `HYPE $${r.price} RUNG · ${num(r.tokens)}`, gross: r.price * r.tokens })),
+          ...LADDER.slice(h.hype.rungsSold).map((r) => ({ label: `HYPE $${r.price} · ${num(r.tokens)}`, gross: r.price * r.tokens })),
         ],
         tax: RULES.taxSetAside,
       },
