@@ -33,8 +33,8 @@ export type Overlay = {
   color: string;
   /** dashed, for a fixed level rather than a line through time */
   dashed?: boolean;
-  /** written at the right-hand end of the line */
-  label?: string;
+  /** a fixed price level (e.g. a sell rung): drawn edge to edge and labelled on the y axis */
+  level?: boolean;
 };
 
 function geometry(points: Point[], width: number, height: number, overlays: Overlay[] = []) {
@@ -42,8 +42,8 @@ function geometry(points: Point[], width: number, height: number, overlays: Over
   const all = [...vals, ...overlays.flatMap((o) => o.values.filter((v): v is number => v != null))];
   let lo = Math.min(...all);
   let hi = Math.max(...all);
-  // room above the top line for its label
-  if (overlays.some((o) => o.label)) hi += (hi - lo) * 0.1;
+  // room above the top level for its axis label
+  if (overlays.some((o) => o.level)) hi += (hi - lo) * 0.08;
   if (hi === lo) {
     lo *= 0.9;
     hi *= 1.05;
@@ -169,23 +169,29 @@ export function Chart({
     ctx.strokeStyle = MUTED;
     ctx.lineWidth = 0.75;
     ctx.setLineDash([1, 3]);
+    // every price level gets its value on the axis, in its line's colour; the
+    // round values fill in wherever they don't crowd one
+    const levels = (overlays ?? [])
+      .filter((o) => o.level && o.values[0] != null)
+      .map((o) => ({ v: o.values[0]!, color: css.getPropertyValue(o.color).trim() }));
     // down to just above the axis, since the shading runs below the lowest point
-    const levels = (overlays ?? []).filter((o) => o.label).map((o) => o.values[0]);
     for (const v of yTicks(g.valueAt(HEIGHT - 14), g.hi)) {
       const ty = Math.round(y(v)) + 0.5;
       if (ty < 14) continue; // no room for its label at the very top
-      // a sell rung already draws its own line at this value
-      if (!levels.some((l) => l != null && Math.abs(y(l) - ty) < 1)) {
-        ctx.globalAlpha = 0.45;
-        ctx.beginPath();
-        ctx.moveTo(0, ty);
-        ctx.lineTo(width, ty);
-        ctx.stroke();
-      }
+      if (levels.some((l) => Math.abs(y(l.v) - ty) < 14)) continue;
+      ctx.globalAlpha = 0.45;
+      ctx.beginPath();
+      ctx.moveTo(0, ty);
+      ctx.lineTo(width, ty);
+      ctx.stroke();
       ctx.globalAlpha = 1;
       ctx.fillText(yFormat(v), 0, ty - 2);
     }
     ctx.setLineDash([]);
+    for (const l of levels) {
+      ctx.fillStyle = l.color;
+      ctx.fillText(yFormat(l.v), 0, Math.round(y(l.v)) - 2);
+    }
 
     // line + end dot
     ctx.strokeStyle = INK;
@@ -205,8 +211,7 @@ export function Chart({
       ctx.lineWidth = o.dashed ? 1 : 1.25;
       ctx.setLineDash(o.dashed ? [4, 3] : []);
       ctx.beginPath();
-      const flat = o.label != null && o.values.every((v) => v === o.values[0]);
-      if (flat && o.values[0] != null) {
+      if (o.level && o.values[0] != null) {
         // a price level spans the full width, flush with the panel edges
         ctx.moveTo(0, y(o.values[0]));
         ctx.lineTo(width, y(o.values[0]));
@@ -221,14 +226,6 @@ export function Chart({
       }
       ctx.stroke();
       ctx.setLineDash([]);
-      const last = o.values[o.values.length - 1];
-      if (o.label && last != null) {
-        ctx.font = `400 ${Math.round(10 * (parseFloat(getComputedStyle(document.documentElement).fontSize) / 16) + 1)}px ${css.getPropertyValue('--mono')}`;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillStyle = color;
-        ctx.fillText(o.label, flat ? width : width - pad, y(last) - 3);
-      }
     }
   }, [width, HEIGHT, points, overlays, g, light, yFormat]);
 

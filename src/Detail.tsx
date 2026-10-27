@@ -344,7 +344,7 @@ function PriceChart({
   show: number;
   averages: number[];
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
-  levels?: { price: number; label: string; next?: boolean }[];
+  levels?: { price: number; next?: boolean }[];
   fmt: (v: number) => string;
   /** shorter form for the y axis */
   axisFmt: (v: number) => string;
@@ -361,7 +361,7 @@ function PriceChart({
           values: h.slice(from).map(() => l.price),
           color: l.next ? '--accent' : '--muted',
           dashed: true,
-          label: l.label,
+          level: true,
         })),
       ],
     };
@@ -417,7 +417,7 @@ const moneyAxis = (v: number) => (v >= 1e6 ? `$${+(v / 1e6).toFixed(2)}M` : `$${
 function rungLevels(s: Sleeve) {
   if (s.module?.kind !== 'ladder') return [];
   const { rungs, sold, next } = s.module;
-  return rungs.slice(sold, sold + 3).map((r, i) => ({ price: r.price, label: `$${r.price} · ${num(r.tokens)}`, next: sold + i === next }));
+  return rungs.slice(sold, sold + 3).map((r, i) => ({ price: r.price, next: sold + i === next }));
 }
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
