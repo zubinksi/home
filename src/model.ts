@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, fortressYield, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
+import { diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -61,8 +61,13 @@ export interface Sleeve {
     yield: number;
     target: number;
     floor: number;
-    /** expected Evergreen distributions, $ / year (irregular; shown only when asked for) */
+    /** expected Evergreen distributions, $ / year */
     evergreen: number;
+    /** received so far this calendar year */
+    evergreenYTD: number;
+    evergreenCount: number;
+    /** idle cash is an estimate until it's entered in data.ts */
+    idleKnown: boolean;
     /** sales that would refill the Fortress, gross $, in the order they'd happen */
     refills: { label: string; gross: number }[];
     tax: number;
@@ -266,6 +271,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const hypeShareAfter = (hypeTokensAfter * h.hype.price) / total;
   const fortressMonthsAfter = (h.fortress.value + toFortress) / burn;
 
+  const year = String(new Date().getFullYear());
+  const evergreenThisYear = evergreenReceived.filter((d) => d.date.startsWith(year));
+
   // ── DIVERSIFIED
   const divShare = share(div);
   const divGoal = total * RULES.diversifiedGoal;
@@ -378,6 +386,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         target: RULES.fortressTargetMonths * burn,
         floor: RULES.austerityMonths * burn,
         evergreen: household.evergreenIncome,
+        evergreenYTD: evergreenThisYear.reduce((t, d) => t + d.amount, 0),
+        evergreenCount: evergreenThisYear.length,
+        idleKnown: h.fortress.idleCash != null,
         refills: [
           ...(zecTrimTokens > 0 ? [{ label: `ZEC TRIM · ${num(zecTrimTokens)}`, gross: zecTrimTokens * h.zec.price }] : []),
           ...LADDER.slice(h.hype.rungsSold).map((r) => ({ label: `HYPE $${r.price} RUNG · ${num(r.tokens)}`, gross: r.price * r.tokens })),

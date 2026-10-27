@@ -202,87 +202,36 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
               {s.alloc}
             </span>
           </div>
-          {s.runway ? <Runway r={s.runway} /> : <Cards kv={s.kv} />}
+          {!s.runway && <Cards kv={s.kv} />}
         </>
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <ZecBtc history={market.zecBtc} />}
       {s.module && <ModuleView m={s.module} />}
+      {s.runway && <FortressBars r={s.runway} />}
       <Policy lines={s.policy} />
     </>
   );
 }
 
 /**
- * The Fortress runway: today's balance drawn down by monthly spending, with and
- * without T-bill yield, against the 30-month target and the 18-month austerity
- * line. Where a line meets zero is how long the Fortress lasts on its own.
+ * Two more Fortress bars, in the same form as Months Covered: how much of the
+ * cash is earning interest, and this year's Evergreen distributions against
+ * what we expect. Then the sales waiting to refill it.
  */
-function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
-  const [withEvergreen, setWithEvergreen] = useState(false);
-  const MONTHS = withEvergreen ? 60 : 36;
-  const monthly = (b: number) => Math.max(0, b - r.idle) * (r.yield / 12); // idle cash earns nothing
-
-  // balances by month; they may go below zero, and drawing stops where they cross
-  const plain: number[] = [];
-  const earning: number[] = [];
-  let b = r.balance;
-  for (let m = 0; m <= MONTHS; m++) {
-    plain.push(r.balance - r.burn * m);
-    earning.push(b);
-    b = b + monthly(b) - r.burn;
-  }
-  // with Evergreen: a quarter of the year's distributions lands every third month
-  const steps: [number, number][] = [];
-  let e = r.balance;
-  let outEvergreen: number | null = null;
-  for (let m = 0; m <= MONTHS && outEvergreen == null; m++) {
-    steps.push([m, e]);
-    if (m && m % 3 === 0) {
-      e += r.evergreen / 4;
-      steps.push([m, e]);
-    }
-    const next = e + monthly(e) - r.burn;
-    if (next <= 0 && m < MONTHS) outEvergreen = m + e / (e - next);
-    e = next;
-  }
-
-  /** Months until a line reaches zero, between whole months; null if it doesn't within the chart. */
-  const lasts = (series: number[]) => {
-    const i = series.findIndex((v) => v <= 0);
-    if (i < 1) return null;
-    const prev = series[i - 1];
-    return i - 1 + prev / (prev - series[i]);
-  };
-  const outPlain = r.balance / r.burn;
-  const outEarning = lasts(earning);
-  const top = Math.max(r.balance, r.target, ...steps.map(([, v]) => v)) * 1.12;
-  const X = (m: number) => (m / MONTHS) * 100;
-  const Y = (v: number) => (1 - Math.max(0, v) / top) * 100;
-  const path = (series: number[], out: number | null) => {
-    const pts: string[] = [];
-    for (let m = 0; m < series.length; m++) {
-      if (out != null && m > out) {
-        pts.push(`L${X(out)},${Y(0)}`);
-        break;
-      }
-      pts.push(`${m ? 'L' : 'M'}${X(m)},${Y(series[m])}`);
-    }
-    return pts.join(' ');
-  };
-  const stepPath =
-    steps.map(([m, v], i) => `${i ? 'L' : 'M'}${X(m)},${Y(v)}`).join(' ') + (outEvergreen != null ? ` L${X(outEvergreen)},${Y(0)}` : '');
-  const when = (months: number) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + Math.floor(months));
-    return `${monYY(isoDay(d)).replace(' ', ' ’')}`;
-  };
-  const ticks = Array.from({ length: MONTHS / 12 }, (_, i) => (i + 1) * 12);
+function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
+  const invested = Math.max(0, r.balance - r.idle);
+  const share = r.balance ? invested / r.balance : 0;
+  const tilde = r.idleKnown ? '' : '~';
+  const start = new Date(new Date().getFullYear(), 0, 1).getTime();
+  const elapsed = (Date.now() - start) / (365.25 * 86_400_000);
+  const pace = r.evergreen * elapsed;
+  const at = (v: number, max: number) => `${(Math.min(v, max) / max) * 100}%`;
 
   // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
-  // back at 30 months, then on to Diversified (§2)
+  // back at 30 months, then on to Diversified (§2); listed until it's full again,
+  // plus the first that would go on to Diversified
   let gap = Math.max(0, r.target - r.balance);
-  // listed until the Fortress is full again, plus the first that would go on to Diversified
   const refills: { label: string; net: number; months: number; full: boolean }[] = [];
   for (const x of r.refills) {
     const net = x.gross * (1 - r.tax);
@@ -293,50 +242,50 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
   }
 
   return (
-    <div className="module runway">
-      <div className="module-head">
-        <span className="label">BURN {money(r.burn)} / MO</span>
-        <span className="label">
-          LASTS {outPlain.toFixed(1)}
-          {outEarning != null && <>–{outEarning.toFixed(1)}</>} MO
-          {withEvergreen && <> · {outEvergreen != null ? outEvergreen.toFixed(0) : `${MONTHS}+`} WITH EVERGREEN</>}
-        </span>
+    <>
+      <div className="module">
+        <div className="label">CASH EARNING INTEREST</div>
+        <div className="gauge-big">
+          <span className="gauge-now">
+            {tilde}
+            {Math.round(share * 100)}%
+          </span>
+          <span className="label">
+            IN T-BILLS · {tilde}
+            {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div className="gauge">
+          <div className="gauge-track">
+            <div className="gauge-fill" style={{ width: `${share * 100}%` }} />
+          </div>
+          <div className="gauge-labels">
+            <span style={{ left: '0%' }}>
+              {tilde}
+              {money(r.idle)} IDLE
+            </span>
+            <span style={{ left: '100%' }}>{money(r.balance)}</span>
+          </div>
+        </div>
       </div>
-      <div className="runway-plot">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-          <path className="runway-area" d={`${path(earning, outEarning)} L${X(outEarning ?? MONTHS)},100 L0,100 Z`} />
-          <line className="runway-target" x1="0" x2="100" y1={Y(r.target)} y2={Y(r.target)} />
-          <line className="runway-floor" x1="0" x2="100" y1={Y(r.floor)} y2={Y(r.floor)} />
-          {withEvergreen && <path className="runway-evergreen" d={stepPath} />}
-          <path className="runway-plain" d={path(plain, outPlain)} />
-          <path className="runway-earning" d={path(earning, outEarning)} />
-        </svg>
-        <span className="runway-tag" style={{ top: `${Y(r.target)}%` }}>
-          30 MO TARGET
-        </span>
-        <span className="runway-tag floor" style={{ top: `${Y(r.floor)}%` }}>
-          18 MO AUSTERITY
-        </span>
-        <span className="runway-now" style={{ top: `${Y(r.balance)}%` }}>
-          {money(r.balance)}
-        </span>
-      </div>
-      <div className="chart-axis">
-        <span>NOW</span>
-        {ticks.map((t) => (
-          <span key={t}>{when(t)}</span>
-        ))}
-      </div>
-      <div className="runway-key">
-        <span>
-          <i className="key-earning" /> IN T-BILLS AT {(r.yield * 100).toFixed(1)}%
-        </span>
-        <span>
-          <i className="key-plain" /> AS CASH
-        </span>
-        <button className={`runway-toggle ${withEvergreen ? 'on' : ''}`} onClick={() => setWithEvergreen(!withEvergreen)} aria-pressed={withEvergreen}>
-          <i className="key-evergreen" /> {withEvergreen ? '✓' : '+'} EVERGREEN {money(r.evergreen)} / YR · EXPECTED
-        </button>
+
+      <div className="module">
+        <div className="label">EVERGREEN DISTRIBUTIONS · {new Date().getFullYear()}</div>
+        <div className="gauge-big">
+          <span className="gauge-now">{money(r.evergreenYTD)}</span>
+          <span className="label">OF ~{money(r.evergreen)} EXPECTED</span>
+        </div>
+        <div className="gauge">
+          <div className="gauge-track">
+            <div className="gauge-fill" style={{ width: at(r.evergreenYTD, r.evergreen) }} />
+            <div className="gauge-tick target" style={{ left: at(pace, r.evergreen) }} />
+          </div>
+          <div className="gauge-labels">
+            <span style={{ left: '0%' }}>0</span>
+            <span style={{ left: at(pace, r.evergreen) }}>PACE {money(pace)}</span>
+          </div>
+        </div>
+        {r.evergreenCount === 0 && <div className="module-note">None recorded yet this year. Add each one to evergreenReceived in src/data.ts.</div>}
       </div>
 
       {refills.length > 0 && (
@@ -354,7 +303,7 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -385,7 +334,7 @@ function ZecBtc({ history }: { history?: [string, number][] }) {
       </div>
     );
   }
-  const fmt = (v: number) => v.toPrecision(4);
+  const fmt = (v: number) => v.toFixed(3);
   const i = scrub >= 0 ? scrub : points.length - 1;
   const now = points[i].total;
   const ma = avg[i];

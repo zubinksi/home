@@ -62,7 +62,10 @@ export const hypeRungsSold = 0;
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
 export const fortressIdleCash: number | null = null;
 
-/** What T-bills / SGOV pay, for the Fortress runway chart (an estimate; update as rates move). */
+/** Evergreen distributions received, as they arrive. Add one line each time. */
+export const evergreenReceived: { date: string; amount: number }[] = [];
+
+/** What T-bills / SGOV pay, for the Fortress yield bar (an estimate; update as rates move). */
 export const fortressYield = 0.04;
 
 /** Number of positions in the flexible / Equities bucket. */
