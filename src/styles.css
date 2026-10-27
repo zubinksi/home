@@ -1122,7 +1122,6 @@ p {
     inset 0 0.0625rem 0.1875rem rgba(70, 52, 24, 0.35),
     inset 0 -0.0625rem 0 rgba(255, 255, 255, 0.5),
     0 0.0625rem 0 rgba(255, 255, 255, 0.6);
-  transition: background 0.5s, box-shadow 0.5s, width 0.5s cubic-bezier(0.5, 0, 0.2, 1);
 }
 .gate-track .lock-icon {
   stroke: #b4a789;
@@ -1157,16 +1156,8 @@ p {
   75% { transform: translateX(calc(var(--travel) - 0.15rem)) rotate(calc(var(--spin) - 16deg)); }
 }
 .gate-lock {
-  transition: opacity 0.15s;
-}
-.gate-lock.is-gone {
-  opacity: 0; /* its twin is flying to the masthead */
-  transition: none;
-}
-/* in place of the dots: a long channel, the code's digits engraved inside */
-.gate-lock {
   margin: 1rem 0 1.75rem;
-  width: calc(8.5rem * 1.25); /* scale matches GATE_LOCK_SCALE in Gate.tsx */
+  width: calc(8.5rem * 1.25);
   height: calc(1.625rem * 1.25);
 }
 .gate-lock .gate-track {
@@ -1179,7 +1170,9 @@ p {
   --spin: 520deg; /* rolls, rather than slides, along the long channel */
 }
 .gate-track .lock-knob {
-  transition-duration: 0.6s;
+  /* an unhurried, even roll along the channel */
+  transition-duration: 1.2s;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
 }
 .gate-pips {
   position: absolute;
@@ -1206,51 +1199,8 @@ p {
 .gate-track.is-open .gate-pip {
   background: var(--green);
 }
-/* the handoff: the card fades off the site while the lock lifts away */
-.gate.gate-leaving {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: var(--ground);
-  animation: gate-out 0.45s 0.15s ease-in forwards;
-}
-@keyframes gate-out {
-  to { opacity: 0; }
-}
-.gate-flight {
-  position: fixed;
-  z-index: 60;
-  transform-origin: 0 0;
-  transition: transform 0.6s cubic-bezier(0.45, 0, 0.15, 1);
-}
-.gate-flight .gate-track {
-  transform: none !important;
-}
-/* landing: it takes on the masthead's size and colours as it arrives */
-.gate-flight.is-landing .gate-track {
-  width: 2.875rem;
-  background: #7d7f74;
-  box-shadow:
-    inset 0 0.0625rem 0.1875rem rgba(30, 30, 24, 0.45),
-    inset 0 -0.0625rem 0 rgba(255, 255, 255, 0.12),
-    0 0.0625rem 0 rgba(255, 255, 255, 0.16);
-}
-.gate-flight.is-landing .lock-icon {
-  stroke: #65675d;
-  transition: stroke 0.5s;
-}
-.gate-flight.is-landing .lock-icon rect {
-  fill: #65675d;
-}
-.gate-flight.is-landing .gate-pips {
-  opacity: 0;
-}
-body:has(.gate-flight) .mast-lock {
-  visibility: hidden;
-}
 @media (prefers-reduced-motion: reduce) {
-  .gate-track .lock-knob,
-  .gate-flight {
+  .gate-track .lock-knob {
     transition: none;
   }
 }
