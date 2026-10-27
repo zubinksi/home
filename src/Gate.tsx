@@ -121,9 +121,10 @@ export function Gate({ children }: { children: ReactNode }) {
       <div className="gate-card">
         <div className="gate-mast">
           <img className="gate-iris" src={irisUrl} alt="" />
+          <div className="mast-title">THE HOUSEHOLD</div>
           <div className="mast-line2">
-            <span className="mast-of">the</span>
-            <span className="mast-title">BROWNS</span>
+            <span className="mast-of">of</span>
+            <span className="mast-title">THE BROWNS</span>
           </div>
         </div>
 
