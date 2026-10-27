@@ -218,16 +218,34 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
  * line. Where a line meets zero is how long the Fortress lasts on its own.
  */
 function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
-  const MONTHS = 36;
+  const [withEvergreen, setWithEvergreen] = useState(false);
+  const MONTHS = withEvergreen ? 60 : 36;
+  const monthly = (b: number) => Math.max(0, b - r.idle) * (r.yield / 12); // idle cash earns nothing
+
+  // balances by month; they may go below zero, and drawing stops where they cross
   const plain: number[] = [];
-  const earning: number[] = []; // may go below zero; the drawing stops where it crosses
+  const earning: number[] = [];
   let b = r.balance;
   for (let m = 0; m <= MONTHS; m++) {
     plain.push(r.balance - r.burn * m);
     earning.push(b);
-    // idle cash earns nothing; the rest earns the T-bill yield
-    b = b + Math.max(0, b - r.idle) * (r.yield / 12) - r.burn;
+    b = b + monthly(b) - r.burn;
   }
+  // with Evergreen: a quarter of the year's distributions lands every third month
+  const steps: [number, number][] = [];
+  let e = r.balance;
+  let outEvergreen: number | null = null;
+  for (let m = 0; m <= MONTHS && outEvergreen == null; m++) {
+    steps.push([m, e]);
+    if (m && m % 3 === 0) {
+      e += r.evergreen / 4;
+      steps.push([m, e]);
+    }
+    const next = e + monthly(e) - r.burn;
+    if (next <= 0 && m < MONTHS) outEvergreen = m + e / (e - next);
+    e = next;
+  }
+
   /** Months until a line reaches zero, between whole months; null if it doesn't within the chart. */
   const lasts = (series: number[]) => {
     const i = series.findIndex((v) => v <= 0);
@@ -237,10 +255,9 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
   };
   const outPlain = r.balance / r.burn;
   const outEarning = lasts(earning);
-  const top = Math.max(r.balance, r.target) * 1.12;
+  const top = Math.max(r.balance, r.target, ...steps.map(([, v]) => v)) * 1.12;
   const X = (m: number) => (m / MONTHS) * 100;
-  const Y = (v: number) => (1 - v / top) * 100;
-  // draw each line only until it reaches zero, ending exactly where it crosses
+  const Y = (v: number) => (1 - Math.max(0, v) / top) * 100;
   const path = (series: number[], out: number | null) => {
     const pts: string[] = [];
     for (let m = 0; m < series.length; m++) {
@@ -252,11 +269,28 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
     }
     return pts.join(' ');
   };
+  const stepPath =
+    steps.map(([m, v], i) => `${i ? 'L' : 'M'}${X(m)},${Y(v)}`).join(' ') + (outEvergreen != null ? ` L${X(outEvergreen)},${Y(0)}` : '');
   const when = (months: number) => {
     const d = new Date();
     d.setMonth(d.getMonth() + Math.floor(months));
     return `${monYY(isoDay(d)).replace(' ', ' ’')}`;
   };
+  const ticks = Array.from({ length: MONTHS / 12 }, (_, i) => (i + 1) * 12);
+
+  // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
+  // back at 30 months, then on to Diversified (§2)
+  let gap = Math.max(0, r.target - r.balance);
+  // listed until the Fortress is full again, plus the first that would go on to Diversified
+  const refills: { label: string; net: number; months: number; full: boolean }[] = [];
+  for (const x of r.refills) {
+    const net = x.gross * (1 - r.tax);
+    const toFortress = Math.min(net, gap);
+    gap -= toFortress;
+    refills.push({ label: x.label, net, months: toFortress / r.burn, full: toFortress > 0 && gap <= 0 });
+    if (toFortress <= 0) break;
+  }
+
   return (
     <div className="module runway">
       <div className="module-head">
@@ -264,6 +298,7 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
         <span className="label">
           LASTS {outPlain.toFixed(1)}
           {outEarning != null && <>–{outEarning.toFixed(1)}</>} MO
+          {withEvergreen && <> · {outEvergreen != null ? outEvergreen.toFixed(0) : `${MONTHS}+`} WITH EVERGREEN</>}
         </span>
       </div>
       <div className="runway-plot">
@@ -271,6 +306,7 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
           <path className="runway-area" d={`${path(earning, outEarning)} L${X(outEarning ?? MONTHS)},100 L0,100 Z`} />
           <line className="runway-target" x1="0" x2="100" y1={Y(r.target)} y2={Y(r.target)} />
           <line className="runway-floor" x1="0" x2="100" y1={Y(r.floor)} y2={Y(r.floor)} />
+          {withEvergreen && <path className="runway-evergreen" d={stepPath} />}
           <path className="runway-plain" d={path(plain, outPlain)} />
           <path className="runway-earning" d={path(earning, outEarning)} />
         </svg>
@@ -286,9 +322,9 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
       </div>
       <div className="chart-axis">
         <span>NOW</span>
-        <span>{when(12)}</span>
-        <span>{when(24)}</span>
-        <span>{when(36)}</span>
+        {ticks.map((t) => (
+          <span key={t}>{when(t)}</span>
+        ))}
       </div>
       <div className="runway-key">
         <span>
@@ -297,7 +333,26 @@ function Runway({ r }: { r: NonNullable<Sleeve['runway']> }) {
         <span>
           <i className="key-plain" /> AS CASH
         </span>
+        <button className={`runway-toggle ${withEvergreen ? 'on' : ''}`} onClick={() => setWithEvergreen(!withEvergreen)} aria-pressed={withEvergreen}>
+          <i className="key-evergreen" /> {withEvergreen ? '✓' : '+'} EVERGREEN {money(r.evergreen)} / YR · EXPECTED
+        </button>
       </div>
+
+      {refills.length > 0 && (
+        <div className="refills">
+          <div className="label">REFILLS WAITING · AFTER 30% TAX</div>
+          {refills.map((x) => (
+            <div key={x.label} className={`refill ${x.months <= 0 ? 'past' : ''}`}>
+              <span>{x.label}</span>
+              <span>+{money(x.net)}</span>
+              <span>
+                {x.months > 0 ? `+${x.months.toFixed(1)} MO` : 'TO DIVERSIFIED'}
+                {x.full && <b> · BACK TO 30</b>}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

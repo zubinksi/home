@@ -54,7 +54,19 @@ export interface Sleeve {
   /** The asset whose price history feeds this sleeve's 1D / 1W / 1M / 3M row. */
   asset?: Asset;
   /** Fortress: what the runway chart needs. */
-  runway?: { balance: number; burn: number; idle: number; yield: number; target: number; floor: number };
+  runway?: {
+    balance: number;
+    burn: number;
+    idle: number;
+    yield: number;
+    target: number;
+    floor: number;
+    /** expected Evergreen distributions, $ / year (irregular; shown only when asked for) */
+    evergreen: number;
+    /** sales that would refill the Fortress, gross $, in the order they'd happen */
+    refills: { label: string; gross: number }[];
+    tax: number;
+  };
   policy: string[];
   module?: Module;
 }
@@ -365,6 +377,12 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         yield: fortressYield,
         target: RULES.fortressTargetMonths * burn,
         floor: RULES.austerityMonths * burn,
+        evergreen: household.evergreenIncome,
+        refills: [
+          ...(zecTrimTokens > 0 ? [{ label: `ZEC TRIM · ${num(zecTrimTokens)}`, gross: zecTrimTokens * h.zec.price }] : []),
+          ...LADDER.slice(h.hype.rungsSold).map((r) => ({ label: `HYPE $${r.price} RUNG · ${num(r.tokens)}`, gross: r.price * r.tokens })),
+        ],
+        tax: RULES.taxSetAside,
       },
       policy: [
         'Target: 30 months of expenses, held in T-bills or SGOV — not idle cash. All spending comes out of here.',
