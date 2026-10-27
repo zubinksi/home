@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Ask, type ChatTurn } from './Ask';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
@@ -34,7 +33,6 @@ export function App() {
   const narrow = useNarrow();
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
-  const [chat, setChat] = useState<ChatTurn[]>([]);
   const sleevesRef = useRef<HTMLElement>(null);
 
   // ── phones: the list is the home view; a row opens its detail as its own page
@@ -230,17 +228,6 @@ export function App() {
           </div>
         </section>
       </main>
-      )}
-      {tab === 'ask' && (
-        <main className="body">
-          <section className="slab ask-page">
-            <div className="detail">
-              <ErrorBoundary resetKey="ask">
-                <Ask chat={chat} setChat={setChat} live={market.live} />
-              </ErrorBoundary>
-            </div>
-          </section>
-        </main>
       )}
       </div>
     </>

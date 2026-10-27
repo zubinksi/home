@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
   { id: 'projects', label: 'PROJECTS' },
-  { id: 'ask', label: 'POLICY' },
+  // { id: 'ask', label: 'POLICY' }, // off for now; the page lives in src/Ask.tsx
 ] as const;
 
 export type TabId = (typeof TABS)[number]['id'];
