@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import irisUrl from './assets/iris.png';
 
 // A household gate, not real security: the code and the data both ship in the
@@ -62,21 +62,82 @@ export function LockButton() {
   );
 }
 
+/** The door lock's size relative to the masthead's (matches .gate-lock in styles.css). */
+const GATE_LOCK_SCALE = 1.25;
+
+type LockState = 'locked' | 'wrong' | 'open';
+
+/**
+ * The masthead's bronze lock, at the door. The code's digits sit engraved in
+ * a long channel; the knob rests locked at the right end and, on the right
+ * code, rolls back across them to open.
+ */
+function GateLock({ state, entered }: { state: LockState; entered: number }) {
+  return (
+    <span className={`lock-track gate-track is-${state}`} aria-hidden>
+      <svg className="lock-icon lock-icon-closed" viewBox="0 0 12 14">
+        <path d="M3.5 6.5V4.5a2.5 2.5 0 0 1 5 0v2" />
+        <rect x="2" y="6.5" width="8" height="6" rx="1.2" />
+      </svg>
+      <svg className="lock-icon lock-icon-open" viewBox="0 0 12 14">
+        <path d="M3.5 6.5V4.5a2.5 2.5 0 0 1 5 0" />
+        <rect x="2" y="6.5" width="8" height="6" rx="1.2" />
+      </svg>
+      <span className="gate-pips">
+        {Array.from({ length: LEN }, (_, i) => (
+          <span key={i} className={`gate-pip ${i < entered ? 'filled' : ''}`} />
+        ))}
+      </span>
+      <span className="lock-knob" />
+    </span>
+  );
+}
+
+/**
+ * The opened lock lifting off the card and settling into its place in the
+ * masthead, so locking and unlocking are visibly the same lock.
+ */
+function FlyingLock({ from }: { from: DOMRect }) {
+  const [to, setTo] = useState<DOMRect | null>(null);
+  useLayoutEffect(() => {
+    const target = document.querySelector('.mast-lock .lock-track');
+    if (!target) return;
+    const r = target.getBoundingClientRect();
+    // a frame at the start position first, so the move transitions
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setTo(r)));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  const css: CSSProperties = {
+    left: from.left,
+    top: from.top,
+    transform: to ? `translate(${to.left - from.left}px, ${to.top - from.top}px)` : `scale(${GATE_LOCK_SCALE})`,
+  };
+  return (
+    <span className={`gate-flight ${to ? 'is-landing' : ''}`} style={css}>
+      <GateLock state="open" entered={LEN} />
+    </span>
+  );
+}
+
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const;
 
 export function Gate({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(wasUnlocked);
   const [entry, setEntry] = useState('');
   const [wrong, setWrong] = useState(false);
+  // the lock turns, then lifts into the masthead while the card fades
+  const [handoff, setHandoff] = useState<DOMRect | null>(null);
+  const lockRef = useRef<HTMLDivElement>(null);
+  const opening = entry === CODE;
 
   const press = useCallback(
     (k: string) => {
-      if (wrong) return;
+      if (wrong || opening) return;
       if (k === 'clear') return setEntry('');
       if (k === 'back') return setEntry((e) => e.slice(0, -1));
       setEntry((e) => (e.length < LEN ? e + k : e));
     },
-    [wrong],
+    [wrong, opening],
   );
 
   // check once the last digit is in
@@ -84,7 +145,8 @@ export function Gate({ children }: { children: ReactNode }) {
     if (entry.length < LEN) return;
     if (entry === CODE) {
       remember(true);
-      const t = setTimeout(() => setUnlocked(true), 160);
+      // let the knob turn open, then hand the lock to the masthead
+      const t = setTimeout(() => setHandoff(lockRef.current!.querySelector('.lock-track')!.getBoundingClientRect()), 620);
       return () => clearTimeout(t);
     }
     setWrong(true);
@@ -106,6 +168,16 @@ export function Gate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [unlocked, press]);
 
+  // once the lock has landed, the site is simply unlocked
+  useEffect(() => {
+    if (!handoff) return;
+    const t = setTimeout(() => {
+      setUnlocked(true);
+      setHandoff(null);
+    }, 720);
+    return () => clearTimeout(t);
+  }, [handoff]);
+
   const lock = useCallback(() => {
     remember(false);
     setEntry('');
@@ -113,11 +185,10 @@ export function Gate({ children }: { children: ReactNode }) {
     setUnlocked(false);
   }, []);
 
-  if (unlocked) return <LockContext.Provider value={lock}>{children}</LockContext.Provider>;
-
-  const done = entry === CODE;
-  return (
-    <div className="gate">
+  const done = opening;
+  const lockState: LockState = wrong ? 'wrong' : done ? 'open' : 'locked';
+  const card = (
+    <div className={`gate ${handoff ? 'gate-leaving' : ''}`}>
       <div className="gate-card">
         <div className="gate-mast">
           <img className="gate-iris" src={irisUrl} alt="" />
@@ -132,10 +203,13 @@ export function Gate({ children }: { children: ReactNode }) {
           {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
         </div>
 
-        <div className={`gate-slots ${wrong ? 'shake' : ''}`} role="img" aria-label={`${entry.length} of ${LEN} digits entered`}>
-          {Array.from({ length: LEN }, (_, i) => (
-            <span key={i} className={`gate-slot ${i < entry.length ? 'filled' : ''} ${wrong ? 'wrong' : ''} ${done ? 'done' : ''}`} />
-          ))}
+        <div
+          className={`gate-lock ${wrong ? 'shake' : ''} ${handoff ? 'is-gone' : ''}`}
+          ref={lockRef}
+          role="img"
+          aria-label={`${entry.length} of ${LEN} digits entered`}
+        >
+          <GateLock state={lockState} entered={entry.length} />
         </div>
 
         <div className="keypad">
@@ -152,5 +226,16 @@ export function Gate({ children }: { children: ReactNode }) {
         </div>
       </div>
     </div>
+  );
+
+  if (!unlocked && !handoff) return card;
+  // during the handoff the site is already there beneath; the card fades off
+  // it as the lock flies up (same tree either way, so the site doesn't remount)
+  return (
+    <>
+      <LockContext.Provider value={lock}>{children}</LockContext.Provider>
+      {handoff && card}
+      {handoff && <FlyingLock from={handoff} />}
+    </>
   );
 }
