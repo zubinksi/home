@@ -231,7 +231,7 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
     return { label: x.label, net, months: net / r.burn };
   });
 
-  const covered = r.balance / r.burn;
+  const covered = r.months;
   const target = r.target / r.burn;
   const floor = r.floor / r.burn;
   const MAX = 36;
@@ -404,6 +404,7 @@ function Periods({ periods }: { periods: Model['periods'] }) {
 
 export function TotalDetail({ model }: { model: Model }) {
   const [scrub, setScrub] = useState<{ date: string; total: number } | null>(null);
+  // the same coverage figure as the Fortress page
   const months = model.fortressMonths;
   const scale = (m: number) => `${(Math.min(m, RULES.gaugeMax) / RULES.gaugeMax) * 100}%`;
   return (
@@ -436,7 +437,7 @@ export function TotalDetail({ model }: { model: Model }) {
         <div className="card">
           <div className="label">MONTHS COVERED</div>
           <div className="card-v">
-            {Math.floor(months)} <span className="card-of">OF {RULES.fortressTargetMonths}</span>
+            {months.toFixed(1)} <span className="card-of">OF {RULES.fortressTargetMonths}</span>
           </div>
           <div className="mini-gauge" title={`Austerity below ${RULES.austerityMonths} months`}>
             <span className="mini-fill" style={{ width: scale(months) }} />

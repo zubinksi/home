@@ -56,6 +56,8 @@ export interface Sleeve {
   /** Fortress: what the runway chart needs. */
   runway?: {
     balance: number;
+    /** months of expenses covered: the one figure the Fortress and Total pages both show */
+    months: number;
     burn: number;
     idle: number;
     yield: number;
@@ -262,7 +264,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       sleeve: 'FORTRESS',
       action: `Refill the Fortress to ${RULES.fortressTargetMonths} months`,
       amount: toFortress,
-      why: `The Fortress covers ${Math.floor(fortressMonths)} months. Refill from what is up, HYPE proceeds first.`,
+      why: `The Fortress covers ${fortressMonths.toFixed(1)} months. Refill from what is up, HYPE proceeds first.`,
     });
   // rounding up whole tokens leaves a few dollars over; only a real surplus goes on
   if (toDiversified >= 1_000)
@@ -361,13 +363,13 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       pct: share(h.fortress.value),
       roleTitle: 'Cash and T-bills — 30 months of bills, no matter what',
       status: fortressStatus,
-      alloc: `${Math.floor(fortressMonths)} MO · TARGET ${RULES.fortressTargetMonths}`,
+      alloc: `${fortressMonths.toFixed(1)} MO · TARGET ${RULES.fortressTargetMonths}`,
       cap: { cap: RULES.fortressTargetMonths, kind: 'target' },
       kv: [
         { k: 'BURN', v: money(burn), d: `PER MONTH · ${money(household.annualSpend)} / YR` },
         {
           k: 'COVERAGE',
-          v: `${Math.floor(fortressMonths)} MO`,
+          v: `${fortressMonths.toFixed(1)} MO`,
           d: fortressStatus === 'green' ? 'AT TARGET' : fortressStatus === 'amber' ? 'REFILL THIS QUARTER' : 'AUSTERITY MODE',
           dc: fortressStatus,
         },
@@ -380,6 +382,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       ],
       runway: {
         balance: h.fortress.value,
+        months: fortressMonths,
         burn,
         idle: h.fortress.idleCash ?? 10_000,
         yield: fortressYield,
