@@ -66,7 +66,7 @@ export const fortressIdleCash: number | null = 82_000; // ~40% of the $205K isn'
 export const evergreenReceived: { date: string; amount: number }[] = [];
 
 /** What T-bills / SGOV pay, for the Fortress yield bar (an estimate; update as rates move). */
-export const fortressYield = 0.04;
+export const fortressYield = 0.045;
 
 /** Number of positions in the flexible / Equities bucket. */
 export const equityPositions: number | null = null;

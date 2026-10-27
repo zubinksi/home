@@ -220,6 +220,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
  */
 function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   const invested = Math.max(0, r.balance - r.idle);
+  const share = r.balance ? invested / r.balance : 0;
   const tilde = r.idleKnown ? '' : '~';
 
   // refills waiting: each sale's after-tax proceeds go to the Fortress until it's
@@ -243,8 +244,7 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
 
   return (
     <>
-      {/* one bar: months covered, split into what's earning and what's idle, with
-          expected Evergreen hatched beyond, against austerity and the target */}
+      {/* months covered, against austerity and the target */}
       <div className="module">
         <div className="label">MONTHS OF EXPENSES COVERED</div>
         <div className="gauge-big">
@@ -268,26 +268,35 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
         </div>
       </div>
 
-      {/* where the cash sits, and what it earns */}
+      {/* where the cash sits, and what it earns: one line per place, the bar
+          showing its share; the rate and what moving idle cash would add sit in
+          the heading */}
       <div className="refills cash-split">
-        <div className="label">WHERE IT SITS</div>
+        <div className="module-head">
+          <span className="label">WHERE IT SITS · {(r.yield * 100).toFixed(1)}%</span>
+          {r.idle > 0 && <span className="label warn">IF MOVED +{money(r.idle * r.yield)} / YR</span>}
+        </div>
         <div className="refill">
-          <span>IN T-BILLS · {Math.round((invested / (r.balance || 1)) * 100)}%</span>
+          <span>T-BILLS</span>
+          <span className="split-bar">
+            <span style={{ width: `${share * 100}%` }} />
+          </span>
           <span>
             {tilde}
             {money(invested)}
           </span>
-          <span>
-            EARNING {money(invested * r.yield)} / YR AT {(r.yield * 100).toFixed(1)}%
-          </span>
+          <span className="gain">{money(invested * r.yield)} / YR</span>
         </div>
         <div className="refill">
-          <span>IDLE CASH · {Math.round((r.idle / (r.balance || 1)) * 100)}%</span>
+          <span>IDLE</span>
+          <span className="split-bar idle">
+            <span style={{ width: `${(1 - share) * 100}%` }} />
+          </span>
           <span>
             {tilde}
             {money(r.idle)}
           </span>
-          <span>{r.idle > 0 ? <b className="warn">+{money(r.idle * r.yield)} / YR IF MOVED</b> : 'NONE'}</span>
+          <span className="warn">$0 / YR</span>
         </div>
       </div>
 
