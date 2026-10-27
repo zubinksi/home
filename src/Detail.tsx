@@ -226,12 +226,12 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   // back at 30 months, then on to Diversified (§2); listed until it's full again,
   // plus the first that would go on to Diversified
   let gap = Math.max(0, r.target - r.balance);
-  const refills: { label: string; net: number; months: number; full: boolean }[] = [];
+  const refills: { label: string; net: number; months: number }[] = [];
   for (const x of r.refills) {
     const net = x.gross * (1 - r.tax);
     const toFortress = Math.min(net, gap);
     gap -= toFortress;
-    refills.push({ label: x.label, net, months: toFortress / r.burn, full: toFortress > 0 && gap <= 0 });
+    refills.push({ label: x.label, net, months: toFortress / r.burn });
     if (toFortress <= 0) break;
   }
 
@@ -293,15 +293,12 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
 
       {refills.length > 0 && (
         <div className="refills">
-          <div className="label">REFILLS WAITING · AFTER 30% TAX</div>
+          <div className="label">REFILLS WAITING · AFTER TAX</div>
           {refills.map((x) => (
             <div key={x.label} className={`refill ${x.months <= 0 ? 'past' : ''}`}>
               <span>{x.label}</span>
               <span>+{money(x.net)}</span>
-              <span>
-                {x.months > 0 ? `+${x.months.toFixed(1)} MO` : 'TO DIVERSIFIED'}
-                {x.full && <b> · BACK TO 30</b>}
-              </span>
+              <span className={x.months > 0 ? 'gain' : undefined}>{x.months > 0 ? `+${x.months.toFixed(1)} MO` : 'TO DIVERSIFIED'}</span>
             </div>
           ))}
         </div>
