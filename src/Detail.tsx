@@ -206,7 +206,8 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         </>
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
-      {s.key === 'ZEC' && <ZecBtc history={market.zecBtc} />}
+      {s.key === 'ZEC' && <PriceChart title="ZEC / BTC" history={market.zecBtc} show={90} averages={ZEC_AVERAGES} fmt={(v) => `${v.toFixed(3)} BTC`} />}
+      {s.key === 'HYPE' && <PriceChart title="HYPE" history={market.hypeLong} show={180} averages={HYPE_AVERAGES} fmt={priceFmt} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
@@ -310,58 +311,81 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   );
 }
 
+/** Simple moving average over `n` days; null until there are `n` days. */
+function movingAverage(h: [string, number][], n: number) {
+  let sum = 0;
+  return h.map(([, v], i) => {
+    sum += v;
+    if (i >= n) sum -= h[i - n][1];
+    return i + 1 >= n ? sum / n : null;
+  });
+}
+
+const MA_COLORS: Record<number, string> = { 20: '--accent', 100: '--iris' };
+
 /**
- * ZEC priced in bitcoin over the last 90 days, with its 20-day moving average:
- * is ZEC gaining or losing ground against crypto as a whole?
+ * A daily price line with moving averages over it, for the last `show` days.
+ * The history passed in reaches back far enough that each average is whole
+ * from the first day shown.
  */
-function ZecBtc({ history }: { history?: [string, number][] }) {
+function PriceChart({
+  title,
+  history,
+  show,
+  averages,
+  fmt,
+}: {
+  title: string;
+  history?: [string, number][];
+  show: number;
+  averages: number[];
+  fmt: (v: number) => string;
+}) {
   const [scrub, setScrub] = useState<number>(-1);
-  const SHOW = 90;
-  const AVG = 20;
-  const { points, avg } = useMemo(() => {
+  const { points, overlays } = useMemo(() => {
     const h = history ?? [];
-    const ma = h.map((_, i) => (i + 1 >= AVG ? h.slice(i + 1 - AVG, i + 1).reduce((t, [, v]) => t + v, 0) / AVG : null));
-    const from = Math.max(0, h.length - SHOW);
+    const from = Math.max(0, h.length - show);
     return {
       points: h.slice(from).map(([date, total]) => ({ date, total })),
-      avg: ma.slice(from),
+      overlays: averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
     };
-  }, [history]);
+  }, [history, show, averages]);
   if (points.length < 2) {
     return (
       <div className="module">
         <div className="module-head">
-          <span className="label">ZEC / BTC</span>
+          <span className="label">{title}</span>
         </div>
-        <div className="module-note">The ZEC / BTC price isn’t available right now.</div>
+        <div className="module-note">The {title} price history isn’t available right now.</div>
       </div>
     );
   }
-  const fmt = (v: number) => v.toFixed(3);
   const i = scrub >= 0 ? scrub : points.length - 1;
-  const now = points[i].total;
   return (
     <div className="module">
       <div className="module-head">
-        <span className="label">
-          {scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : 'ZEC / BTC'}
-        </span>
+        <span className="label">{scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : title}</span>
         <span className="label zecbtc-now">
-          <b>{fmt(now)} BTC</b>
+          <b>{fmt(points[i].total)}</b>
         </span>
       </div>
-      <Chart points={points} overlay={avg} onScrub={(_, at) => setScrub(at)} />
+      <Chart points={points} overlays={overlays} onScrub={(_, at) => setScrub(at)} />
       <div className="runway-key">
         <span>
-          <i className="key-earning" /> ZEC IN BTC
+          <i className="key-earning" /> {title}
         </span>
-        <span>
-          <i className="key-avg" /> 20-DAY AVERAGE
-        </span>
+        {averages.map((n) => (
+          <span key={n}>
+            <i className={`key-avg ma-${n}`} /> {n}-DAY AVERAGE
+          </span>
+        ))}
       </div>
     </div>
   );
 }
+
+const ZEC_AVERAGES = [20];
+const HYPE_AVERAGES = [20, 100];
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
 function Periods({ periods }: { periods: Model['periods'] }) {

@@ -1725,13 +1725,16 @@ p {
   }
 }
 
-/* ZEC / BTC chart */
+/* price charts with moving averages (HYPE, ZEC / BTC) */
 .zecbtc-now b {
   font-weight: 500;
   color: var(--ink);
 }
 .runway-key i.key-avg {
   border-top: 1.25px solid var(--accent);
+}
+.runway-key i.key-avg.ma-100 {
+  border-top-color: var(--iris);
 }
 
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */

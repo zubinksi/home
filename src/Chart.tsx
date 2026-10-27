@@ -12,9 +12,11 @@ function axisLabels<T>(points: T[]): T[] {
 type Point = { date: string; total: number };
 
 /** Where each point sits on a canvas of the given size. */
-function geometry(points: Point[], width: number, height: number, overlay: (number | null)[] = []) {
+export type Overlay = { values: (number | null)[]; color: string };
+
+function geometry(points: Point[], width: number, height: number, overlays: Overlay[] = []) {
   const vals = points.map((p) => p.total);
-  const all = [...vals, ...overlay.filter((v): v is number => v != null)];
+  const all = [...vals, ...overlays.flatMap((o) => o.values.filter((v): v is number => v != null))];
   let lo = Math.min(...all);
   let hi = Math.max(...all);
   if (hi === lo) {
@@ -36,19 +38,19 @@ function geometry(points: Point[], width: number, height: number, overlay: (numb
  */
 export function Chart({
   points,
-  overlay,
+  overlays,
   onScrub,
 }: {
   points: Point[];
-  /** a second line on the same scale, one value per point (e.g. a moving average) */
-  overlay?: (number | null)[];
+  /** more lines on the same scale, one value per point (e.g. moving averages); colour is a CSS variable */
+  overlays?: Overlay[];
   onScrub?: (p: Point | null, i: number) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
   const [scrub, setScrub] = useState<number | null>(null);
   const light = useLamplight();
-  const g = useMemo(() => geometry(points, width, HEIGHT, overlay), [points, width, HEIGHT, overlay]);
+  const g = useMemo(() => geometry(points, width, HEIGHT, overlays), [points, width, HEIGHT, overlays]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
   useEffect(() => {
@@ -137,13 +139,13 @@ export function Chart({
     ctx.arc(x(points.length - 1), y(vals[vals.length - 1]), 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // overlay line (e.g. a moving average) in the accent colour
-    if (overlay?.some((v) => v != null)) {
-      ctx.strokeStyle = css.getPropertyValue('--accent').trim();
+    // overlay lines (e.g. moving averages)
+    for (const o of overlays ?? []) {
+      ctx.strokeStyle = css.getPropertyValue(o.color).trim();
       ctx.lineWidth = 1.25;
       ctx.beginPath();
       let started = false;
-      overlay.forEach((v, i) => {
+      o.values.forEach((v, i) => {
         if (v == null) return;
         if (started) ctx.lineTo(x(i), y(v));
         else ctx.moveTo(x(i), y(v));
@@ -151,7 +153,7 @@ export function Chart({
       });
       ctx.stroke();
     }
-  }, [width, HEIGHT, points, overlay, g, light]);
+  }, [width, HEIGHT, points, overlays, g, light]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);
