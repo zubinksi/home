@@ -331,7 +331,7 @@ function ZecBtc({ history }: { history?: [string, number][] }) {
     return (
       <div className="module">
         <div className="module-head">
-          <span className="label">ZEC / BTC · DAILY</span>
+          <span className="label">ZEC / BTC</span>
         </div>
         <div className="module-note">The ZEC / BTC price isn’t available right now.</div>
       </div>
@@ -340,22 +340,14 @@ function ZecBtc({ history }: { history?: [string, number][] }) {
   const fmt = (v: number) => v.toFixed(3);
   const i = scrub >= 0 ? scrub : points.length - 1;
   const now = points[i].total;
-  const ma = avg[i];
-  const vsAvg = ma ? now / ma - 1 : null;
   return (
     <div className="module">
       <div className="module-head">
         <span className="label">
-          {scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : 'ZEC / BTC · DAILY'}
+          {scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : 'ZEC / BTC'}
         </span>
         <span className="label zecbtc-now">
           <b>{fmt(now)} BTC</b>
-          {vsAvg != null && (
-            <span style={{ color: STATUS_COLOR[vsAvg >= 0 ? 'green' : 'red'] }}>
-              {' · '}
-              {(Math.abs(vsAvg) * 100).toFixed(1)}% {vsAvg >= 0 ? 'ABOVE' : 'BELOW'} 20D
-            </span>
-          )}
         </span>
       </div>
       <Chart points={points} overlay={avg} onScrub={(_, at) => setScrub(at)} />
