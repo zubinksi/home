@@ -12,13 +12,22 @@ function axisLabels<T>(points: T[]): T[] {
 type Point = { date: string; total: number };
 
 /** Where each point sits on a canvas of the given size. */
-export type Overlay = { values: (number | null)[]; color: string };
+export type Overlay = {
+  values: (number | null)[];
+  color: string;
+  /** dashed, for a fixed level rather than a line through time */
+  dashed?: boolean;
+  /** written at the right-hand end of the line */
+  label?: string;
+};
 
 function geometry(points: Point[], width: number, height: number, overlays: Overlay[] = []) {
   const vals = points.map((p) => p.total);
   const all = [...vals, ...overlays.flatMap((o) => o.values.filter((v): v is number => v != null))];
   let lo = Math.min(...all);
   let hi = Math.max(...all);
+  // room above the top line for its label
+  if (overlays.some((o) => o.label)) hi += (hi - lo) * 0.1;
   if (hi === lo) {
     lo *= 0.9;
     hi *= 1.05;
@@ -141,8 +150,10 @@ export function Chart({
 
     // overlay lines (e.g. moving averages)
     for (const o of overlays ?? []) {
-      ctx.strokeStyle = css.getPropertyValue(o.color).trim();
-      ctx.lineWidth = 1.25;
+      const color = css.getPropertyValue(o.color).trim();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = o.dashed ? 1 : 1.25;
+      ctx.setLineDash(o.dashed ? [4, 3] : []);
       ctx.beginPath();
       let started = false;
       o.values.forEach((v, i) => {
@@ -152,6 +163,15 @@ export function Chart({
         started = true;
       });
       ctx.stroke();
+      ctx.setLineDash([]);
+      const last = o.values[o.values.length - 1];
+      if (o.label && last != null) {
+        ctx.font = `400 ${Math.round(10 * (parseFloat(getComputedStyle(document.documentElement).fontSize) / 16) + 1)}px ${css.getPropertyValue('--mono')}`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = color;
+        ctx.fillText(o.label, width - pad, y(last) - 3);
+      }
     }
   }, [width, HEIGHT, points, overlays, g, light]);
 

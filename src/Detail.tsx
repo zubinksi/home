@@ -183,6 +183,7 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 }
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
+  const levels = useMemo(() => rungLevels(s), [s]);
   return (
     <>
       <div className="d-title">
@@ -207,7 +208,9 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <PriceChart title="ZEC / BTC" history={market.zecBtc} show={90} averages={ZEC_AVERAGES} fmt={(v) => `${v.toFixed(3)} BTC`} />}
-      {s.key === 'HYPE' && <PriceChart title="HYPE" history={market.hypeLong} show={180} averages={HYPE_AVERAGES} fmt={priceFmt} />}
+      {s.key === 'HYPE' && (
+        <PriceChart title="HYPE" history={market.hypeLong} show={180} averages={NO_AVERAGES} levels={levels} fmt={priceFmt} />
+      )}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
@@ -332,12 +335,15 @@ function PriceChart({
   history,
   show,
   averages,
+  levels = [],
   fmt,
 }: {
   title: string;
   history?: [string, number][];
   show: number;
   averages: number[];
+  /** fixed price levels drawn across the chart, e.g. the sell rungs */
+  levels?: { price: number; label: string; next?: boolean }[];
   fmt: (v: number) => string;
 }) {
   const [scrub, setScrub] = useState<number>(-1);
@@ -346,9 +352,17 @@ function PriceChart({
     const from = Math.max(0, h.length - show);
     return {
       points: h.slice(from).map(([date, total]) => ({ date, total })),
-      overlays: averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
+      overlays: [
+        ...averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
+        ...levels.map((l) => ({
+          values: h.slice(from).map(() => l.price),
+          color: l.next ? '--accent' : '--muted',
+          dashed: true,
+          label: l.label,
+        })),
+      ],
     };
-  }, [history, show, averages]);
+  }, [history, show, averages, levels]);
   if (points.length < 2) {
     return (
       <div className="module">
@@ -378,13 +392,25 @@ function PriceChart({
             <i className={`key-avg ma-${n}`} /> {n}-DAY AVERAGE
           </span>
         ))}
+        {levels.length > 0 && (
+          <span>
+            <i className="key-level" /> SELL RUNGS
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
 const ZEC_AVERAGES = [20];
-const HYPE_AVERAGES = [100];
+const NO_AVERAGES: number[] = [];
+
+/** The next few unsold sell rungs, as price levels for the HYPE chart. */
+function rungLevels(s: Sleeve) {
+  if (s.module?.kind !== 'ladder') return [];
+  const { rungs, sold, next } = s.module;
+  return rungs.slice(sold, sold + 3).map((r, i) => ({ price: r.price, label: `$${r.price} · ${num(r.tokens)}`, next: sold + i === next }));
+}
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
 function Periods({ periods }: { periods: Model['periods'] }) {

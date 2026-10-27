@@ -1737,6 +1737,9 @@ p {
 .runway-key i.key-avg.ma-100 {
   border-top-color: var(--iris);
 }
+.runway-key i.key-level {
+  border-top: 1px dashed var(--accent);
+}
 
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
 .cash-split .module-head {
