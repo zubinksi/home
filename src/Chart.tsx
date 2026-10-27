@@ -155,13 +155,20 @@ export function Chart({
       ctx.lineWidth = o.dashed ? 1 : 1.25;
       ctx.setLineDash(o.dashed ? [4, 3] : []);
       ctx.beginPath();
-      let started = false;
-      o.values.forEach((v, i) => {
-        if (v == null) return;
-        if (started) ctx.lineTo(x(i), y(v));
-        else ctx.moveTo(x(i), y(v));
-        started = true;
-      });
+      const flat = o.label != null && o.values.every((v) => v === o.values[0]);
+      if (flat && o.values[0] != null) {
+        // a price level spans the full width, flush with the panel edges
+        ctx.moveTo(0, y(o.values[0]));
+        ctx.lineTo(width, y(o.values[0]));
+      } else {
+        let started = false;
+        o.values.forEach((v, i) => {
+          if (v == null) return;
+          if (started) ctx.lineTo(x(i), y(v));
+          else ctx.moveTo(x(i), y(v));
+          started = true;
+        });
+      }
       ctx.stroke();
       ctx.setLineDash([]);
       const last = o.values[o.values.length - 1];
@@ -170,7 +177,7 @@ export function Chart({
         ctx.textAlign = 'right';
         ctx.textBaseline = 'bottom';
         ctx.fillStyle = color;
-        ctx.fillText(o.label, width - pad, y(last) - 3);
+        ctx.fillText(o.label, flat ? width : width - pad, y(last) - 3);
       }
     }
   }, [width, HEIGHT, points, overlays, g, light]);
