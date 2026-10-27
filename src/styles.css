@@ -1388,18 +1388,6 @@ p {
 .mnav-back span {
   font-size: 1rem;
 }
-.mnav-step {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.mnav-step button {
-  width: 2.25rem;
-  height: 2.25rem;
-  text-align: center;
-  font-size: 1.25rem;
-  color: var(--accent-ink);
-}
 @keyframes slide-from-right {
   from { transform: translateX(100%); opacity: 0.4; }
 }
@@ -1444,28 +1432,6 @@ p {
 }
 .period + .period {
   border-left: 1px solid var(--b1);
-}
-.period-since {
-  white-space: nowrap;
-}
-.period-since-dash {
-  display: none;
-}
-@media (max-width: 860px) {
-  /* not enough room beside 3M on a phone; it moves under the label */
-  .period-since {
-    display: block;
-    margin-top: 0.125rem;
-  }
-  .period-since-word {
-    display: none;
-  }
-  .period-since-dash {
-    display: inline;
-  }
-  .period-sep {
-    display: none;
-  }
 }
 .period-v {
   font-family: var(--mono);
@@ -1627,4 +1593,48 @@ p {
   .side-foot {
     padding-top: 0.5rem;
   }
+}
+
+/* TOTAL's 90-day change sits under the total, on the right */
+.side-sub.total-sub {
+  padding-left: 0;
+  text-align: right;
+  margin-top: 0.125rem;
+}
+/* the chart's header line is empty until you scrub */
+.chart-head {
+  min-height: 0.875rem;
+  justify-content: flex-end;
+}
+
+/* Net Draw and Months Covered side by side */
+.cards.cards-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.card-of {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.mini-gauge {
+  position: relative;
+  height: 0.3125rem;
+  margin-top: auto;
+  background: var(--b2);
+}
+.mini-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+}
+.mini-tick {
+  position: absolute;
+  top: -0.1875rem;
+  bottom: -0.1875rem;
+  width: 0.125rem;
+  margin-left: -1px;
+  background: var(--ink);
+}
+.mini-tick.floor {
+  background: var(--red);
 }

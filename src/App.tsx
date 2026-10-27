@@ -178,7 +178,7 @@ export function App() {
                 <span />
                 <span className="side-amt">{compact(model.total)}</span>
               </button>
-              <div className="side-sub">{model.totalSub}</div>
+              <div className="side-sub total-sub">{model.totalSub}</div>
               <div className="side-rule" />
 
               {model.sleeves.map((s, i) => (
@@ -210,10 +210,10 @@ export function App() {
 
             {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
-              {narrow && <MobileNav onBack={drill.back} position={drill.position} onStep={drill.step} />}
+              {narrow && <MobileNav onBack={drill.back} />}
               <ErrorBoundary resetKey={sel}>
               {sel === SEL_TOTAL && (
-                <TotalDetail model={model} market={market} />
+                <TotalDetail model={model} />
               )}
               {selected && <Detail key={selected.key} sleeve={selected} />}
               {sel === SEL_ITEMS && (

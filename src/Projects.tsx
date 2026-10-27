@@ -241,7 +241,7 @@ export function Projects(props: {
 
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
-              {props.narrow && <MobileNav onBack={drill.back} position={drill.position} onStep={drill.step} />}
+              {props.narrow && <MobileNav onBack={drill.back} />}
               {area && <AreaDetail area={area} showOptional={showOptional} />}
             </div>
           )}

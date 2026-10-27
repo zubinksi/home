@@ -105,6 +105,7 @@ export const RULES = {
   taxSetAside: 0.3,
   hypeFloor: 40,
   hypeKeep: 650,
+  gaugeMax: 36, // months shown on the Fortress gauges
 };
 
 export const LADDER: Rung[] = [
@@ -340,7 +341,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         'If nothing is up and the Fortress falls below 18 months: austerity mode. Spending drops to $75k / year; we do not sell into a crash.',
         'Never prepay the mortgage from the Fortress.',
       ],
-      module: { kind: 'gauge', now: fortressMonths, target: RULES.fortressTargetMonths, floor: RULES.austerityMonths, max: 36 },
+      module: { kind: 'gauge', now: fortressMonths, target: RULES.fortressTargetMonths, floor: RULES.austerityMonths, max: RULES.gaugeMax },
     },
     {
       key: 'ZEC',
@@ -427,13 +428,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   // ── TOTAL
   // With live prices the baseline is the market series' first day; otherwise
   // the review snapshots as entered.
-  const today = isoDay(new Date());
   const marketLine = series && series.length >= 2 ? series : null;
   const history = marketLine ?? snapshots;
   const first = history[0];
-  const sinceFirst = total / first.total - 1;
+  const ninety = trailingChange(history, 90, total);
   const netDraw = household.annualSpend - household.evergreenIncome;
-  const months = Math.max(0, monthsBetween(first.date, marketLine ? today : reviewDate));
 
   const totalCards: KV[] = [{ k: 'NET DRAW', v: pct(netDraw / total, 1), d: `${money(netDraw)} / YR FROM PORTFOLIO` }];
 
@@ -441,12 +440,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
     sleeves,
     total,
     totalCards,
+    // the trailing 90 days; until the line is 90 days long, since it began (Aug 1)
     totalSub:
       history.length < 2
         ? `FIRST REVIEW · ${dayMon(first.date)}`
-        : marketLine
-          ? `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · SINCE ${dayMon(first.date)}`
-          : `${sinceFirst >= 0 ? '+' : '−'}${Math.abs(Math.round(sinceFirst * 100))}% · ${months} MONTH${months === 1 ? '' : 'S'}`,
+        : `${ninety >= 0 ? '+' : '−'}${Math.abs(Math.round(ninety * 100))}% · 90D`,
     history,
     // the quarterly-review fallback is too coarse for day/week/month changes
     periods: marketLine ? periodChanges(marketLine) : PERIODS.map(({ label }) => ({ label, change: null as number | null, since: undefined as string | undefined })),
@@ -461,16 +459,25 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   };
 }
 
+/** Change over the last `days` days of a line, or since it began if it's shorter. */
+function trailingChange(history: { date: string; total: number }[], days: number, now: number) {
+  const last = history[history.length - 1];
+  const d = new Date(last.date + 'T00:00:00');
+  d.setDate(d.getDate() - days);
+  const from = isoDay(d);
+  let base = history[0];
+  for (const h of history) {
+    if (h.date > from) break;
+    base = h;
+  }
+  return base.total ? now / base.total - 1 : 0;
+}
+
 /** Local calendar day as YYYY-MM-DD. */
 export function isoDay(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function monthsBetween(a: string, b: string) {
-  const da = new Date(a + 'T00:00:00');
-  const db = new Date(b + 'T00:00:00');
-  return (db.getFullYear() - da.getFullYear()) * 12 + db.getMonth() - da.getMonth();
-}
 
 /** Today, as the masthead shows it: "OCT 21, 2026". */
 export function longDate(d: Date) {

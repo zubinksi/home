@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Chart } from './Chart';
-import type { MarketState } from './prices';
 import {
   compact,
-  dayMon,
   longDate,
   money,
   monYY,
   num,
   priceFmt,
+  RULES,
   STATUS_COLOR,
   type buildSleeves,
   type KV,
@@ -189,35 +188,12 @@ export function Detail({ sleeve: s }: { sleeve: Sleeve }) {
 }
 
 /** Where each price came from, and how fresh it is. */
-function MarketNote({ market }: { market: MarketState }) {
-  const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toUpperCase();
-  const ok = (['hype', 'zec', 'aapl'] as const).some((a) => market.live[a] && !market.problems[a]);
-  return (
-    <div className="market-note chart-title">
-      <span className={`market-dot ${market.at && ok ? 'on' : ''}`} />
-      {market.at ? `LIVE PRICES · ${time(market.at)}` : Object.keys(market.problems).length ? 'PRICES UNAVAILABLE' : 'LOADING PRICES…'}
-    </div>
-  );
-}
-
 function Periods({ periods }: { periods: Model['periods'] }) {
   return (
     <div className="periods">
       {periods.map((p) => (
         <div key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
-          <span className="label">
-            {p.label}
-            {p.since && (
-              <>
-                <span className="period-sep"> · </span>
-                <span className="period-since">
-                  <span className="period-since-word">SINCE </span>
-                  {dayMon(p.since)}
-                  <span className="period-since-dash">–</span>
-                </span>
-              </>
-            )}
-          </span>
+          <span className="label">{p.label}</span>
           <span className="period-v" style={p.change === null ? undefined : { color: STATUS_COLOR[p.change >= 0 ? 'green' : 'red'] }}>
             {p.change === null ? '—' : `${p.change >= 0 ? '+' : '−'}${(Math.abs(p.change) * 100).toFixed(1)}%`}
           </span>
@@ -227,11 +203,10 @@ function Periods({ periods }: { periods: Model['periods'] }) {
   );
 }
 
-export function TotalDetail({ model, market }: { model: Model; market: MarketState }) {
+export function TotalDetail({ model }: { model: Model }) {
   const [scrub, setScrub] = useState<{ date: string; total: number } | null>(null);
-  const values = model.history.map((h) => h.total);
-  const lo = Math.min(...values, model.total);
-  const hi = Math.max(...values, model.total);
+  const months = model.fortressMonths;
+  const scale = (m: number) => `${(Math.min(m, RULES.gaugeMax) / RULES.gaugeMax) * 100}%`;
   return (
     <>
       <div className="d-title">
@@ -239,22 +214,38 @@ export function TotalDetail({ model, market }: { model: Model; market: MarketSta
         <span className="d-amt">${compact(model.total)}</span>
       </div>
       <div className="module">
-        <div className={`module-head ${scrub ? 'is-scrubbing' : ''}`}>
-          <MarketNote market={market} />
-          {scrub ? (
+        {/* while scrubbing, the day's value appears here */}
+        <div className="module-head chart-head">
+          {scrub && (
             <span className="label chart-readout">
               {longDate(new Date(scrub.date + 'T00:00:00'))} · <b>${Math.round(scrub.total).toLocaleString()}</b>
-            </span>
-          ) : (
-            <span className="label">
-              {compact(lo)} — {compact(hi)}
             </span>
           )}
         </div>
         <Chart points={model.history} onScrub={setScrub} />
         <Periods periods={model.periods} />
       </div>
-      <Cards kv={model.totalCards} />
+      <div className="cards cards-two">
+        {model.totalCards.map((c) => (
+          <div key={c.k} className="card">
+            <div className="label">{c.k}</div>
+            <div className="card-v">{c.v}</div>
+            {c.d && <div className="card-d">{c.d}</div>}
+          </div>
+        ))}
+        {/* a simplified Fortress gauge: months covered against the 30-month target */}
+        <div className="card">
+          <div className="label">MONTHS COVERED</div>
+          <div className="card-v">
+            {Math.floor(months)} <span className="card-of">OF {RULES.fortressTargetMonths}</span>
+          </div>
+          <div className="mini-gauge" title={`Austerity below ${RULES.austerityMonths} months`}>
+            <span className="mini-fill" style={{ width: scale(months) }} />
+            <span className="mini-tick floor" style={{ left: scale(RULES.austerityMonths) }} />
+            <span className="mini-tick" style={{ left: scale(RULES.fortressTargetMonths) }} />
+          </div>
+        </div>
+      </div>
     </>
   );
 }
