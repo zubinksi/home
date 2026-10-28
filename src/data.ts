@@ -22,7 +22,7 @@ export interface Review {
   hype: { tokens: number; price: number };
   zec: { tokens: number; price: number };
   aapl: { shares: number; price: number };
-  equities: number; // flexible bucket: seeds Diversified; Equities bets live here too
+  equities: number; // the Equities positions (see equityPositions)
   cash: number; // the Fortress
   diversified: { voo: number; vxus: number; avuv: number };
 }
@@ -103,9 +103,7 @@ export const items: Record<string, { text: string; when: When }[]> = {
     { text: 'Move the idle USAA cash into T-bills or SGOV', when: 'this week' },
     { text: 'Confirm real spending now that 90 days have passed (expect ~$100K / yr)', when: 'this week' },
   ],
-  DIVERSIFIED: [
-    { text: 'Move the $30K flexible equities into VOO 55 / VXUS 30 / AVUV 15', when: 'this month' },
-  ],
+  DIVERSIFIED: [],
   HYPE: [
     { text: 'Place the $100 rung: sell 250 tokens when it hits', when: 'before fill' },
     { text: 'Set up the 30% tax set-aside line inside the Fortress', when: 'this month' },

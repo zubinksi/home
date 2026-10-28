@@ -284,10 +284,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const divGoal = total * RULES.diversifiedGoal;
   const divStatus: Status = div === 0 ? 'red' : divShare >= RULES.diversifiedGoal ? 'green' : 'amber';
 
-  // ── EQUITIES (flexible bucket / researched bets)
+  // ── EQUITIES (researched bets we hold, each with a thesis)
   const eqShare = share(h.equities.value);
   const withThesis = h.equities.positions.filter((p) => p.thesis && p.sellIf).length;
-  const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : div === 0 && h.equities.value > 0 ? 'amber' : 'green';
+  // amber until every position has its thesis written down
+  const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : withThesis < h.equities.positions.length ? 'amber' : 'green';
 
   const sleeves: Sleeve[] = [
     {
@@ -405,7 +406,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       policy: [
         'Target: 30 months of expenses, held in T-bills or SGOV — not idle cash. All spending comes out of here.',
         'Every Evergreen distribution goes here first. Anything above target flows to the Diversified sleeve.',
-        'Each quarter, if under 30 months, refill from whatever is up — first HYPE proceeds, then flexible / Diversified, then AAPL.',
+        'Each quarter, if under 30 months, refill from whatever is up — first HYPE proceeds, then Diversified, then AAPL.',
         'If nothing is up and the Fortress falls below 18 months: austerity mode. Spending drops to $75k / year; we do not sell into a crash.',
         'Never prepay the mortgage from the Fortress.',
       ],
@@ -447,9 +448,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       name: 'EQUITIES',
       amount: h.equities.value,
       pct: eqShare,
-      roleTitle: 'Flexible bucket — seeds Diversified; Equities bets capped at 10%',
+      roleTitle: 'Researched bets with written theses — capped at 10%',
       status: eqStatus,
-      alloc: div === 0 ? `${pct(eqShare)} · SLATED FOR DIVERSIFIED` : `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
+      alloc: `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
       kv: [
         {
@@ -461,7 +462,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         { k: 'MAX EACH', v: money(total * RULES.maxPosition), d: '5% OF LIQUID' },
       ],
       policy: [
-        'The current $100k flexible bucket is the start of the Diversified sleeve.',
+        'New cash goes to Diversified first; we add to Equities positions only after that.',
         'Equities cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',
         'Funded only with spare money — never from the Fortress or the Diversified sleeve.',
         'Every position needs a written thesis in our own words. If the thesis breaks, we sell regardless of price.',
@@ -495,7 +496,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         goalDate: diversifiedGoalDate,
         rows: [
           ...(toDiversified >= 1_000 ? [{ source: 'This review’s trim, after the Fortress refill', amount: money(toDiversified), when: 'THIS MONTH' }] : []),
-          { source: 'Flexible equities bucket', amount: money(h.equities.value), when: 'THIS MONTH' },
+          { source: 'New cash, before any Equities adds', amount: 'ALL OF IT', when: 'AS IT COMES' },
           { source: 'HYPE ladder, after 30% tax set-aside', amount: money(ladderTotal * (1 - RULES.taxSetAside)), when: 'AS RUNGS FILL' },
           { source: 'Evergreen above the Fortress target', amount: 'VARIES', when: 'AS RECEIVED' },
           { source: 'AAPL harvesting in low-income years', amount: 'CPA SETS', when: 'LOW-INCOME YEARS' },
