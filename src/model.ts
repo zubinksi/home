@@ -452,15 +452,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       status: eqStatus,
       alloc: `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
-      kv: [
-        {
-          k: 'POSITIONS',
-          v: num(h.equities.positions.length),
-          d: `${num(withThesis)} OF ${num(h.equities.positions.length)} WITH A THESIS`,
-          dc: withThesis === h.equities.positions.length ? 'green' : 'amber',
-        },
-        { k: 'MAX EACH', v: money(total * RULES.maxPosition), d: '5% OF LIQUID' },
-      ],
+      kv: [],
       policy: [
         'New cash goes to Diversified first; we add to Equities positions only after that.',
         'Equities cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',

@@ -82,9 +82,30 @@ export interface EquityPosition {
 }
 
 export const equityPositions: EquityPosition[] = [
-  { ticker: 'LLY', name: 'Eli Lilly', value: 11_000, thesis: null, sellIf: null },
-  { ticker: 'FIG', name: 'Figma', value: 7_000, thesis: null, sellIf: null },
-  { ticker: 'CRWD', name: 'CrowdStrike', value: 12_000, thesis: null, sellIf: null },
+  {
+    ticker: 'LLY',
+    name: 'Eli Lilly',
+    value: 11_000,
+    thesis:
+      'Lilly has the most efficient pipeline for drug development and GLPs are selling incredibly well. AI entrenches their moat since drugs can be patented in a way software cannot. A trillion dollar company worth multiple trillions.',
+    sellIf: null,
+  },
+  {
+    ticker: 'FIG',
+    name: 'Figma',
+    value: 7_000,
+    thesis:
+      'Figma is underrated in terms of their ability to monetize and have a second act crossing the chasm into being AI-native. Figma Agent can translate creative non-designers into designers. When software creation goes up 10x because of AI coding, Figma is the place where all that product work gets made coherent. The stock has been beaten down and the bear case of losing market share to Claude Design and similar products is now fairly baked in. The bull case is owning the start to finish process and becoming the organizational control panel for AI-generated interfaces.',
+    sellIf: null,
+  },
+  {
+    ticker: 'CRWD',
+    name: 'CrowdStrike',
+    value: 12_000,
+    thesis:
+      'Cyber security is increasingly necessary with AI-enabled hacks. The pace at which security compromises are occurring is speeding up and getting more concerning.',
+    sellIf: null,
+  },
 ];
 
 /** Reviews at which we've agreed to skip the ZEC 10% trim (by review date). */

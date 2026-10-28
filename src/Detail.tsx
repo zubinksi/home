@@ -64,6 +64,57 @@ function Policy({ lines }: { lines: string[] }) {
   );
 }
 
+type PositionRow = Extract<Module, { kind: 'positions' }>['rows'][number];
+
+/** Each Equities position on one line; tapping it opens its thesis and sell-if line. */
+function Positions({ rows }: { rows: PositionRow[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div className="module">
+      <div className="module-head">
+        <span className="label">
+          {rows.length} POSITION{rows.length === 1 ? '' : 'S'}
+        </span>
+        <span className="label">MAX {pct(RULES.maxPosition)} OF LIQUID EACH</span>
+      </div>
+      <div className="eq-list">
+        {rows.map((p) => {
+          const isOpen = open === p.ticker;
+          const missing = !p.thesis || !p.sellIf;
+          return (
+            <div key={p.ticker} className={`eq-pos ${isOpen ? 'is-open' : ''}`}>
+              <button className="eq-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : p.ticker)}>
+                <span className="eq-ticker">{p.ticker}</span>
+                <span className="eq-name">
+                  {p.name}
+                  {missing && <span className="eq-flag" title="Thesis or sell-if line not written yet" />}
+                </span>
+                <span className="eq-amt">{money(p.value)}</span>
+                <span className="eq-share" style={p.overMax ? { color: STATUS_COLOR.red } : undefined}>
+                  {pct(p.share, 1)}
+                </span>
+                <span className="eq-caret" aria-hidden />
+              </button>
+              {isOpen && (
+                <div className="eq-body">
+                  <div className="eq-field">
+                    <span className="label">THESIS</span>
+                    {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
+                  </div>
+                  <div className="eq-field">
+                    <span className="label">SELL IF</span>
+                    {p.sellIf ? <p>{p.sellIf}</p> : <p className="eq-missing">Not written yet.</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ModuleView({ m }: { m: Module }) {
   switch (m.kind) {
     case 'ladder': {
@@ -155,36 +206,7 @@ function ModuleView({ m }: { m: Module }) {
         </div>
       );
     case 'positions':
-      return (
-        <div className="module">
-          <div className="module-head">
-            <span className="label">POSITIONS</span>
-            <span className="label">MAX {pct(RULES.maxPosition)} OF LIQUID EACH</span>
-          </div>
-          <div className="eq-list">
-            {m.rows.map((p) => (
-              <div key={p.ticker} className="eq-pos">
-                <div className="eq-head">
-                  <span className="eq-ticker">{p.ticker}</span>
-                  <span className="eq-name">{p.name}</span>
-                  <span className="eq-amt">{money(p.value)}</span>
-                  <span className="eq-share" style={p.overMax ? { color: STATUS_COLOR.red } : undefined}>
-                    {pct(p.share, 1)}
-                  </span>
-                </div>
-                <div className="eq-field">
-                  <span className="label">THESIS</span>
-                  {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
-                </div>
-                <div className="eq-field">
-                  <span className="label">SELL IF</span>
-                  {p.sellIf ? <p>{p.sellIf}</p> : <p className="eq-missing">Not written yet.</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+      return <Positions rows={m.rows} />;
     case 'tax':
       return (
         <div className="module">
