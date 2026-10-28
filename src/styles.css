@@ -637,11 +637,23 @@ p {
 /* ladder */
 .ladder-row {
   display: grid;
-  grid-template-columns: 1.625rem 1fr 1fr 1fr;
+  grid-template-columns: 1.625rem repeat(5, minmax(0, 1fr));
   padding: 0.4375rem 0.625rem;
   font-family: var(--mono);
   font-size: 0.8125rem;
   color: var(--ink2);
+}
+@media (max-width: 860px) {
+  .ladder-row {
+    grid-template-columns: 1rem repeat(5, minmax(0, 1fr));
+    padding: 0.4375rem 0.375rem;
+    font-size: 0.75rem;
+  }
+}
+/* a module's own title, set a weight heavier than its labels */
+.label.module-title {
+  font-weight: 600;
+  color: var(--ink);
 }
 .ladder-row:nth-child(even) {
   background: var(--zebra);

@@ -36,7 +36,7 @@ export interface Rung {
 }
 
 export type Module =
-  | { kind: 'ladder'; rungs: Rung[]; sold: number; next: number; price: number; keep: number; total: number }
+  | { kind: 'ladder'; rungs: Rung[]; sold: number; next: number; price: number; keep: number; total: number; held: number }
   | { kind: 'gauge'; now: number; target: number; floor: number; max: number }
   | { kind: 'plan'; rows: { source: string; amount: string; when: string }[]; goal: number; goalDate: string }
   | { kind: 'tax'; rows: { k: string; v: string; color?: Status }[]; note?: string }
@@ -321,7 +321,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         'We never buy more HYPE with Fortress or Diversified money. Gains get skimmed; dips get held, not bought.',
         'Set aside 30% of every sale into the Fortress for taxes. The ladder always wins over tax optimization.',
       ],
-      module: { kind: 'ladder', rungs: LADDER, sold: h.hype.rungsSold, next: nextRung, price: h.hype.price, keep: RULES.hypeKeep, total: ladderTotal },
+      module: { kind: 'ladder', rungs: LADDER, sold: h.hype.rungsSold, next: nextRung, price: h.hype.price, keep: RULES.hypeKeep, total: ladderTotal, held: h.hype.tokens },
     },
     {
       key: 'AAPL',

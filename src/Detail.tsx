@@ -121,21 +121,26 @@ function Positions({ rows }: { rows: PositionRow[] }) {
 function ModuleView({ m }: { m: Module }) {
   switch (m.kind) {
     case 'ladder': {
-      const toNext = m.next >= 0 ? m.rungs[m.next].price / m.price - 1 : 0;
+      // the whole stack before any rung sold, and what's left after each rung
+      const soldSoFar = m.rungs.slice(0, m.sold).reduce((t, r) => t + r.tokens, 0);
+      const stack = m.held + soldSoFar;
+      let left = stack;
+      const rows = m.rungs.map((r) => ({ ...r, after: (left -= r.tokens) }));
       return (
         <div className="module">
           <div className="module-head">
-            <span className="label">SKIM LADDER</span>
-            <span className="label">${(m.total / 1e6).toFixed(3)}M PRE-TAX</span>
+            <span className="label module-title">SKIM LADDER</span>
           </div>
           <div className="ladder">
             <div className="ladder-row head">
               <span />
               <span>PRICE</span>
-              <span>TOKENS</span>
+              <span>SELL</span>
+              <span>% SOLD</span>
+              <span>HELD</span>
               <span>PROCEEDS</span>
             </div>
-            {m.rungs.map((r, i) => {
+            {rows.map((r, i) => {
               const mark = i < m.sold ? '✓' : i === m.next ? '▲' : '○';
               const cls = i < m.sold ? 'sold' : i === m.next ? 'next' : '';
               return (
@@ -143,20 +148,12 @@ function ModuleView({ m }: { m: Module }) {
                   <span className="mark">{mark}</span>
                   <span>${r.price}</span>
                   <span>{num(r.tokens)}</span>
+                  <span>{((r.tokens / stack) * 100).toFixed(1)}%</span>
+                  <span>{num(r.after)}</span>
                   <span>{money(r.price * r.tokens)}</span>
                 </div>
               );
             })}
-          </div>
-          <div className="module-foot">
-            {m.next >= 0 ? (
-              <span>
-                NEXT RUNG ${m.rungs[m.next].price} · +{Math.round(toNext * 100)}% FROM {priceFmt(m.price)}
-              </span>
-            ) : (
-              <span>ALL RUNGS FILLED</span>
-            )}
-            <span>KEEP {num(m.keep)} FOREVER</span>
           </div>
         </div>
       );
