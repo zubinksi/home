@@ -1429,6 +1429,14 @@ p {
 .proj-sort.on {
   color: var(--accent-ink);
 }
+.proj-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.proj-section span:last-child {
+  color: var(--ink2);
+}
 .side-row + .side-section {
   margin-top: 1rem;
 }

@@ -19,6 +19,8 @@ function loadSort(): SortMode {
 }
 const money = (n: number) => `$${compact(n)}`;
 
+const SECTION_NAMES = { house: 'MOVE + MAINTENANCE', rooms: 'FURNISHING' } as const;
+
 /** The detail key for the list of everything still to do. */
 const TODO_KEY = 'to-do';
 
@@ -144,6 +146,14 @@ export function Projects(props: {
   const activeKey = sequence.includes(drill.selKey) ? drill.selKey : showTodo ? '' : sequence[0];
   const area = areas.find((a) => a.key === activeKey) ?? null;
 
+  // a section's name with what its areas have spent, in the amount column
+  const section = (name: string, list: Area[]) => (
+    <div className="label side-section proj-section">
+      <span>{name}</span>
+      <span>{compact(list.reduce((t, a) => t + areaStats(a).spent, 0))}</span>
+    </div>
+  );
+
   const row = (a: Area) => {
     const s = areaStats(a);
     return (
@@ -186,7 +196,7 @@ export function Projects(props: {
               <div className="side-rule" />
 
               <div className="proj-sortbar">
-                <span className="label">{sort === 'spend' ? 'BY SPEND' : 'THE HOUSE'}</span>
+                <span className="label">{sort === 'spend' ? 'BY SPEND' : ''}</span>
                 <button
                   className={`proj-sort ${sort === 'spend' ? 'on' : ''}`}
                   onClick={() => setSort(sort === 'spend' ? 'listed' : 'spend')}
@@ -203,8 +213,9 @@ export function Projects(props: {
                 ordered.map(row)
               ) : (
                 <>
+                  {section(SECTION_NAMES.house, house)}
                   {house.map(row)}
-                  <div className="label side-section">THE ROOMS</div>
+                  {section(SECTION_NAMES.rooms, rooms)}
                   {rooms.map(row)}
                 </>
               )}
@@ -326,7 +337,7 @@ function AreaDetail({ area }: { area: Area }) {
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: complete ? 'var(--green)' : 'var(--amber)' }}>
-          {complete ? 'ALL DONE' : `${s.done} OF ${s.total} DONE`} · {area.section === 'house' ? 'THE HOUSE' : 'THE ROOMS'}
+          {complete ? 'ALL DONE' : `${s.done} OF ${s.total} DONE`} · {SECTION_NAMES[area.section]}
         </span>
       </div>
       {area.note && <p className="proj-note">{area.note}</p>}
