@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecTrimWaived } from './data';
+import { diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecSales, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -40,6 +40,7 @@ export type Module =
   | { kind: 'gauge'; now: number; target: number; floor: number; max: number }
   | { kind: 'plan'; rows: { source: string; amount: string; when: string }[]; goal: number; goalDate: string }
   | { kind: 'tax'; rows: { k: string; v: string; color?: Status }[]; note?: string }
+  | { kind: 'tranches'; asset: string; price: number; held: number; sales: { date: string; price: number; tokens: number }[] }
   | { kind: 'positions'; rows: { ticker: string; name: string; value: number; share: number; overMax: boolean; thesis: string | null; sellIf: string | null }[] };
 
 export interface Sleeve {
@@ -435,6 +436,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         },
       ],
       position: positionLine(`${num(h.zec.tokens)} ZEC`, h.zec.price, zecGain),
+      module: { kind: 'tranches', asset: 'ZEC', price: h.zec.price, held: h.zec.tokens, sales: zecSales },
       asset: 'zec',
       policy: [
         'If ZEC grows past 10% of liquid assets at a quarterly review, trim back to 7%.',

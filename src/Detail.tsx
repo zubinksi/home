@@ -3,6 +3,7 @@ import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
   compact,
+  longDate,
   money,
   monYY,
   num,
@@ -215,6 +216,49 @@ function ModuleView({ m }: { m: Module }) {
       );
     case 'positions':
       return <Positions rows={m.rows} />;
+    case 'tranches': {
+      // the stack before any sale, and what's left after each
+      const stack = m.held + m.sales.reduce((t, x) => t + x.tokens, 0);
+      let left = stack;
+      const sold = m.sales.map((x) => ({ ...x, after: (left -= x.tokens) }));
+      return (
+        <div className="module">
+          <div className="module-head">
+            <span className="label">TRANCHES</span>
+            <span className="label">{sold.length ? `${sold.length} SOLD` : 'NONE SOLD YET'}</span>
+          </div>
+          <div className="ladder">
+            <div className="ladder-row head">
+              <span />
+              <span>PRICE</span>
+              <span>SELL</span>
+              <span>% SOLD</span>
+              <span>HELD</span>
+              <span>PROCEEDS</span>
+            </div>
+            {/* where we stand today, then each sale, newest first */}
+            <div className="ladder-row now">
+              <span className="mark">●</span>
+              <span>{priceFmt(m.price)}</span>
+              <span>—</span>
+              <span>—</span>
+              <span>{num(m.held)}</span>
+              <span>—</span>
+            </div>
+            {[...sold].reverse().map((x) => (
+              <div key={x.date + x.price} className="ladder-row done" title={`Sold ${longDate(new Date(x.date + 'T00:00:00'))}`}>
+                <span className="mark">✓</span>
+                <span>{priceFmt(x.price)}</span>
+                <span>{num(x.tokens)}</span>
+                <span>{((x.tokens / stack) * 100).toFixed(1)}%</span>
+                <span>{num(x.after)}</span>
+                <span>{money(x.price * x.tokens)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
     case 'tax':
       return (
         <div className="module">
@@ -254,10 +298,10 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         <span className="d-amt">${compact(s.amount)}</span>
       </div>
       {s.position ? (
-        // held assets: what we hold at what price, and how it's done (HYPE's
-        // ladder and chart already say both)
-        s.key !== 'HYPE' && <div className="d-pos">
-          <span>{s.position.holding}</span>
+        // held assets: what we hold at what price, and how it's done (for HYPE
+        // and ZEC the holding is in the table and the price on the chart)
+        <div className="d-pos">
+          <span>{!charted && s.position.holding}</span>
           {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
         </div>
       ) : (

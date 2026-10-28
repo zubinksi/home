@@ -676,6 +676,9 @@ p {
   color: var(--ink);
   font-size: 0.625rem;
 }
+.ladder-row.done .mark {
+  color: var(--green);
+}
 .ladder-row.next {
   color: var(--ink);
 }
