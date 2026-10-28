@@ -1968,18 +1968,35 @@ p {
 /* price charts with moving averages (HYPE, ZEC / BTC) */
 .chart-switch {
   display: inline-flex;
-  gap: 0.875rem;
+}
+/* a recessed channel, as the lock's, with the chart showing on a bronze tab */
+.chart-switch {
+  padding: 0.1875rem;
+  border-radius: 0.875rem;
+  background: #ddd2bc;
+  box-shadow:
+    inset 0 0.0625rem 0.1875rem rgba(70, 52, 24, 0.3),
+    0 0.0625rem 0 rgba(255, 255, 255, 0.6);
 }
 .chart-switch button {
+  padding: 0.3125rem 0.875rem;
+  border-radius: 0.6875rem;
   font-family: var(--mono);
   font-size: inherit;
   letter-spacing: inherit;
-  color: var(--ink);
-  opacity: 0.4; /* the chart not showing, faded */
-  transition: opacity 0.15s;
+  color: var(--ink3);
+  transition: color 0.15s;
 }
 .chart-switch button.on {
-  opacity: 1;
+  color: #2e2210;
+  background: linear-gradient(180deg, #ebd29a, #c49a58 55%, #a9813f);
+  box-shadow:
+    inset 0 0 0 0.0625rem rgba(70, 48, 16, 0.45),
+    inset 0 0.0625rem 0.0625rem rgba(255, 244, 214, 0.7),
+    0 0.0625rem 0.125rem rgba(20, 12, 4, 0.35);
+}
+.module-head.switch-head {
+  margin-bottom: -0.5rem; /* sit the switch close on the chart */
 }
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
 .cash-split .module-head {

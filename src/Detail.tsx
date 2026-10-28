@@ -483,7 +483,7 @@ function PriceChart({
   // no title or price above: the page names the asset, and the latest price sits at the line's end
   return (
     <div className="module">
-      {heading && <div className="module-head">{heading}</div>}
+      {heading && <div className="module-head switch-head">{heading}</div>}
       <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
     </div>
   );
@@ -493,12 +493,12 @@ function PriceChart({
 function ZecCharts({ market }: { market: MarketState }) {
   const [vs, setVs] = useState<'usd' | 'btc'>('usd');
   const heading = (
-    <span className="label chart-switch" role="group" aria-label="Chart">
+    <span className="label chart-switch" role="group" aria-label="Price ZEC in">
       <button className={vs === 'usd' ? 'on' : ''} aria-pressed={vs === 'usd'} onClick={() => setVs('usd')}>
-        ZEC
+        USD
       </button>
       <button className={vs === 'btc' ? 'on' : ''} aria-pressed={vs === 'btc'} onClick={() => setVs('btc')}>
-        ZEC / BTC
+        BTC
       </button>
     </span>
   );
