@@ -19,6 +19,9 @@ function loadSort(): SortMode {
 }
 const money = (n: number) => `$${compact(n)}`;
 
+/** The detail key for the list of everything still to do. */
+const TODO_KEY = 'to-do';
+
 type Source =
   | { kind: 'saved' }
   | { kind: 'live'; at: number; via: 'server' | 'browser' }
@@ -126,7 +129,7 @@ export function Projects(props: {
   const drill = useDrill({
     narrow: props.narrow,
     sub: props.sub,
-    keys: sequence,
+    keys: [...sequence, TODO_KEY],
     sequence,
     defaultKey: sequence[0] ?? '',
     openSub: props.openSub,
@@ -137,7 +140,8 @@ export function Projects(props: {
 
   const t = totals(areas);
   // on wide screens an area is always showing: the chosen one, else the first in order
-  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : sequence[0];
+  const showTodo = drill.selKey === TODO_KEY;
+  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : showTodo ? '' : sequence[0];
   const area = areas.find((a) => a.key === activeKey) ?? null;
 
   const row = (a: Area) => {
@@ -174,7 +178,10 @@ export function Projects(props: {
                 <span className="side-amt">{compact(t.spent)}</span>
               </div>
               <div className="side-sub">
-                {t.done} OF {t.items} DONE · {t.openNeeded} TO DO
+                {t.done} OF {t.items} DONE ·{' '}
+                <button className="todo-link" onClick={() => drill.select(TODO_KEY)}>
+                  {t.openNeeded} TO DO
+                </button>
               </div>
               <div className="side-rule" />
 
@@ -222,12 +229,55 @@ export function Projects(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              {area && <AreaDetail area={area} />}
+              {showTodo ? <TodoDetail areas={ordered} onArea={(k) => drill.select(k)} /> : area && <AreaDetail area={area} />}
             </div>
           )}
         </div>
       </section>
     </main>
+  );
+}
+
+/** Every unfinished item across the house in one table: needed first, then optional. */
+function TodoDetail({ areas, onArea }: { areas: Area[]; onArea: (key: string) => void }) {
+  const open = areas.flatMap((a) => a.items.filter((i) => !i.done && !i.closed).map((item) => ({ item, area: a })));
+  const needed = open.filter((r) => !r.item.optional);
+  const optional = open.filter((r) => r.item.optional);
+  return (
+    <>
+      <div className="d-title">
+        <span className="d-name proj-name">TO DO</span>
+        <span className="d-amt">{needed.length}</span>
+      </div>
+      <div className="d-sub">
+        <span className="d-alloc" style={{ color: 'var(--amber)' }}>
+          {needed.length} NEEDED · {optional.length} OPTIONAL · ACROSS THE HOUSE
+        </span>
+      </div>
+      <div className="todo-table" role="table">
+        <div className="todo-row head" role="row">
+          <span role="columnheader">ITEM</span>
+          <span role="columnheader">AREA</span>
+          <span role="columnheader" />
+        </div>
+        {[...needed, ...optional].map(({ item, area }, n) => (
+          <div key={n} className={`todo-row ${item.optional ? 'is-optional' : ''}`} role="row">
+            <span className="todo-item" role="cell">
+              {item.text}
+            </span>
+            <span role="cell">
+              <button className="todo-area" onClick={() => onArea(area.key)}>
+                {area.name}
+              </button>
+            </span>
+            <span className="todo-tag" role="cell">
+              {item.optional ? 'OPTIONAL' : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+      {open.length === 0 && <div className="module-note">Nothing left to do.</div>}
+    </>
   );
 }
 

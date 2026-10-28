@@ -1485,6 +1485,80 @@ p {
   color: var(--ink3);
   max-width: 45rem;
 }
+/* the count in the summary opens the to-do table */
+.todo-link {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--accent-ink);
+}
+@media (hover: hover) {
+  .todo-link:hover {
+    opacity: 0.75;
+  }
+}
+.todo-table {
+  display: flex;
+  flex-direction: column;
+}
+.todo-row {
+  display: grid;
+  grid-template-columns: 1fr 11.5rem 4.5rem;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5625rem 0;
+  border-bottom: 1px solid var(--b1);
+}
+.todo-row.head {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding-top: 0;
+}
+.todo-item {
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.todo-area {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-align: left;
+  color: var(--accent-ink);
+}
+.todo-tag {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-align: right;
+}
+.todo-row.is-optional .todo-item {
+  color: var(--ink3);
+}
+@media (max-width: 860px) {
+  /* on phones the tag drops under the area, so the item keeps its width */
+  .todo-row {
+    grid-template-columns: 1fr 6.5rem;
+    grid-template-areas: 'item area' 'item tag';
+    row-gap: 0.125rem;
+  }
+  .todo-item {
+    grid-area: item;
+  }
+  .todo-row > :nth-child(2) {
+    grid-area: area;
+  }
+  .todo-tag {
+    grid-area: tag;
+    text-align: left;
+  }
+  .todo-row.head > :nth-child(3) {
+    display: none;
+  }
+}
 .pitems {
   display: flex;
   flex-direction: column;
