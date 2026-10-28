@@ -59,10 +59,9 @@
   --piping: #8fb3cf;
   --lock-channel: #1f1a14;
   --lock-engrave: #3b3228;
-  --shadow:
-    0 0.375rem 1.75rem rgba(0, 0, 0, 0.5),
-    0 0 5rem 1rem rgba(255, 190, 115, 0.2),
-    0 0 14rem 4rem rgba(255, 165, 85, 0.1);
+  /* the lamp light itself is the slab's shadow: a warm glow close around it */
+  --shadow: 0 0.25rem 1.5rem rgba(255, 186, 110, 0.38);
+  --piping-width: 2px;
 }
 /* evening: the dark brown wall (lamplight.ts sets this) */
 :root[data-light='evening'] {
@@ -209,7 +208,7 @@ p {
   content: '';
   position: absolute;
   inset: 0.3125rem;
-  border: 1px solid var(--piping);
+  border: var(--piping-width, 1px) solid var(--piping);
   opacity: 0.7;
   pointer-events: none;
   transition: border-color 0.6s ease;
