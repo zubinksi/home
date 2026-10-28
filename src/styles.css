@@ -54,8 +54,8 @@
   --piping: var(--iris);
   --piping-width: 1.5px;
 }
-/* Projects is another room: the dark brown wall, light blue piping, and a
-   lamp behind the slab (App.tsx sets data-room) */
+/* Projects is another room: the dark brown wall and light blue piping
+   (App.tsx sets data-room) */
 :root[data-room='projects'] {
   --ground: #29231b;
   --mast-ink: #eadcc0;
@@ -64,8 +64,7 @@
   --piping: #8fb3cf;
   --lock-channel: #1f1a14;
   --lock-engrave: #3b3228;
-  /* the lamp light itself is the slab's shadow: a warm glow close around it */
-  --shadow: 0 0.25rem 1.5rem rgba(255, 128, 32, 0.55);
+  --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
   --piping-width: 1.5px;
 }
 /* evening: the dark brown wall (lamplight.ts sets this) */
