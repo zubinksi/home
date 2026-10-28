@@ -31,6 +31,18 @@ export function App() {
 
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
+
+  // each section is a different room: Projects has the dark brown wall and a lamp
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.room = tab;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    meta?.setAttribute('content', getComputedStyle(root).getPropertyValue('--ground').trim());
+    return () => {
+      delete root.dataset.room;
+      meta?.setAttribute('content', getComputedStyle(root).getPropertyValue('--ground').trim());
+    };
+  }, [tab]);
   const narrow = useNarrow();
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
