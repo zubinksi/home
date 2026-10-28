@@ -493,7 +493,9 @@ function PriceChart({
 function ZecCharts({ market }: { market: MarketState }) {
   const [vs, setVs] = useState<'usd' | 'btc'>('usd');
   const heading = (
-    <span className="label chart-switch" role="group" aria-label="Price ZEC in">
+    <span className={`label chart-switch ${vs === 'btc' ? 'is-second' : ''}`} role="group" aria-label="Price ZEC in">
+      {/* the bronze knob slides under whichever is chosen */}
+      <span className="chart-switch-knob" aria-hidden />
       <button className={vs === 'usd' ? 'on' : ''} aria-pressed={vs === 'usd'} onClick={() => setVs('usd')}>
         USD
       </button>
@@ -502,10 +504,11 @@ function ZecCharts({ market }: { market: MarketState }) {
       </button>
     </span>
   );
+  // one chart whose data swaps, so the switch stays put and its knob can slide
   return vs === 'usd' ? (
-    <PriceChart key="usd" title="ZEC" heading={heading} history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
+    <PriceChart title="ZEC" heading={heading} history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
   ) : (
-    <PriceChart key="btc" title="ZEC / BTC" heading={heading} history={market.zecBtc} show={90} fmt={btcFmt} axisFmt={btcAxis} />
+    <PriceChart title="ZEC / BTC" heading={heading} history={market.zecBtc} show={90} fmt={btcFmt} axisFmt={btcAxis} />
   );
 }
 // stable formatters (the chart redraws when they change)
