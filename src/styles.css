@@ -49,6 +49,11 @@
   --serif: 'Source Serif 4', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
+/* Investments: burgundy piping, the iris's own colour */
+:root[data-room='investments'] {
+  --piping: var(--iris);
+  --piping-width: 1.5px;
+}
 /* Projects is another room: the dark brown wall, light blue piping, and a
    lamp behind the slab (App.tsx sets data-room) */
 :root[data-room='projects'] {
@@ -60,7 +65,7 @@
   --lock-channel: #1f1a14;
   --lock-engrave: #3b3228;
   /* the lamp light itself is the slab's shadow: a warm glow close around it */
-  --shadow: 0 0.25rem 1.5rem rgba(255, 158, 70, 0.52);
+  --shadow: 0 0.25rem 1.5rem rgba(255, 128, 32, 0.55);
   --piping-width: 1.5px;
 }
 /* evening: the dark brown wall (lamplight.ts sets this) */
