@@ -286,7 +286,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
 
   // ── EQUITIES (researched bets we hold, each with a thesis)
   const eqShare = share(h.equities.value);
-  const withThesis = h.equities.positions.filter((p) => p.thesis && p.sellIf).length;
+  const withThesis = h.equities.positions.filter((p) => p.thesis).length;
   // amber until every position has its thesis written down
   const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : withThesis < h.equities.positions.length ? 'amber' : 'green';
 

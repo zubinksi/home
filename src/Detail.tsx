@@ -80,14 +80,14 @@ function Positions({ rows }: { rows: PositionRow[] }) {
       <div className="eq-list">
         {rows.map((p) => {
           const isOpen = open === p.ticker;
-          const missing = !p.thesis || !p.sellIf;
+          const missing = !p.thesis;
           return (
             <div key={p.ticker} className={`eq-pos ${isOpen ? 'is-open' : ''}`}>
               <button className="eq-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : p.ticker)}>
                 <span className="eq-ticker">{p.ticker}</span>
                 <span className="eq-name">
                   {p.name}
-                  {missing && <span className="eq-flag" title="Thesis or sell-if line not written yet" />}
+                  {missing && <span className="eq-flag" title="Thesis not written yet" />}
                 </span>
                 <span className="eq-amt">{money(p.value)}</span>
                 <span className="eq-share" style={p.overMax ? { color: STATUS_COLOR.red } : undefined}>
@@ -101,10 +101,13 @@ function Positions({ rows }: { rows: PositionRow[] }) {
                     <span className="label">THESIS</span>
                     {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
                   </div>
-                  <div className="eq-field">
-                    <span className="label">SELL IF</span>
-                    {p.sellIf ? <p>{p.sellIf}</p> : <p className="eq-missing">Not written yet.</p>}
-                  </div>
+                  {/* shown once written */}
+                  {p.sellIf && (
+                    <div className="eq-field">
+                      <span className="label">SELL IF</span>
+                      <p>{p.sellIf}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -432,16 +435,6 @@ function PriceChart({
         </span>
       </div>
       <Chart points={points} overlays={overlays} onScrub={(_, at) => setScrub(at)} yFormat={axisFmt} />
-      <div className="runway-key">
-        <span>
-          <i className="key-earning" /> {title}
-        </span>
-        {levels.length > 0 && (
-          <span>
-            <i className="key-level" /> SELL RUNGS
-          </span>
-        )}
-      </div>
     </div>
   );
 }

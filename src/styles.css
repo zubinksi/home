@@ -1893,28 +1893,6 @@ p {
   background: var(--red);
 }
 
-/* ── chart keys (ZEC / BTC) ─────────────────────────── */
-.runway-key {
-  display: flex;
-  gap: 1.25rem;
-  font-family: var(--mono);
-  font-size: 0.5938rem;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
-.runway-key i {
-  display: inline-block;
-  width: 1rem;
-  vertical-align: middle;
-  margin-right: 0.25rem;
-  border-top: 1.5px solid var(--ink);
-}
-
-.runway-key {
-  flex-wrap: wrap;
-  row-gap: 0.375rem;
-  align-items: center;
-}
 .refills {
   display: flex;
   flex-direction: column;
@@ -1979,9 +1957,6 @@ p {
 .zecbtc-now b {
   font-weight: 500;
   color: var(--ink);
-}
-.runway-key i.key-level {
-  border-top: 1px dashed var(--accent);
 }
 
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
