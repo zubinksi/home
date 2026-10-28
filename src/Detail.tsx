@@ -3,7 +3,6 @@ import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
   compact,
-  longDate,
   money,
   monYY,
   num,
@@ -140,6 +139,15 @@ function ModuleView({ m }: { m: Module }) {
               <span>HELD</span>
               <span>PROCEEDS</span>
             </div>
+            {/* where we stand today, before any of the rungs below */}
+            <div className="ladder-row now">
+              <span className="mark">●</span>
+              <span>{priceFmt(m.price)}</span>
+              <span>—</span>
+              <span>—</span>
+              <span>{num(m.held)}</span>
+              <span>—</span>
+            </div>
             {rows.map((r, i) => {
               const mark = i < m.sold ? '✓' : i === m.next ? '▲' : '○';
               const cls = i < m.sold ? 'sold' : i === m.next ? 'next' : '';
@@ -245,8 +253,9 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         <span className="d-amt">${compact(s.amount)}</span>
       </div>
       {s.position ? (
-        // held assets: what we hold at what price, and how it's done
-        <div className="d-pos">
+        // held assets: what we hold at what price, and how it's done (HYPE's
+        // ladder and chart already say both)
+        s.key !== 'HYPE' && <div className="d-pos">
           <span>{s.position.holding}</span>
           {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
         </div>
@@ -265,11 +274,13 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
           )}
         </>
       )}
-      {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.asset && s.key !== 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <ZecCharts market={market} />}
+      {/* HYPE's returns sit under its chart, as on the Total page */}
       {s.key === 'HYPE' && (
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
+      {s.asset && s.key === 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
@@ -396,7 +407,6 @@ function PriceChart({
   /** shorter form for the y axis */
   axisFmt: (v: number) => string;
 }) {
-  const [scrub, setScrub] = useState<number>(-1);
   const { points, overlays } = useMemo(() => {
     const h = history ?? [];
     const from = Math.max(0, h.length - show);
@@ -422,16 +432,11 @@ function PriceChart({
       </div>
     );
   }
-  const i = scrub >= 0 ? scrub : points.length - 1;
+  // no title or price above: the page names the asset, and the latest price sits at the line's end
   return (
     <div className="module">
-      <div className="module-head">
-        {scrub >= 0 ? <span className="label">{longDate(new Date(points[i].date + 'T00:00:00'))}</span> : (heading ?? <span className="label">{title}</span>)}
-        <span className="label zecbtc-now">
-          <b>{fmt(points[i].total)}</b>
-        </span>
-      </div>
-      <Chart points={points} overlays={overlays} onScrub={(_, at) => setScrub(at)} yFormat={axisFmt} />
+      {heading && <div className="module-head">{heading}</div>}
+      <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
     </div>
   );
 }
@@ -459,6 +464,7 @@ function ZecCharts({ market }: { market: MarketState }) {
 const btcFmt = (v: number) => `${v.toFixed(3)} BTC`;
 const btcAxis = (v: number) => `${+v.toFixed(4)}`;
 const dollarAxis = (v: number) => `$${+v.toFixed(2)}`;
+const fullMoney = (v: number) => `$${Math.round(v).toLocaleString()}`;
 const moneyAxis = (v: number) => (v >= 1e6 ? `$${+(v / 1e6).toFixed(2)}M` : `$${Math.round(v / 1e3)}K`);
 
 /** The next few unsold sell rungs, as price levels for the HYPE chart. */
@@ -485,7 +491,6 @@ function Periods({ periods }: { periods: Model['periods'] }) {
 }
 
 export function TotalDetail({ model }: { model: Model }) {
-  const [scrub, setScrub] = useState<{ date: string; total: number } | null>(null);
   // the same coverage figure as the Fortress page
   const months = model.fortressMonths;
   const scale = (m: number) => `${(Math.min(m, RULES.gaugeMax) / RULES.gaugeMax) * 100}%`;
@@ -496,15 +501,7 @@ export function TotalDetail({ model }: { model: Model }) {
         <span className="d-amt">${compact(model.total)}</span>
       </div>
       <div className="module">
-        {/* while scrubbing, the day's value appears here */}
-        <div className="module-head chart-head">
-          {scrub && (
-            <span className="label chart-readout">
-              {longDate(new Date(scrub.date + 'T00:00:00'))} · <b>${Math.round(scrub.total).toLocaleString()}</b>
-            </span>
-          )}
-        </div>
-        <Chart points={model.history} onScrub={setScrub} yFormat={moneyAxis} />
+        <Chart points={model.history} yFormat={moneyAxis} format={fullMoney} />
         <Periods periods={model.periods} />
       </div>
       <div className="cards cards-two">

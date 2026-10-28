@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useLamplight } from './lamplight';
-import { dayMon } from './model';
+import { dayMon, longDate } from './model';
 
 /** At most five evenly spaced dates for the axis (first and last always). */
 function axisLabels<T>(points: T[]): T[] {
@@ -37,7 +37,7 @@ export type Overlay = {
   level?: boolean;
 };
 
-function geometry(points: Point[], width: number, height: number, overlays: Overlay[] = []) {
+function geometry(points: Point[], width: number, height: number, overlays: Overlay[] = [], right = 0) {
   const vals = points.map((p) => p.total);
   const all = [...vals, ...overlays.flatMap((o) => o.values.filter((v): v is number => v != null))];
   let lo = Math.min(...all);
@@ -49,15 +49,33 @@ function geometry(points: Point[], width: number, height: number, overlays: Over
     hi *= 1.05;
   }
   const pad = 8;
-  const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * (width - pad * 2));
+  // the line runs from pad to `span` past it; `right` is kept clear for the end label
+  const span = width - pad * 2 - right;
+  const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * span);
   const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (height * 0.72 - pad);
-  /** Nearest point to a horizontal position. */
   /** The value at a height on the canvas (the inverse of y). */
   const valueAt = (py: number) => lo + (1 - (py - pad) / (height * 0.72 - pad)) * (hi - lo);
+  /** Nearest point to a horizontal position. */
   const indexAt = (px: number) =>
-    points.length === 1 ? 0 : Math.max(0, Math.min(points.length - 1, Math.round(((px - pad) / (width - pad * 2)) * (points.length - 1))));
-  return { vals, hi, pad, x, y, valueAt, indexAt };
+    points.length === 1 ? 0 : Math.max(0, Math.min(points.length - 1, Math.round(((px - pad) / span) * (points.length - 1))));
+  return { vals, hi, pad, span, x, y, valueAt, indexAt };
 }
+
+/** The mono face the chart draws its words in, at a size in rem. */
+function chartFont(css: CSSStyleDeclaration, rem: number, weight = 400) {
+  const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return `${weight} ${Math.round(rem * root * 10) / 10}px ${css.getPropertyValue('--mono')}`;
+}
+
+let measurer: CanvasRenderingContext2D | null = null;
+/** Width of a label in the end-label font, for the room kept to the right of the line. */
+function endLabelWidth(text: string) {
+  measurer ??= document.createElement('canvas').getContext('2d');
+  if (!measurer) return text.length * 8;
+  measurer.font = chartFont(getComputedStyle(document.documentElement), END_LABEL_REM, 500);
+  return measurer.measureText(text).width;
+}
+const END_LABEL_REM = 0.6875;
 
 /**
  * Ink line with a linen-weave shading beneath it. Dragging a mouse
@@ -68,10 +86,16 @@ export function Chart({
   overlays,
   onScrub,
   yFormat,
+  format,
+  endLabel = false,
 }: {
   points: Point[];
   /** how the y-axis values read, e.g. "$1.2M" */
   yFormat: (v: number) => string;
+  /** a value in full, for the scrub readout (and the end label), e.g. "$81.31" */
+  format: (v: number) => string;
+  /** write the latest value just right of the line's end dot */
+  endLabel?: boolean;
   /** more lines on the same scale, one value per point (e.g. moving averages); colour is a CSS variable */
   overlays?: Overlay[];
   onScrub?: (p: Point | null, i: number) => void;
@@ -80,7 +104,10 @@ export function Chart({
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
   const [scrub, setScrub] = useState<number | null>(null);
   const light = useLamplight();
-  const g = useMemo(() => geometry(points, width, HEIGHT, overlays), [points, width, HEIGHT, overlays]);
+  const last = points[points.length - 1];
+  const endText = endLabel && last ? format(last.total) : '';
+  const right = endText ? endLabelWidth(endText) + 10 : 0;
+  const g = useMemo(() => geometry(points, width, HEIGHT, overlays, right), [points, width, HEIGHT, overlays, right]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
   useEffect(() => {
@@ -107,10 +134,10 @@ export function Chart({
     const INK = css.getPropertyValue('--ink').trim();
     const STIPPLE = css.getPropertyValue('--stipple').trim();
 
-    const { vals, pad, x, y } = g;
+    const { vals, pad, span, x, y } = g;
     const lineAt = (px: number) => {
       if (points.length === 1) return y(vals[0]);
-      const t = ((px - pad) / (width - pad * 2)) * (points.length - 1);
+      const t = ((px - pad) / span) * (points.length - 1);
       const i = Math.max(0, Math.min(points.length - 2, Math.floor(t)));
       const f = Math.max(0, Math.min(1, t - i));
       return y(vals[i] + (vals[i + 1] - vals[i]) * f);
@@ -160,8 +187,7 @@ export function Chart({
 
     // a minimal y axis: faint dotted rules at a few round values, labelled at the left
     const MUTED = css.getPropertyValue('--muted').trim();
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    ctx.font = `400 ${Math.round(0.5938 * rem * 10) / 10}px ${css.getPropertyValue('--mono')}`;
+    ctx.font = chartFont(css, 0.5938);
     if ('letterSpacing' in ctx) (ctx as { letterSpacing: string }).letterSpacing = '0.06em';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
@@ -227,7 +253,17 @@ export function Chart({
       ctx.stroke();
       ctx.setLineDash([]);
     }
-  }, [width, HEIGHT, points, overlays, g, light, yFormat]);
+
+    // the latest value, just right of the end dot, flush with the panel's right edge
+    if (endText) {
+      ctx.font = chartFont(css, END_LABEL_REM, 500);
+      if ('letterSpacing' in ctx) (ctx as { letterSpacing: string }).letterSpacing = '0px';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = INK;
+      ctx.fillText(endText, width, y(vals[vals.length - 1]));
+    }
+  }, [width, HEIGHT, points, overlays, g, light, yFormat, endText]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);
@@ -245,8 +281,17 @@ export function Chart({
     onScrub?.(null, -1);
   };
 
+  const at = scrub !== null && scrub < points.length ? points[scrub] : null;
   return (
     <div className="chart">
+      {/* while scrubbing, the day and its value, together and centred above the plot */}
+      <div className="chart-tip" aria-live="polite">
+        {at && (
+          <>
+            {longDate(new Date(at.date + 'T00:00:00'))} · <b>{format(at.total)}</b>
+          </>
+        )}
+      </div>
       <div
         className="chart-plot"
         onPointerDown={(e) => {
@@ -262,10 +307,10 @@ export function Chart({
         onTouchEnd={(e) => e.stopPropagation()}
       >
         <canvas ref={canvas} />
-        {scrub !== null && scrub < points.length && (
+        {at && (
           <>
-            <span className="chart-guide" style={{ left: g.x(scrub) }} />
-            <span className="chart-mark" style={{ left: g.x(scrub), top: g.y(points[scrub].total) }} />
+            <span className="chart-guide" style={{ left: g.x(scrub!) }} />
+            <span className="chart-mark" style={{ left: g.x(scrub!), top: g.y(at.total) }} />
           </>
         )}
       </div>
