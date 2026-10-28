@@ -658,11 +658,6 @@ p {
     font-size: 0.75rem;
   }
 }
-/* a module's own title, set a weight heavier than its labels */
-.label.module-title {
-  font-weight: 600;
-  color: var(--ink);
-}
 .ladder-row:nth-child(even) {
   background: var(--zebra);
 }
@@ -1968,13 +1963,12 @@ p {
   font-family: var(--mono);
   font-size: inherit;
   letter-spacing: inherit;
-  color: var(--muted);
-  padding-bottom: 0.125rem;
-  border-bottom: 1px solid transparent;
+  color: var(--ink);
+  opacity: 0.4; /* the chart not showing, faded */
+  transition: opacity 0.15s;
 }
 .chart-switch button.on {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
+  opacity: 1;
 }
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
 .cash-split .module-head {

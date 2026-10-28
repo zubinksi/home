@@ -49,7 +49,7 @@ function geometry(points: Point[], width: number, height: number, overlays: Over
     hi *= 1.05;
   }
   const pad = 8;
-  // the line runs from pad to `span` past it; `right` is kept clear for the end label
+  // the line runs from pad to `span` past it; `right` is kept clear for the labels
   const span = width - pad * 2 - right;
   const x = (i: number) => (points.length === 1 ? width / 2 : pad + (i / (points.length - 1)) * span);
   const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (height * 0.72 - pad);
@@ -68,13 +68,16 @@ function chartFont(css: CSSStyleDeclaration, rem: number, weight = 400) {
 }
 
 let measurer: CanvasRenderingContext2D | null = null;
-/** Width of a label in the end-label font, for the room kept to the right of the line. */
-function endLabelWidth(text: string) {
+/** Width of a piece of chart text, for the room kept to the right of the line. */
+function textWidth(text: string, rem: number, weight = 400) {
   measurer ??= document.createElement('canvas').getContext('2d');
-  if (!measurer) return text.length * 8;
-  measurer.font = chartFont(getComputedStyle(document.documentElement), END_LABEL_REM, 500);
+  if (!measurer) return text.length * rem * 10;
+  measurer.font = chartFont(getComputedStyle(document.documentElement), rem, weight);
   return measurer.measureText(text).width;
 }
+const AXIS_REM = 0.5938;
+const TAG_PAD = 5; // px either side of the price inside its tag
+const GUTTER_GAP = 8; // px between the line's end and the right-hand labels
 const END_LABEL_REM = 0.6875;
 
 /**
@@ -94,7 +97,7 @@ export function Chart({
   yFormat: (v: number) => string;
   /** a value in full, for the scrub readout (and the end label), e.g. "$81.31" */
   format: (v: number) => string;
-  /** write the latest value just right of the line's end dot */
+  /** show the latest value in a tag at the right, level with the line's end */
   endLabel?: boolean;
   /** more lines on the same scale, one value per point (e.g. moving averages); colour is a CSS variable */
   overlays?: Overlay[];
@@ -106,7 +109,16 @@ export function Chart({
   const light = useLamplight();
   const last = points[points.length - 1];
   const endText = endLabel && last ? format(last.total) : '';
-  const right = endText ? endLabelWidth(endText) + 10 : 0;
+  // the y labels and the price tag share a gutter on the right, as wide as the widest of them
+  const right = useMemo(() => {
+    const all = [...points.map((p) => p.total), ...(overlays ?? []).flatMap((o) => o.values.filter((v): v is number => v != null))];
+    if (!all.length) return 0;
+    const lo = Math.min(...all);
+    const hi = Math.max(...all);
+    const labels = yTicks(lo - (hi - lo), hi + (hi - lo) * 0.2).map((v) => textWidth(yFormat(v), AXIS_REM));
+    const tag = endText ? textWidth(endText, END_LABEL_REM, 500) + TAG_PAD * 2 : 0;
+    return Math.ceil(Math.max(tag, ...labels)) + GUTTER_GAP;
+  }, [points, overlays, yFormat, endText]);
   const g = useMemo(() => geometry(points, width, HEIGHT, overlays, right), [points, width, HEIGHT, overlays, right]);
 
   // Canvas size comes from CSS (.chart canvas), so it follows the page scale.
@@ -185,12 +197,16 @@ export function Chart({
     ctx.fillRect(0, 0, width, HEIGHT);
     ctx.restore();
 
-    // a minimal y axis: faint dotted rules at a few round values, labelled at the left
+    // a minimal y axis: faint dotted rules at a few round values, labelled in the
+    // right-hand gutter beside the price tag
     const MUTED = css.getPropertyValue('--muted').trim();
-    ctx.font = chartFont(css, 0.5938);
+    const ruleEnd = width - right + GUTTER_GAP / 2;
+    const tagY = endText ? y(vals[vals.length - 1]) : null;
+    const clearOfTag = (ty: number) => tagY == null || Math.abs(ty - tagY) >= 20;
+    ctx.font = chartFont(css, AXIS_REM);
     if ('letterSpacing' in ctx) (ctx as { letterSpacing: string }).letterSpacing = '0.06em';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'bottom';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     ctx.fillStyle = MUTED;
     ctx.strokeStyle = MUTED;
     ctx.lineWidth = 0.75;
@@ -201,22 +217,24 @@ export function Chart({
       .filter((o) => o.level && o.values[0] != null)
       .map((o) => ({ v: o.values[0]!, color: css.getPropertyValue(o.color).trim() }));
     // down to just above the axis, since the shading runs below the lowest point
-    for (const v of yTicks(g.valueAt(HEIGHT - 14), g.hi)) {
+    for (const v of yTicks(g.valueAt(HEIGHT - 10), g.hi)) {
       const ty = Math.round(y(v)) + 0.5;
-      if (ty < 14) continue; // no room for its label at the very top
+      if (ty < 8) continue; // no room for its label at the very top
       if (levels.some((l) => Math.abs(y(l.v) - ty) < 14)) continue;
       ctx.globalAlpha = 0.45;
       ctx.beginPath();
       ctx.moveTo(0, ty);
-      ctx.lineTo(width, ty);
+      ctx.lineTo(ruleEnd, ty);
       ctx.stroke();
       ctx.globalAlpha = 1;
-      ctx.fillText(yFormat(v), 0, ty - 2);
+      if (clearOfTag(ty)) ctx.fillText(yFormat(v), width, ty);
     }
     ctx.setLineDash([]);
     for (const l of levels) {
+      const ly = Math.round(y(l.v));
+      if (!clearOfTag(ly)) continue;
       ctx.fillStyle = l.color;
-      ctx.fillText(yFormat(l.v), 0, Math.round(y(l.v)) - 2);
+      ctx.fillText(yFormat(l.v), width, ly);
     }
 
     // line + end dot
@@ -238,9 +256,9 @@ export function Chart({
       ctx.setLineDash(o.dashed ? [4, 3] : []);
       ctx.beginPath();
       if (o.level && o.values[0] != null) {
-        // a price level spans the full width, flush with the panel edges
+        // a price level runs from the left edge to its label in the gutter
         ctx.moveTo(0, y(o.values[0]));
-        ctx.lineTo(width, y(o.values[0]));
+        ctx.lineTo(ruleEnd, y(o.values[0]));
       } else {
         let started = false;
         o.values.forEach((v, i) => {
@@ -254,16 +272,22 @@ export function Chart({
       ctx.setLineDash([]);
     }
 
-    // the latest value, just right of the end dot, flush with the panel's right edge
-    if (endText) {
+    // the latest value in a small ink tag, level with the end dot, flush with the right edge
+    if (endText && tagY != null) {
       ctx.font = chartFont(css, END_LABEL_REM, 500);
       if ('letterSpacing' in ctx) (ctx as { letterSpacing: string }).letterSpacing = '0px';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
+      const w = textWidth(endText, END_LABEL_REM, 500) + TAG_PAD * 2;
+      const h = 16;
       ctx.fillStyle = INK;
-      ctx.fillText(endText, width, y(vals[vals.length - 1]));
+      ctx.beginPath();
+      ctx.roundRect(width - w, tagY - h / 2, w, h, 2);
+      ctx.fill();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = css.getPropertyValue('--slab').trim();
+      ctx.fillText(endText, width - w / 2, tagY + 0.5);
     }
-  }, [width, HEIGHT, points, overlays, g, light, yFormat, endText]);
+  }, [width, HEIGHT, points, overlays, g, light, yFormat, endText, right]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);
@@ -314,7 +338,8 @@ export function Chart({
           </>
         )}
       </div>
-      <div className="chart-axis">
+      {/* dates span exactly the line, not the gutter */}
+      <div className="chart-axis" style={{ paddingLeft: g.pad, paddingRight: g.pad + right }}>
         {axisLabels(points).map((p, i) => (
           <span key={i}>{dayMon(p.date)}</span>
         ))}

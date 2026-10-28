@@ -128,7 +128,7 @@ function ModuleView({ m }: { m: Module }) {
       return (
         <div className="module">
           <div className="module-head">
-            <span className="label module-title">SKIM LADDER</span>
+            <span className="label">SKIM LADDER</span>
           </div>
           <div className="ladder">
             <div className="ladder-row head">
@@ -246,6 +246,7 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
+  const charted = s.key === 'HYPE' || s.key === 'ZEC';
   return (
     <>
       <div className="d-title">
@@ -274,13 +275,13 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
           )}
         </>
       )}
-      {s.asset && s.key !== 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
+      {/* returns sit under the chart where there is one, as on the Total page */}
+      {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <ZecCharts market={market} />}
-      {/* HYPE's returns sit under its chart, as on the Total page */}
       {s.key === 'HYPE' && (
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
-      {s.asset && s.key === 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
