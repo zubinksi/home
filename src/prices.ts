@@ -1,12 +1,13 @@
-// Live prices for HYPE, ZEC and AAPL, and the daily value of the liquid portfolio.
+// Live prices for HYPE, ZEC, AAPL and the Equities positions, and the daily
+// value of the liquid portfolio.
 //
 //  - HYPE and ZEC come from CoinGecko, which browsers may call directly.
-//  - AAPL comes from Yahoo Finance through this site's server (/api/stock);
-//    Yahoo doesn't allow browsers to call it directly.
+//  - AAPL and the Equities stocks come from Yahoo Finance through this site's
+//    server (/api/stock); Yahoo doesn't allow browsers to call it directly.
 // Anything that can't be fetched falls back to the latest review's price.
 
 import { useEffect, useMemo, useState } from 'react';
-import { holdings, reviews } from './data';
+import { equitiesSince, holdings, reviews } from './data';
 import { isoDay, type Asset, type LivePrices, type Quote, type Series } from './model';
 
 const COINGECKO = 'https://api.coingecko.com/api/v3';
@@ -27,6 +28,8 @@ export interface MarketState {
   zecBtc?: History;
   /** HYPE in USD, daily, about 300 days, for the HYPE chart's 100-day average */
   hypeLong?: History;
+  /** daily closes for each Equities position, by ticker */
+  stockHistories?: Record<string, History>;
 }
 
 const firstDay = reviews[0].date;
@@ -121,14 +124,35 @@ function reviewPrice(asset: Asset, day: string) {
   return asset === 'hype' ? r.hype.price : asset === 'zec' ? r.zec.price : r.aapl.price;
 }
 
+/** The Equities positions' value on a day: today's shares at that day's closes (today at live prices). */
+function equitiesOn(day: string, today: string, live: LivePrices, histories: Record<string, History> = {}) {
+  return holdings.equities.positions.reduce((t, p) => {
+    const price = day === today && live.stocks?.[p.ticker] ? live.stocks[p.ticker].price : priceOn(histories[p.ticker], day, p.price);
+    return t + p.shares * price;
+  }, 0);
+}
+
+/**
+ * The Equities positions' daily value since they were bought: each trading
+ * day's close, then today at live prices.
+ */
+export function buildEquitiesSeries(live: LivePrices, histories: Record<string, History> = {}): Series | null {
+  const today = isoDay(new Date());
+  const days = new Set<string>();
+  for (const h of Object.values(histories)) for (const [d] of h) if (d >= equitiesSince && d < today) days.add(d);
+  if (!days.size) return null;
+  days.add(today);
+  return [...days].sort().map((date) => ({ date, total: equitiesOn(date, today, live, histories) }));
+}
+
 /**
  * Today's holdings valued at each day's prices, from the first review to today.
- * Cash, equities and Diversified are held at their current amounts.
+ * Cash and Diversified are held at their current amounts; Equities at the
+ * review's figure until the positions were bought, then at market.
  */
-export function buildSeries(histories: Histories, live: LivePrices): Series | null {
+export function buildSeries(histories: Histories, live: LivePrices, stockHistories?: Record<string, History>): Series | null {
   if (!histories.hype && !histories.zec && !histories.aapl) return null;
-  const fixed =
-    holdings.fortress.value + holdings.equities.value + holdings.diversified.voo + holdings.diversified.vxus + holdings.diversified.avuv;
+  const fixed = holdings.fortress.value + holdings.diversified.voo + holdings.diversified.vxus + holdings.diversified.avuv;
   const today = isoDay(new Date());
   const out: Series = [];
   for (let d = new Date(firstDay + 'T00:00:00'); isoDay(d) <= today; d.setDate(d.getDate() + 1)) {
@@ -137,7 +161,12 @@ export function buildSeries(histories: Histories, live: LivePrices): Series | nu
     const px = (a: Asset) => (isToday && live[a] ? live[a]!.price : priceOn(histories[a], day, reviewPrice(a, day)));
     out.push({
       date: day,
-      total: holdings.hype.tokens * px('hype') + holdings.zec.tokens * px('zec') + holdings.aapl.shares * px('aapl') + fixed,
+      total:
+        holdings.hype.tokens * px('hype') +
+        holdings.zec.tokens * px('zec') +
+        holdings.aapl.shares * px('aapl') +
+        (day < equitiesSince ? reviews[0].equities : equitiesOn(day, today, live, stockHistories)) +
+        fixed,
     });
   }
   return out;
@@ -165,8 +194,9 @@ export function useMarket() {
     let alive = true;
     const merge = (fn: (s: MarketState) => MarketState) => alive && setState((s) => fn(s));
 
+    const tickers = holdings.equities.positions.map((p) => p.ticker);
     const refreshQuotes = async () => {
-      const [crypto, aapl] = await Promise.allSettled([cryptoQuotes(), stock('AAPL')]);
+      const [crypto, aapl, ...stocks] = await Promise.allSettled([cryptoQuotes(), stock('AAPL'), ...tickers.map((t) => stock(t))]);
       merge((s) => {
         const live = { ...s.live };
         const problems = { ...s.problems };
@@ -181,8 +211,17 @@ export function useMarket() {
           if (aapl.value.history.length) histories.aapl = aapl.value.history;
           delete problems.aapl;
         } else problems.aapl = aapl.reason instanceof Error ? aapl.reason.message : 'unavailable';
+        // each Equities stock keeps its last good quote and closes if a refresh fails
+        const liveStocks = { ...(live.stocks ?? {}) };
+        const stockHistories = { ...(s.stockHistories ?? {}) };
+        stocks.forEach((r, i) => {
+          if (r.status !== 'fulfilled') return;
+          liveStocks[tickers[i]] = r.value.quote;
+          if (r.value.history.length) stockHistories[tickers[i]] = r.value.history;
+        });
+        live.stocks = liveStocks;
         const ok = crypto.status === 'fulfilled' || aapl.status === 'fulfilled';
-        return { ...s, live, histories, problems, at: ok ? Date.now() : s.at };
+        return { ...s, live, histories, stockHistories, problems, at: ok ? Date.now() : s.at };
       });
     };
 
@@ -224,6 +263,9 @@ export function useMarket() {
     }
   }, [state]);
 
-  const series = useMemo(() => buildSeries(state.histories, state.live), [state.histories, state.live]);
+  const series = useMemo(
+    () => buildSeries(state.histories, state.live, state.stockHistories),
+    [state.histories, state.live, state.stockHistories],
+  );
   return { ...state, series };
 }

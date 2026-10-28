@@ -22,7 +22,7 @@ export interface Review {
   hype: { tokens: number; price: number };
   zec: { tokens: number; price: number };
   aapl: { shares: number; price: number };
-  equities: number; // the Equities positions (see equityPositions)
+  equities: number; // $ in the Equities positions at that review (today's value comes from equityPositions)
   cash: number; // the Fortress
   diversified: { voo: number; vxus: number; avuv: number };
 }
@@ -76,16 +76,22 @@ export const fortressYield = 0.045;
 export interface EquityPosition {
   ticker: string;
   name: string;
-  value: number; // $, as of the latest review
+  shares: number;
+  /** a recent share price, used only until live prices arrive (or if they can't) */
+  price: number;
   thesis: string | null;
   sellIf: string | null;
 }
+
+/** The day the Equities positions were bought; the Equities chart starts here. */
+export const equitiesSince = '2026-10-21';
 
 export const equityPositions: EquityPosition[] = [
   {
     ticker: 'LLY',
     name: 'Eli Lilly',
-    value: 11_000,
+    shares: 8,
+    price: 1_375,
     thesis:
       'Lilly has the most efficient pipeline for drug development and GLPs are selling incredibly well. AI entrenches their moat since drugs can be patented in a way software cannot. A trillion dollar company worth multiple trillions.',
     sellIf: null,
@@ -93,7 +99,8 @@ export const equityPositions: EquityPosition[] = [
   {
     ticker: 'FIG',
     name: 'Figma',
-    value: 7_000,
+    shares: 300,
+    price: 23.33,
     thesis:
       'Figma is underrated in terms of their ability to monetize and have a second act crossing the chasm into being AI-native. Figma Agent can translate creative non-designers into designers. When software creation goes up 10x because of AI coding, Figma is the place where all that product work gets made coherent. The stock has been beaten down and the bear case of losing market share to Claude Design and similar products is now fairly baked in. The bull case is owning the start to finish process and becoming the organizational control panel for AI-generated interfaces.',
     sellIf: null,
@@ -101,7 +108,8 @@ export const equityPositions: EquityPosition[] = [
   {
     ticker: 'CRWD',
     name: 'CrowdStrike',
-    value: 12_000,
+    shares: 44,
+    price: 272.73,
     thesis:
       'Cyber security is increasingly necessary with AI-enabled hacks. The pace at which security compromises are occurring is speeding up and getting more concerning.',
     sellIf: null,
@@ -158,7 +166,8 @@ export const holdings = {
   aapl: { price: now.aapl.price, shares: now.aapl.shares, basis: basis.aapl as number | null },
   fortress: { value: now.cash, idleCash: fortressIdleCash },
   zec: { tokens: now.zec.tokens, price: now.zec.price, basis: basis.zec as number | null },
-  equities: { value: now.equities, positions: equityPositions },
+  // valued from the positions (shares × price), not the review's round figure
+  equities: { value: equityPositions.reduce((t, p) => t + p.shares * p.price, 0), positions: equityPositions },
   diversified: now.diversified,
 };
 

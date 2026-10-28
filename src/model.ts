@@ -41,7 +41,10 @@ export type Module =
   | { kind: 'plan'; rows: { source: string; amount: string; when: string }[]; goal: number; goalDate: string }
   | { kind: 'tax'; rows: { k: string; v: string; color?: Status }[]; note?: string }
   | { kind: 'tranches'; asset: string; price: number; held: number; sales: { date: string; price: number; tokens: number }[] }
-  | { kind: 'positions'; rows: { ticker: string; name: string; value: number; share: number; overMax: boolean; thesis: string | null; sellIf: string | null }[] };
+  | {
+      kind: 'positions';
+      rows: { ticker: string; name: string; shares: number; price: number; value: number; share: number; overMax: boolean; thesis: string | null; sellIf: string | null }[];
+    };
 
 export interface Sleeve {
   key: SleeveKey;
@@ -164,7 +167,10 @@ export interface Quote {
   source: string;
 }
 /** Live prices; any asset missing falls back to the latest review's price. */
-export type LivePrices = Partial<Record<Asset, Quote>>;
+export type LivePrices = Partial<Record<Asset, Quote>> & {
+  /** the Equities positions, by ticker */
+  stocks?: Record<string, Quote>;
+};
 /** Daily value of the liquid portfolio at market prices. */
 export type Series = { date: string; total: number }[];
 
@@ -192,6 +198,15 @@ function positionLine(qty: string, price: number, gain: number | null) {
 
 // ── derivation ──────────────────────────────────────────────────────────────
 
+/** The Equities positions at live prices (each falls back to its last known price). */
+export function equitiesAt(live: LivePrices) {
+  const positions = holdings.equities.positions.map((p) => {
+    const price = live.stocks?.[p.ticker]?.price ?? p.price;
+    return { ...p, price, value: p.shares * price };
+  });
+  return { value: positions.reduce((t, p) => t + p.value, 0), positions };
+}
+
 export function buildSleeves(live: LivePrices = {}, series: Series | null = null) {
   const aaplPrice = live.aapl?.price ?? holdings.aapl.price;
   const h = {
@@ -199,6 +214,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
     hype: { ...holdings.hype, price: live.hype?.price ?? holdings.hype.price },
     zec: { ...holdings.zec, price: live.zec?.price ?? holdings.zec.price },
     aapl: { ...holdings.aapl, price: aaplPrice, value: holdings.aapl.shares * aaplPrice },
+    equities: equitiesAt(live),
   };
   const hype = h.hype.tokens * h.hype.price;
   const zec = h.zec.tokens * h.zec.price;

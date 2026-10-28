@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Chart } from './Chart';
-import type { MarketState } from './prices';
+import { buildEquitiesSeries, type MarketState } from './prices';
 import {
   compact,
   longDate,
@@ -16,6 +16,7 @@ import {
   type buildSleeves,
   type KV,
   type Module,
+  type Series,
   type Sleeve,
 } from './model';
 
@@ -84,7 +85,10 @@ function Positions({ rows }: { rows: PositionRow[] }) {
           return (
             <div key={p.ticker} className={`eq-pos ${isOpen ? 'is-open' : ''}`}>
               <button className="eq-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : p.ticker)}>
-                <span className="eq-ticker">{p.ticker}</span>
+                <span className="eq-ticker">
+                  {p.ticker}
+                  <span className="eq-shares">{num(p.shares)} SH</span>
+                </span>
                 <span className="eq-name">
                   {p.name}
                   {missing && <span className="eq-flag" title="Thesis not written yet" />}
@@ -291,6 +295,11 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
   const charted = s.key === 'HYPE' || s.key === 'ZEC';
+  // the Equities positions together, daily since they were bought
+  const equities = useMemo(
+    () => (s.key === 'EQUITIES' ? buildEquitiesSeries(market.live, market.stockHistories) : null),
+    [s.key, market.live, market.stockHistories],
+  );
   return (
     <>
       <div className="d-title">
@@ -329,6 +338,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
       {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.key === 'EQUITIES' && <EquitiesChart series={equities} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
@@ -489,6 +499,17 @@ function PriceChart({
   );
 }
 
+/** The Equities positions' combined value since they were bought, with its returns beneath. */
+function EquitiesChart({ series }: { series: Series | null }) {
+  const history = useMemo(() => (series ?? []).map((p) => [p.date, p.total] as [string, number]), [series]);
+  return (
+    <>
+      <PriceChart title="Equities" history={history} show={history.length} fmt={fullMoney} axisFmt={kAxis} />
+      <Periods periods={periodChanges(series ?? [])} />
+    </>
+  );
+}
+
 /** ZEC in dollars (the default) or against bitcoin, with a switch between them. */
 function ZecCharts({ market }: { market: MarketState }) {
   const [vs, setVs] = useState<'usd' | 'btc'>('usd');
@@ -515,6 +536,7 @@ function ZecCharts({ market }: { market: MarketState }) {
 const btcFmt = (v: number) => `${v.toFixed(3)} BTC`;
 const btcAxis = (v: number) => `${+v.toFixed(4)}`;
 const dollarAxis = (v: number) => `$${+v.toFixed(2)}`;
+const kAxis = (v: number) => `$${+(v / 1e3).toFixed(1)}K`;
 const fullMoney = (v: number) => `$${Math.round(v).toLocaleString()}`;
 const moneyAxis = (v: number) => (v >= 1e6 ? `$${+(v / 1e6).toFixed(2)}M` : `$${Math.round(v / 1e3)}K`);
 

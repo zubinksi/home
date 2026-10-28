@@ -790,6 +790,15 @@ p {
   font-size: 0.875rem;
   color: var(--ink2);
 }
+.eq-shares {
+  display: block;
+  margin-top: 0.125rem;
+  font-weight: 400;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
 /* a small amber dot: something still to write */
 .eq-flag {
   display: inline-block;
