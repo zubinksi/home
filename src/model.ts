@@ -39,7 +39,8 @@ export type Module =
   | { kind: 'ladder'; rungs: Rung[]; sold: number; next: number; price: number; keep: number; total: number }
   | { kind: 'gauge'; now: number; target: number; floor: number; max: number }
   | { kind: 'plan'; rows: { source: string; amount: string; when: string }[]; goal: number; goalDate: string }
-  | { kind: 'tax'; rows: { k: string; v: string; color?: Status }[]; note?: string };
+  | { kind: 'tax'; rows: { k: string; v: string; color?: Status }[]; note?: string }
+  | { kind: 'positions'; rows: { ticker: string; name: string; value: number; share: number; overMax: boolean; thesis: string | null; sellIf: string | null }[] };
 
 export interface Sleeve {
   key: SleeveKey;
@@ -285,6 +286,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
 
   // ── EQUITIES (flexible bucket / researched bets)
   const eqShare = share(h.equities.value);
+  const withThesis = h.equities.positions.filter((p) => p.thesis && p.sellIf).length;
   const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : div === 0 && h.equities.value > 0 ? 'amber' : 'green';
 
   const sleeves: Sleeve[] = [
@@ -450,7 +452,12 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       alloc: div === 0 ? `${pct(eqShare)} · SLATED FOR DIVERSIFIED` : `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
       kv: [
-        { k: 'POSITIONS', v: dash(h.equities.positions, num), d: h.equities.positions == null ? 'LIST AT REVIEW' : undefined },
+        {
+          k: 'POSITIONS',
+          v: num(h.equities.positions.length),
+          d: `${num(withThesis)} OF ${num(h.equities.positions.length)} WITH A THESIS`,
+          dc: withThesis === h.equities.positions.length ? 'green' : 'amber',
+        },
         { k: 'MAX EACH', v: money(total * RULES.maxPosition), d: '5% OF LIQUID' },
       ],
       policy: [
@@ -460,6 +467,10 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
         'Every position needs a written thesis in our own words. If the thesis breaks, we sell regardless of price.',
         'Changes only at quarterly reviews. Research arrives weekly; we don’t trade weekly.',
       ],
+      module: {
+        kind: 'positions',
+        rows: h.equities.positions.map((p) => ({ ...p, share: share(p.value), overMax: share(p.value) > RULES.maxPosition })),
+      },
     },
     {
       key: 'DIVERSIFIED',

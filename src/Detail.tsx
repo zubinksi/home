@@ -7,6 +7,7 @@ import {
   money,
   monYY,
   num,
+  pct,
   periodChanges,
   isoDay,
   priceFmt,
@@ -148,6 +149,37 @@ function ModuleView({ m }: { m: Module }) {
                 <span className="plan-src">{r.source}</span>
                 <span className="plan-amt">{r.amount}</span>
                 <span className="plan-when">{r.when}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    case 'positions':
+      return (
+        <div className="module">
+          <div className="module-head">
+            <span className="label">POSITIONS</span>
+            <span className="label">MAX {pct(RULES.maxPosition)} OF LIQUID EACH</span>
+          </div>
+          <div className="eq-list">
+            {m.rows.map((p) => (
+              <div key={p.ticker} className="eq-pos">
+                <div className="eq-head">
+                  <span className="eq-ticker">{p.ticker}</span>
+                  <span className="eq-name">{p.name}</span>
+                  <span className="eq-amt">{money(p.value)}</span>
+                  <span className="eq-share" style={p.overMax ? { color: STATUS_COLOR.red } : undefined}>
+                    {pct(p.share, 1)}
+                  </span>
+                </div>
+                <div className="eq-field">
+                  <span className="label">THESIS</span>
+                  {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
+                </div>
+                <div className="eq-field">
+                  <span className="label">SELL IF</span>
+                  {p.sellIf ? <p>{p.sellIf}</p> : <p className="eq-missing">Not written yet.</p>}
+                </div>
               </div>
             ))}
           </div>

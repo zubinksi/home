@@ -68,8 +68,24 @@ export const evergreenReceived: { date: string; amount: number }[] = [];
 /** What T-bills / SGOV pay, for the Fortress yield bar (an estimate; update as rates move). */
 export const fortressYield = 0.045;
 
-/** Number of positions in the flexible / Equities bucket. */
-export const equityPositions: number | null = null;
+/**
+ * The Equities positions. Every one needs a thesis in our own words, and the
+ * line that would break it (if it breaks, we sell regardless of price).
+ * Leave a field null until it's written; the page shows it as missing.
+ */
+export interface EquityPosition {
+  ticker: string;
+  name: string;
+  value: number; // $, as of the latest review
+  thesis: string | null;
+  sellIf: string | null;
+}
+
+export const equityPositions: EquityPosition[] = [
+  { ticker: 'LLY', name: 'Eli Lilly', value: 11_000, thesis: null, sellIf: null },
+  { ticker: 'FIG', name: 'Figma', value: 7_000, thesis: null, sellIf: null },
+  { ticker: 'CRWD', name: 'CrowdStrike', value: 12_000, thesis: null, sellIf: null },
+];
 
 /** Reviews at which we've agreed to skip the ZEC 10% trim (by review date). */
 export const zecTrimWaived: string[] = ['2026-11-01'];
