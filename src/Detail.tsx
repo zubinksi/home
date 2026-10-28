@@ -310,7 +310,14 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         // held assets: what we hold at what price, and how it's done (for HYPE
         // and ZEC the holding is in the table and the price on the chart)
         <div className="d-pos">
-          <span>{!charted && s.position.holding}</span>
+          {/* Equities keeps its share of liquid on the left; HYPE and ZEC show the holding elsewhere */}
+          {s.key === 'EQUITIES' ? (
+            <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
+              {s.alloc}
+            </span>
+          ) : (
+            <span>{!charted && s.position.holding}</span>
+          )}
           {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
         </div>
       ) : (
@@ -505,7 +512,8 @@ function EquitiesChart({ series }: { series: Series | null }) {
   return (
     <>
       <PriceChart title="Equities" history={history} show={history.length} fmt={fullMoney} axisFmt={kAxis} />
-      <Periods periods={periodChanges(series ?? [])} />
+      {/* no partial 3M figure: a dash until the positions have three months behind them */}
+      <Periods periods={periodChanges(series ?? [], false)} />
     </>
   );
 }

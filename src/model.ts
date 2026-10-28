@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecSales, zecTrimWaived } from './data';
+import { basis, diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecSales, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -471,6 +471,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       alloc: `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
       kv: [],
+      position: positionLine('', 0, h.equities.value - basis.equities),
       policy: [
         'New cash goes to Diversified first; we add to Equities positions only after that.',
         'Equities cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',
@@ -627,7 +628,11 @@ export const PERIODS = [
  * when the line doesn't reach back that far, except the longest period, which
  * shows the change since the line began (`since`) until it has full history.
  */
-export function periodChanges(history: { date: string; total: number }[]): { label: string; change: number | null; since?: string }[] {
+export function periodChanges(
+  history: { date: string; total: number }[],
+  /** let the longest period show the change since the line began, until it has full history */
+  partial = true,
+): { label: string; change: number | null; since?: string }[] {
   const last = history[history.length - 1];
   return PERIODS.map(({ label, days }, i) => {
     if (!last) return { label, change: null };
@@ -635,7 +640,7 @@ export function periodChanges(history: { date: string; total: number }[]): { lab
     d.setDate(d.getDate() - days);
     const from = isoDay(d);
     if (history[0].date > from) {
-      if (i < PERIODS.length - 1 || history.length < 2) return { label, change: null };
+      if (!partial || i < PERIODS.length - 1 || history.length < 2) return { label, change: null };
       const first = history[0];
       return { label, change: first.total ? last.total / first.total - 1 : null, since: first.date };
     }
