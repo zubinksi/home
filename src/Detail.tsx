@@ -372,12 +372,15 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   );
 }
 
+// a stable empty default: a fresh [] each render would redraw the chart on every scrub
+const NO_LEVELS: { price: number; next?: boolean }[] = [];
+
 /** A daily price line for the last `show` days, with any fixed price levels across it. */
 function PriceChart({
   title,
   history,
   show,
-  levels = [],
+  levels = NO_LEVELS,
   fmt,
   axisFmt,
   heading,
