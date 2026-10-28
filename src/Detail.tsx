@@ -265,11 +265,13 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
           )}
         </>
       )}
-      {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.asset && s.key !== 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'ZEC' && <ZecCharts market={market} />}
+      {/* HYPE's returns sit under its chart, as on the Total page */}
       {s.key === 'HYPE' && (
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
+      {s.asset && s.key === 'HYPE' && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
     </>
