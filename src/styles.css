@@ -1989,10 +1989,13 @@ p {
   transition: color 0.15s;
 }
 .chart-switch button.on {
-  color: #2e2210;
-  text-shadow: 0 0.0625rem 0 rgba(255, 238, 200, 0.45);
-  /* the knob's finish: concentric machining over a turned bronze */
+  color: #1e1408;
+  font-weight: 600;
+  text-shadow: 0 0.0625rem 0 rgba(255, 240, 205, 0.6);
+  /* the knob's finish: concentric machining over a turned bronze, with a
+     soft polished patch under the label so it reads */
   background:
+    radial-gradient(ellipse 70% 80% at 50% 50%, rgba(246, 228, 182, 0.55), rgba(246, 228, 182, 0) 100%),
     repeating-radial-gradient(circle at 50% 50%, rgba(255, 238, 200, 0.12) 0 0.5px, rgba(60, 40, 12, 0.08) 0.5px 1.5px),
     conic-gradient(from 20deg, #e9cf95, #a07a3e, #dcbd7f, #8a6633, #e6c98c, #9a743b, #e9cf95);
   box-shadow:
