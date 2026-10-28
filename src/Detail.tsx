@@ -309,11 +309,14 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
           {/* the Fortress's coverage is already the first bar below */}
           {!s.runway && (
             <>
-              <div className="d-sub">
-                <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
-                  {s.alloc}
-                </span>
-              </div>
+              {/* Diversified's goal is already the funding plan's heading */}
+              {s.key !== 'DIVERSIFIED' && (
+                <div className="d-sub">
+                  <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
+                    {s.alloc}
+                  </span>
+                </div>
+              )}
               <Cards kv={s.kv} />
             </>
           )}
