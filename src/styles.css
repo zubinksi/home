@@ -1788,15 +1788,25 @@ p {
 }
 
 /* price charts with moving averages (HYPE, ZEC / BTC) */
+.chart-switch {
+  display: inline-flex;
+  gap: 0.875rem;
+}
+.chart-switch button {
+  font-family: var(--mono);
+  font-size: inherit;
+  letter-spacing: inherit;
+  color: var(--muted);
+  padding-bottom: 0.125rem;
+  border-bottom: 1px solid transparent;
+}
+.chart-switch button.on {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
 .zecbtc-now b {
   font-weight: 500;
   color: var(--ink);
-}
-.runway-key i.key-avg {
-  border-top: 1.25px solid var(--accent);
-}
-.runway-key i.key-avg.ma-100 {
-  border-top-color: var(--iris);
 }
 .runway-key i.key-level {
   border-top: 1px dashed var(--accent);

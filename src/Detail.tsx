@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Chart } from './Chart';
 import type { MarketState } from './prices';
 import {
@@ -198,18 +198,23 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         </div>
       ) : (
         <>
-          <div className="d-sub">
-            <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
-              {s.alloc}
-            </span>
-          </div>
-          {!s.runway && <Cards kv={s.kv} />}
+          {/* the Fortress's coverage is already the first bar below */}
+          {!s.runway && (
+            <>
+              <div className="d-sub">
+                <span className="d-alloc" style={{ color: STATUS_COLOR[s.status] }}>
+                  {s.alloc}
+                </span>
+              </div>
+              <Cards kv={s.kv} />
+            </>
+          )}
         </>
       )}
       {s.asset && <Periods periods={assetPeriods(market, s.asset)} />}
-      {s.key === 'ZEC' && <PriceChart title="ZEC / BTC" history={market.zecBtc} show={90} averages={ZEC_AVERAGES} fmt={btcFmt} axisFmt={btcAxis} />}
+      {s.key === 'ZEC' && <ZecCharts market={market} />}
       {s.key === 'HYPE' && (
-        <PriceChart title="HYPE" history={market.hypeLong} show={180} averages={NO_AVERAGES} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
+        <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
       <Policy lines={s.policy} />
@@ -313,36 +318,21 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
   );
 }
 
-/** Simple moving average over `n` days; null until there are `n` days. */
-function movingAverage(h: [string, number][], n: number) {
-  let sum = 0;
-  return h.map(([, v], i) => {
-    sum += v;
-    if (i >= n) sum -= h[i - n][1];
-    return i + 1 >= n ? sum / n : null;
-  });
-}
-
-const MA_COLORS: Record<number, string> = { 20: '--accent', 100: '--iris' };
-
-/**
- * A daily price line with moving averages over it, for the last `show` days.
- * The history passed in reaches back far enough that each average is whole
- * from the first day shown.
- */
+/** A daily price line for the last `show` days, with any fixed price levels across it. */
 function PriceChart({
   title,
   history,
   show,
-  averages,
   levels = [],
   fmt,
   axisFmt,
+  heading,
 }: {
   title: string;
+  /** shown in place of the title at the top left, e.g. a switch between charts */
+  heading?: ReactNode;
   history?: [string, number][];
   show: number;
-  averages: number[];
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
   levels?: { price: number; next?: boolean }[];
   fmt: (v: number) => string;
@@ -356,7 +346,6 @@ function PriceChart({
     return {
       points: h.slice(from).map(([date, total]) => ({ date, total })),
       overlays: [
-        ...averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
         ...levels.map((l) => ({
           values: h.slice(from).map(() => l.price),
           color: l.next ? '--accent' : '--muted',
@@ -365,7 +354,7 @@ function PriceChart({
         })),
       ],
     };
-  }, [history, show, averages, levels]);
+  }, [history, show, levels]);
   if (points.length < 2) {
     return (
       <div className="module">
@@ -380,7 +369,7 @@ function PriceChart({
   return (
     <div className="module">
       <div className="module-head">
-        <span className="label">{scrub >= 0 ? longDate(new Date(points[i].date + 'T00:00:00')) : title}</span>
+        {scrub >= 0 ? <span className="label">{longDate(new Date(points[i].date + 'T00:00:00'))}</span> : (heading ?? <span className="label">{title}</span>)}
         <span className="label zecbtc-now">
           <b>{fmt(points[i].total)}</b>
         </span>
@@ -390,11 +379,6 @@ function PriceChart({
         <span>
           <i className="key-earning" /> {title}
         </span>
-        {averages.map((n) => (
-          <span key={n}>
-            <i className={`key-avg ma-${n}`} /> {n}-DAY AVERAGE
-          </span>
-        ))}
         {levels.length > 0 && (
           <span>
             <i className="key-level" /> SELL RUNGS
@@ -405,8 +389,25 @@ function PriceChart({
   );
 }
 
-const ZEC_AVERAGES = [20];
-const NO_AVERAGES: number[] = [];
+/** ZEC in dollars (the default) or against bitcoin, with a switch between them. */
+function ZecCharts({ market }: { market: MarketState }) {
+  const [vs, setVs] = useState<'usd' | 'btc'>('usd');
+  const heading = (
+    <span className="label chart-switch" role="group" aria-label="Chart">
+      <button className={vs === 'usd' ? 'on' : ''} aria-pressed={vs === 'usd'} onClick={() => setVs('usd')}>
+        ZEC
+      </button>
+      <button className={vs === 'btc' ? 'on' : ''} aria-pressed={vs === 'btc'} onClick={() => setVs('btc')}>
+        ZEC / BTC
+      </button>
+    </span>
+  );
+  return vs === 'usd' ? (
+    <PriceChart key="usd" title="ZEC" heading={heading} history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
+  ) : (
+    <PriceChart key="btc" title="ZEC / BTC" heading={heading} history={market.zecBtc} show={90} fmt={btcFmt} axisFmt={btcAxis} />
+  );
+}
 // stable formatters (the chart redraws when they change)
 const btcFmt = (v: number) => `${v.toFixed(3)} BTC`;
 const btcAxis = (v: number) => `${+v.toFixed(4)}`;
