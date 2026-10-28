@@ -93,12 +93,20 @@ p {
   margin: 0;
 }
 
+/* masthead and page together fill exactly the visible screen (the small
+   viewport, so a phone's toolbars don't push the foot off the bottom) */
+#root {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
 .doc {
-  /* leave room for the fixed tab bar */
   padding-bottom: 1rem;
+  width: 100%;
   max-width: 67.5rem;
   margin: 0 auto;
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
