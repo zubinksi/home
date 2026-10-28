@@ -1359,6 +1359,18 @@ p {
 .gate-pip.filled {
   background: var(--accent);
 }
+/* the knob can be played with while locked: pushed left, it rolls back home */
+.lock-knob.is-grabbable {
+  cursor: grab;
+  touch-action: none;
+}
+.lock-knob.is-grabbable:active {
+  cursor: grabbing;
+}
+.gate-track.is-returning .lock-knob {
+  transition-duration: 0.8s;
+  transition-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+}
 .gate-track.is-wrong .gate-pip.filled {
   background: var(--red);
 }
@@ -1560,6 +1572,90 @@ p {
   line-height: 1.55;
   color: var(--ink3);
   max-width: 45rem;
+}
+/* all projects: spend by section, progress, biggest costs, untouched areas */
+.psum-row {
+  display: grid;
+  grid-template-columns: 1fr auto 3rem;
+  align-items: baseline;
+  column-gap: 1rem;
+  row-gap: 0.375rem;
+  padding: 0.5rem 0 0.625rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+.psum-name {
+  letter-spacing: 0.06em;
+}
+.psum-pct {
+  text-align: right;
+  color: var(--muted);
+}
+.psum-bar,
+.psum-progress {
+  grid-column: 1 / -1;
+  display: block;
+  height: 0.375rem;
+  background: var(--b1);
+}
+.psum-bar span,
+.psum-progress span {
+  display: block;
+  height: 100%;
+  background: var(--ink2);
+}
+.psum-progress {
+  height: 0.625rem;
+}
+.psum-progress span {
+  background: var(--accent);
+}
+.psum-counts {
+  display: flex;
+  gap: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.psum-counts b {
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin-right: 0.25rem;
+}
+.todo-row.psum-big {
+  grid-template-columns: 1fr auto auto;
+}
+.psum-cost {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  text-align: right;
+  color: var(--ink);
+}
+.psum-link {
+  color: var(--accent-ink);
+}
+.psum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.psum-chip {
+  padding: 0.3125rem 0.625rem;
+  background: var(--inset);
+  border-radius: 0.125rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ink2);
+}
+@media (hover: hover) {
+  .psum-chip:hover {
+    background: var(--hover);
+  }
 }
 /* the count in the summary opens the to-do table */
 .todo-link {

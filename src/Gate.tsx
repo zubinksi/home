@@ -70,8 +70,46 @@ type LockState = 'locked' | 'wrong' | 'open';
  * code, rolls back across them to open.
  */
 function GateLock({ state, entered }: { state: LockState; entered: number }) {
+  // while locked, the knob can be pushed left with a thumb; let go and it rolls home
+  const [drag, setDrag] = useState<number | null>(null); // knob position, 0 (left) … 1 (home)
+  const [returning, setReturning] = useState(false);
+  const start = useRef<{ x: number; travel: number; scale: number } | null>(null);
+  const returnTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(returnTimer.current), []);
+
+  const grab = (e: React.PointerEvent<HTMLSpanElement>) => {
+    if (state !== 'locked') return;
+    const track = e.currentTarget.parentElement!;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    // the channel is drawn scaled up, so screen pixels and its own differ
+    const scale = track.getBoundingClientRect().width / track.offsetWidth;
+    start.current = { x: e.clientX, travel: TRAVEL_REM * rem, scale };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    clearTimeout(returnTimer.current);
+    setReturning(false);
+    setDrag(1);
+  };
+  const move = (e: React.PointerEvent<HTMLSpanElement>) => {
+    const s0 = start.current;
+    if (!s0) return;
+    const dx = (e.clientX - s0.x) / s0.scale;
+    setDrag(Math.min(1, Math.max(0, 1 + dx / s0.travel)));
+  };
+  const release = () => {
+    if (!start.current) return;
+    start.current = null;
+    setDrag(null);
+    setReturning(true);
+    returnTimer.current = setTimeout(() => setReturning(false), 900);
+  };
+
+  const knobStyle =
+    drag == null
+      ? undefined
+      : { transform: `translateX(calc(var(--travel) * ${drag})) rotate(calc(var(--spin) * ${drag}))`, transition: 'none' };
+
   return (
-    <span className={`lock-track gate-track is-${state}`} aria-hidden>
+    <span className={`lock-track gate-track is-${state} ${returning ? 'is-returning' : ''}`} aria-hidden>
       <svg className="lock-icon lock-icon-closed" viewBox="0 0 12 14">
         <path d="M3.5 6.5V4.5a2.5 2.5 0 0 1 5 0v2" />
         <rect x="2" y="6.5" width="8" height="6" rx="1.2" />
@@ -85,10 +123,20 @@ function GateLock({ state, entered }: { state: LockState; entered: number }) {
           <span key={i} className={`gate-pip ${i < entered ? 'filled' : ''}`} />
         ))}
       </span>
-      <span className="lock-knob" />
+      <span
+        className={`lock-knob ${state === 'locked' ? 'is-grabbable' : ''}`}
+        style={knobStyle}
+        onPointerDown={grab}
+        onPointerMove={move}
+        onPointerUp={release}
+        onPointerCancel={release}
+      />
     </span>
   );
 }
+
+/** How far the knob travels along the channel, in rem (matches --travel in styles.css). */
+const TRAVEL_REM = 6.875;
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const;
 

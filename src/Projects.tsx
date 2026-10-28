@@ -23,6 +23,8 @@ const SECTION_NAMES = { house: 'MOVE + MAINTENANCE', rooms: 'FURNISHING' } as co
 
 /** The detail key for the list of everything still to do. */
 const TODO_KEY = 'to-do';
+/** The detail key for the summary of everything, the page's default. */
+const ALL_KEY = 'all';
 
 type Source =
   | { kind: 'saved' }
@@ -131,9 +133,9 @@ export function Projects(props: {
   const drill = useDrill({
     narrow: props.narrow,
     sub: props.sub,
-    keys: [...sequence, TODO_KEY],
+    keys: [ALL_KEY, ...sequence, TODO_KEY],
     sequence,
-    defaultKey: sequence[0] ?? '',
+    defaultKey: ALL_KEY,
     openSub: props.openSub,
     replaceSub: props.replaceSub,
     closeSub: props.closeSub,
@@ -143,7 +145,9 @@ export function Projects(props: {
   const t = totals(areas);
   // on wide screens an area is always showing: the chosen one, else the first in order
   const showTodo = drill.selKey === TODO_KEY;
-  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : showTodo ? '' : sequence[0];
+  // on wide screens something always shows: the chosen area, the to-do list, else the summary
+  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : '';
+  const showAll = !showTodo && !activeKey;
   const area = areas.find((a) => a.key === activeKey) ?? null;
 
   // a section's name with what its areas have spent, in the amount column
@@ -181,12 +185,12 @@ export function Projects(props: {
         <div className={`sleeves-grid ${drill.gridClass}`}>
           {drill.showList && (
             <nav className={`sidebar ${drill.listClass}`}>
-              <div className="side-row total static">
-                <span />
+              <button className={`side-row total ${!props.narrow && showAll ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
+                <span className="side-caret" aria-hidden />
                 <span className="side-name">ALL PROJECTS</span>
                 <span />
                 <span className="side-amt">{compact(t.spent)}</span>
-              </div>
+              </button>
               <div className="side-sub">
                 {t.done} OF {t.items} DONE ·{' '}
                 <button className="todo-link" onClick={() => drill.select(TODO_KEY)}>
@@ -240,12 +244,131 @@ export function Projects(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              {showTodo ? <TodoDetail areas={ordered} onArea={(k) => drill.select(k)} /> : area && <AreaDetail area={area} />}
+              {showTodo ? (
+                <TodoDetail areas={ordered} onArea={(k) => drill.select(k)} />
+              ) : area ? (
+                <AreaDetail area={area} />
+              ) : (
+                <ProjectsSummary house={house} rooms={rooms} onArea={(k) => drill.select(k)} onTodo={() => drill.select(TODO_KEY)} />
+              )}
             </div>
           )}
         </div>
       </section>
     </main>
+  );
+}
+
+/**
+ * The whole house at a glance, as the Total is for Investments: what's been
+ * spent and on what, how far along it is, where nothing's started yet, and
+ * the biggest single costs.
+ */
+function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: string) => void; onTodo: () => void }) {
+  const all = [...props.house, ...props.rooms];
+  const t = totals(all);
+  const spent = (list: Area[]) => list.reduce((s, a) => s + areaStats(a).spent, 0);
+  const sections = [
+    { name: SECTION_NAMES.house, spent: spent(props.house) },
+    { name: SECTION_NAMES.rooms, spent: spent(props.rooms) },
+  ];
+  const doneShare = t.items ? t.done / t.items : 0;
+  const untouched = all.filter((a) => {
+    const s = areaStats(a);
+    return s.total > 0 && s.done === 0;
+  });
+  const biggest = all
+    .flatMap((a) => a.items.filter((i) => i.done && !i.closed && (i.cost ?? 0) > 0).map((item) => ({ item, area: a })))
+    .sort((x, y) => (y.item.cost ?? 0) - (x.item.cost ?? 0))
+    .slice(0, 3);
+
+  return (
+    <>
+      <div className="d-title">
+        <span className="d-name proj-name">ALL PROJECTS</span>
+        <span className="d-amt">{money(t.spent)}</span>
+      </div>
+      <div className="d-sub">
+        <span className="d-alloc" style={{ color: t.done === t.items ? 'var(--green)' : 'var(--amber)' }}>
+          {t.done} OF {t.items} DONE · {Math.round(doneShare * 100)}%
+        </span>
+      </div>
+
+      <div className="module">
+        <div className="module-head">
+          <span className="label">SPENT</span>
+        </div>
+        {sections.map((x) => (
+          <div key={x.name} className="psum-row">
+            <span className="psum-name">{x.name}</span>
+            <span className="psum-amt">{money(x.spent)}</span>
+            <span className="psum-pct">{t.spent ? Math.round((x.spent / t.spent) * 100) : 0}%</span>
+            <span className="psum-bar">
+              <span style={{ width: `${t.spent ? (x.spent / t.spent) * 100 : 0}%` }} />
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="module">
+        <div className="module-head">
+          <span className="label">PROGRESS</span>
+          <button className="label psum-link" onClick={props.onTodo}>
+            SEE WHAT’S LEFT →
+          </button>
+        </div>
+        <div className="psum-progress">
+          <span style={{ width: `${doneShare * 100}%` }} />
+        </div>
+        <div className="psum-counts">
+          <span>
+            <b>{t.done}</b> DONE
+          </span>
+          <span>
+            <b>{t.openNeeded}</b> NEEDED
+          </span>
+          <span>
+            <b>{t.openOptional}</b> OPTIONAL
+          </span>
+        </div>
+      </div>
+
+      {biggest.length > 0 && (
+        <div className="module">
+          <div className="module-head">
+            <span className="label">BIGGEST SPENDS</span>
+          </div>
+          <div className="todo-table">
+            {biggest.map(({ item, area }, n) => (
+              <div key={n} className="todo-row psum-big">
+                <span className="todo-item">{item.text}</span>
+                <span>
+                  <button className="todo-area" onClick={() => props.onArea(area.key)}>
+                    {area.name}
+                  </button>
+                </span>
+                <span className="psum-cost">{money(item.cost ?? 0)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {untouched.length > 0 && (
+        <div className="module">
+          <div className="module-head">
+            <span className="label">NOT STARTED · {untouched.length}</span>
+          </div>
+          <div className="psum-chips">
+            {untouched.map((a) => (
+              <button key={a.key} className="psum-chip" onClick={() => props.onArea(a.key)}>
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
