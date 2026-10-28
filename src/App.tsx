@@ -7,6 +7,7 @@ import { IrisSwitch, SectionTitle, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { useMarket } from './prices';
+import { TickerTape } from './Ticker';
 import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
@@ -227,6 +228,7 @@ export function App() {
             )}
           </div>
         </section>
+        <TickerTape live={market.live} />
       </main>
       )}
       </div>
