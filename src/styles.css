@@ -169,68 +169,6 @@ p {
   color: var(--mast-ink2);
 }
 
-/* ── ticker tape: today's moves along the foot of Investments ─── */
-.ticker {
-  /* edge to edge across the window, straight on the wall */
-  width: 100vw;
-  margin: auto calc(50% - 50vw) 0; /* down at the foot of the page */
-  overflow: hidden;
-  white-space: nowrap;
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: 0.01em;
-  color: var(--mast-ink); /* the masthead's white, as the title and iris above */
-  /* soften the ends so ticks slide in and out rather than being cut */
-  mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
-}
-.ticker-track {
-  display: inline-flex;
-  animation: ticker linear infinite;
-}
-@media (hover: hover) {
-  .ticker:hover .ticker-track {
-    animation-play-state: paused;
-  }
-}
-@keyframes ticker {
-  to {
-    transform: translateX(-50%);
-  }
-}
-.tape-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-}
-.tape-item b {
-  font-weight: 700;
-}
-.tape-chg {
-  font-weight: 400;
-}
-/* the iris between each, in the same white */
-.tape-iris {
-  display: inline-block;
-  height: 1.125rem;
-  aspect-ratio: 256 / 233;
-  margin: 0 1.25rem;
-  background: currentColor;
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker {
-    overflow-x: auto;
-  }
-  .ticker-track {
-    animation: none;
-  }
-}
-
 /* ── body + slabs ─────────────────────────────────────── */
 .body {
   padding: 2.5rem 2.125rem 2.75rem;
@@ -1800,6 +1738,25 @@ p {
   font-family: var(--mono);
   font-size: 0.9375rem;
   color: var(--muted);
+}
+
+/* inside a drop-down: no box or rules, just the four figures in a row */
+.periods.is-soft {
+  border: 0;
+  background: none;
+  margin: 0;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--b1);
+}
+.periods.is-soft .period {
+  padding: 0;
+  gap: 0.25rem;
+}
+.periods.is-soft .period + .period {
+  border-left: 0;
+}
+.periods.is-soft .period-v {
+  font-size: 0.8125rem;
 }
 
 /* ── live prices note under the portfolio chart ─────── */

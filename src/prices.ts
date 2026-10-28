@@ -131,6 +131,20 @@ function equitiesOn(day: string, today: string, live: LivePrices, histories: Rec
 }
 
 /**
+ * What each Equities position cost, by ticker: its shares at the close on the
+ * purchase date (or the first close after it). Only used where data.ts has no
+ * actual cost.
+ */
+export function purchaseCosts(histories: Record<string, History> = {}): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const p of holdings.equities.positions) {
+    const first = histories[p.ticker]?.find(([d]) => d >= equitiesSince);
+    if (first) out[p.ticker] = p.shares * first[1];
+  }
+  return out;
+}
+
+/**
  * The Equities positions' daily value since they were bought: each trading
  * day's close, then today at live prices.
  */

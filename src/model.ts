@@ -207,7 +207,7 @@ export function equitiesAt(live: LivePrices) {
   return { value: positions.reduce((t, p) => t + p.value, 0), positions };
 }
 
-export function buildSleeves(live: LivePrices = {}, series: Series | null = null) {
+export function buildSleeves(live: LivePrices = {}, series: Series | null = null, purchaseCosts: Record<string, number> = {}) {
   const aaplPrice = live.aapl?.price ?? holdings.aapl.price;
   const h = {
     ...holdings,
@@ -304,6 +304,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   // ── EQUITIES (researched bets we hold, each with a thesis)
   const eqShare = share(h.equities.value);
   const withThesis = h.equities.positions.filter((p) => p.thesis).length;
+  // each position's cost: as entered, else its purchase-date close; null until every one is known
+  const costs = h.equities.positions.map((p) => p.cost ?? purchaseCosts[p.ticker]);
+  const eqCost = costs.every((c) => c != null) ? costs.reduce((t: number, c) => t + c!, 0) : null;
   // amber until every position has its thesis written down
   const eqStatus: Status = eqShare > RULES.ascentCap ? 'red' : withThesis < h.equities.positions.length ? 'amber' : 'green';
 
@@ -471,7 +474,8 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       alloc: `${pct(eqShare)} · CAP ${pct(RULES.ascentCap)}`,
       cap: { cap: RULES.ascentCap, kind: 'cap' },
       kv: [],
-      position: positionLine('', 0, h.equities.value - basis.equities),
+      // total return since purchase: today's value against what each position cost
+      position: positionLine('', 0, eqCost == null ? h.equities.value - basis.equities : h.equities.value - eqCost),
       policy: [
         'New cash goes to Diversified first; we add to Equities positions only after that.',
         'Equities cap: 10% of liquid assets. Over that, trim to 8%. No single position over 5% of liquid assets.',

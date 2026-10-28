@@ -79,6 +79,8 @@ export interface EquityPosition {
   shares: number;
   /** a recent share price, used only until live prices arrive (or if they can't) */
   price: number;
+  /** what we paid in total, $; until filled in, the close on the purchase date stands in */
+  cost?: number;
   thesis: string | null;
   sellIf: string | null;
 }

@@ -68,7 +68,7 @@ function Policy({ lines }: { lines: string[] }) {
 type PositionRow = Extract<Module, { kind: 'positions' }>['rows'][number];
 
 /** Each Equities position on one line; tapping it opens its thesis and sell-if line. */
-function Positions({ rows }: { rows: PositionRow[] }) {
+function Positions({ rows, market }: { rows: PositionRow[]; market: MarketState }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="module">
@@ -101,6 +101,8 @@ function Positions({ rows }: { rows: PositionRow[] }) {
               </button>
               {isOpen && (
                 <div className="eq-body">
+                  {/* the stock's own moves, quieter than the sleeve's boxes */}
+                  <Periods periods={stockPeriods(market, p.ticker)} soft />
                   <div className="eq-field">
                     <span className="label">THESIS</span>
                     {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
@@ -122,7 +124,7 @@ function Positions({ rows }: { rows: PositionRow[] }) {
   );
 }
 
-function ModuleView({ m }: { m: Module }) {
+function ModuleView({ m, market }: { m: Module; market: MarketState }) {
   switch (m.kind) {
     case 'ladder': {
       // the whole stack before any rung sold, and what's left after each rung
@@ -219,7 +221,7 @@ function ModuleView({ m }: { m: Module }) {
         </div>
       );
     case 'positions':
-      return <Positions rows={m.rows} />;
+      return <Positions rows={m.rows} market={market} />;
     case 'tranches': {
       // the stack before any sale, and what's left after each
       const stack = m.held + m.sales.reduce((t, x) => t + x.tokens, 0);
@@ -281,6 +283,16 @@ function ModuleView({ m }: { m: Module }) {
 }
 
 /** 1D / 1W / 1M / 3M for one asset's price, from the market history plus today's live price. */
+/** A stock's own 1D / 1W / 1M / 3M, from its daily closes and live price. */
+function stockPeriods(market: MarketState, ticker: string) {
+  const history = market.stockHistories?.[ticker];
+  if (!history?.length) return periodChanges([]);
+  const today = isoDay(new Date());
+  const points = history.filter(([d]) => d < today).map(([date, total]) => ({ date, total }));
+  points.push({ date: today, total: market.live.stocks?.[ticker]?.price ?? history[history.length - 1][1] });
+  return periodChanges(points, false);
+}
+
 function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) {
   const history = market.histories[asset];
   if (!history?.length) return periodChanges([]);
@@ -345,7 +357,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       )}
       {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} />}
       {s.key === 'EQUITIES' && <EquitiesChart series={equities} />}
-      {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} />}
+      {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} market={market} />}
       <Policy lines={s.policy} />
     </>
   );
@@ -527,9 +539,9 @@ function rungLevels(s: Sleeve) {
 }
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
-function Periods({ periods }: { periods: Model['periods'] }) {
+function Periods({ periods, soft = false }: { periods: Model['periods']; soft?: boolean }) {
   return (
-    <div className="periods">
+    <div className={`periods ${soft ? 'is-soft' : ''}`}>
       {periods.map((p) => (
         <div key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
           <span className="label">{p.label}</span>

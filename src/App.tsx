@@ -6,8 +6,7 @@ import { LockButton } from './Gate';
 import { IrisSwitch, SectionTitle, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
-import { useMarket } from './prices';
-import { TickerTape } from './Ticker';
+import { purchaseCosts, useMarket } from './prices';
 import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
@@ -26,7 +25,8 @@ function loadDone(): string[] {
 
 export function App() {
   const market = useMarket();
-  const model = useMemo(() => buildSleeves(market.live, market.series), [market.live, market.series]);
+  const costs = useMemo(() => purchaseCosts(market.stockHistories), [market.stockHistories]);
+  const model = useMemo(() => buildSleeves(market.live, market.series, costs), [market.live, market.series, costs]);
   const allItems = useMemo(() => buildItems(market.live), [market.live]);
 
   const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
@@ -228,7 +228,6 @@ export function App() {
             )}
           </div>
         </section>
-        <TickerTape live={market.live} />
       </main>
       )}
       </div>
