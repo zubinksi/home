@@ -24,8 +24,6 @@ export interface MarketState {
   histories: Histories;
   problems: Partial<Record<Asset, string>>;
   at: number | null; // last successful quote refresh
-  /** ZEC priced in BTC, daily, for the ZEC sleeve's ratio chart (a little over 100 days, for the 20-day average) */
-  zecBtc?: History;
   /** HYPE in USD, daily, about 300 days, for the HYPE chart's 100-day average */
   hypeLong?: History;
   /** daily closes for each Equities position, by ticker */
@@ -226,16 +224,10 @@ export function useMarket() {
     };
 
     const refreshHistory = async () => {
-      const [h, z, zb, hl] = await Promise.allSettled([
-        cryptoHistory('hype'),
-        cryptoHistory('zec'),
-        dailyCloses('zcash', 'btc', 120),
-        dailyCloses('hyperliquid', 'usd', 300),
-      ]);
+      const [h, z, hl] = await Promise.allSettled([cryptoHistory('hype'), cryptoHistory('zec'), dailyCloses('hyperliquid', 'usd', 300)]);
       merge((s) => ({
         ...s,
         ...(hl.status === 'fulfilled' && hl.value.length ? { hypeLong: hl.value } : {}),
-        ...(zb.status === 'fulfilled' && zb.value.length ? { zecBtc: zb.value } : {}),
         histories: {
           ...s.histories,
           ...(h.status === 'fulfilled' && h.value.length ? { hype: h.value } : {}),

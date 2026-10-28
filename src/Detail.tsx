@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { Chart } from './Chart';
 import { buildEquitiesSeries, type MarketState } from './prices';
 import {
@@ -229,7 +229,6 @@ function ModuleView({ m }: { m: Module }) {
         <div className="module">
           <div className="module-head">
             <span className="label">TRANCHES</span>
-            <span className="label">{sold.length ? `${sold.length} SOLD` : 'NONE SOLD YET'}</span>
           </div>
           <div className="ladder">
             <div className="ladder-row head">
@@ -340,7 +339,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       )}
       {/* returns sit under the chart where there is one, as on the Total page */}
       {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} />}
-      {s.key === 'ZEC' && <ZecCharts market={market} />}
+      {s.key === 'ZEC' && <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />}
       {s.key === 'HYPE' && (
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
@@ -459,11 +458,8 @@ function PriceChart({
   levels = NO_LEVELS,
   fmt,
   axisFmt,
-  heading,
 }: {
   title: string;
-  /** shown in place of the title at the top left, e.g. a switch between charts */
-  heading?: ReactNode;
   history?: [string, number][];
   show: number;
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
@@ -500,7 +496,6 @@ function PriceChart({
   // no title or price above: the page names the asset, and the latest price sits at the line's end
   return (
     <div className="module">
-      {heading && <div className="module-head switch-head">{heading}</div>}
       <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
     </div>
   );
@@ -518,31 +513,7 @@ function EquitiesChart({ series }: { series: Series | null }) {
   );
 }
 
-/** ZEC in dollars (the default) or against bitcoin, with a switch between them. */
-function ZecCharts({ market }: { market: MarketState }) {
-  const [vs, setVs] = useState<'usd' | 'btc'>('usd');
-  const heading = (
-    <span className={`label chart-switch ${vs === 'btc' ? 'is-second' : ''}`} role="group" aria-label="Price ZEC in">
-      {/* the bronze knob slides under whichever is chosen */}
-      <span className="chart-switch-knob" aria-hidden />
-      <button className={vs === 'usd' ? 'on' : ''} aria-pressed={vs === 'usd'} onClick={() => setVs('usd')}>
-        USD
-      </button>
-      <button className={vs === 'btc' ? 'on' : ''} aria-pressed={vs === 'btc'} onClick={() => setVs('btc')}>
-        BTC
-      </button>
-    </span>
-  );
-  // one chart whose data swaps, so the switch stays put and its knob can slide
-  return vs === 'usd' ? (
-    <PriceChart title="ZEC" heading={heading} history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
-  ) : (
-    <PriceChart title="ZEC / BTC" heading={heading} history={market.zecBtc} show={90} fmt={btcFmt} axisFmt={btcAxis} />
-  );
-}
 // stable formatters (the chart redraws when they change)
-const btcFmt = (v: number) => `${v.toFixed(3)} BTC`;
-const btcAxis = (v: number) => `${+v.toFixed(4)}`;
 const dollarAxis = (v: number) => `$${+v.toFixed(2)}`;
 const kAxis = (v: number) => `$${+(v / 1e3).toFixed(1)}K`;
 const fullMoney = (v: number) => `$${Math.round(v).toLocaleString()}`;
