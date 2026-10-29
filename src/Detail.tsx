@@ -305,7 +305,7 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
-  // the comparison charts are weekly, with the daily 20-day average read off at each week
+  // the comparison charts are weekly, with a 20-week EMA as on TradingView's 1W chart
   const hypeLit = useMemo(() => weeklyWithAverage(ratio(market.hypeLong, market.comparisons?.lit)), [market.hypeLong, market.comparisons?.lit]);
   const hypeTotal = useMemo(
     () => weeklyWithAverage(ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap)),
@@ -489,24 +489,24 @@ const NO_LEVELS: { price: number; next?: boolean }[] = [];
 const WEEKS = 53;
 
 /**
- * A daily series as weekly closes, with its 20-day moving average (taken on
- * the daily values) read off at each week's close.
+ * A daily series as weekly closes, with TradingView's "EMA 20" on the weekly
+ * chart: an exponential average of the last 20 weekly closes (started from
+ * their simple average).
  */
 function weeklyWithAverage(daily?: [string, number][]) {
   if (!daily?.length) return { history: undefined, average: [] as (number | null)[] };
-  const ma = movingAverage(daily, 20);
-  const at = new Map(daily.map(([d], i) => [d, ma[i]]));
   const history = weekly(daily)!;
-  return { history, average: history.map(([d]) => at.get(d) ?? null) };
+  return { history, average: ema(history.map(([, v]) => v), 20) };
 }
 
-/** Trailing n-day average at each point (null until n days are in). */
-function movingAverage(h: [string, number][], n: number) {
-  let sum = 0;
-  return h.map(([, v], i) => {
-    sum += v;
-    if (i >= n) sum -= h[i - n][1];
-    return i >= n - 1 ? sum / n : null;
+/** Exponential moving average over n points, seeded with the first n points' simple average. */
+function ema(values: number[], n: number) {
+  const k = 2 / (n + 1);
+  let prev: number | null = null;
+  return values.map((v, i) => {
+    if (i < n - 1) return null;
+    prev = prev == null ? values.slice(0, n).reduce((a, b) => a + b, 0) / n : v * k + prev * (1 - k);
+    return prev;
   });
 }
 
@@ -541,7 +541,7 @@ function PriceChart({
   title: string;
   history?: [string, number][];
   show: number;
-  /** the 20-day average, one value per point of `history` (null where it isn't whole yet) */
+  /** the weekly EMA 20, one value per point of `history` (null until 20 weeks are in) */
   average?: (number | null)[];
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
   levels?: { price: number; next?: boolean }[];
@@ -586,7 +586,7 @@ function PriceChart({
       {average && (
         <div className="ma-key">
           <span>
-            <i /> 20D AVG
+            <i /> EMA 20 · WEEKLY
           </span>
         </div>
       )}
