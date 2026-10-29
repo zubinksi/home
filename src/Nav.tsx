@@ -79,40 +79,15 @@ export function useNarrow(query = '(max-width: 860px)') {
   return narrow;
 }
 
-/**
- * The iris is the site's navigation: tapping it nods the flower and moves the
- * title on to the next section, "INVESTMENTS", "PROJECTS", "SERVICING" of THE BROWNS.
- */
-export function IrisSwitch({ tab, onChange, icon }: { tab: TabId; onChange: (t: TabId) => void; icon: string }) {
-  const [taps, setTaps] = useState(0);
-  // each tap moves on to the next section, round again after the last
-  const other = TABS[(TABS.findIndex((t) => t.id === tab) + 1) % TABS.length];
+/** The three sections, side by side in the masthead; the one you're in is set in ink. */
+export function SectionTabs({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
   return (
-    <button
-      className="mast-iris-btn"
-      aria-label={`Go to ${other.label.toLowerCase()}`}
-      title={other.label}
-      onClick={() => {
-        setTaps((n) => n + 1);
-        onChange(other.id);
-      }}
-    >
-      {/* keyed by tap, so every tap replays the nod */}
-      <span
-        key={taps}
-        className={`mast-iris ${taps ? 'is-nod' : ''}`}
-        style={{ maskImage: `url(${icon})`, WebkitMaskImage: `url(${icon})` }}
-        aria-hidden
-      />
-    </button>
-  );
-}
-
-/** The page's name, rolling in from below whenever it changes. */
-export function SectionTitle({ tab }: { tab: TabId }) {
-  return (
-    <div className="mast-title section-title" aria-live="polite">
-      <span key={tab}>{TABS.find((t) => t.id === tab)!.label}</span>
-    </div>
+    <nav className="mast-tabs" aria-label="Sections">
+      {TABS.map((t) => (
+        <button key={t.id} className={t.id === tab ? 'on' : ''} aria-current={t.id === tab ? 'page' : undefined} onClick={() => onChange(t.id)}>
+          {t.label}
+        </button>
+      ))}
+    </nav>
   );
 }

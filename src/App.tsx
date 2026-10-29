@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
-import irisWhite from './assets/iris-white.png';
+import irisUrl from './assets/iris.png';
 import { LockButton } from './Gate';
-import { IrisSwitch, SectionTitle, useNarrow, useRoute } from './Nav';
+import { SectionTabs, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { Servicing } from './Servicing';
@@ -158,14 +158,13 @@ export function App() {
   return (
     <>
       <header className="masthead">
+        {/* a slab like the page's: the iris, the three sections, the lock */}
         <div className="mast-inner">
-          <div className="mast-brand">
-            {/* the iris from our mudroom wallpaper, in the title's colour */}
-            <IrisSwitch tab={tab} onChange={goTab} icon={irisWhite} />
-            {/* just the section's name; "of THE BROWNS" lives on the PIN pad */}
-            <SectionTitle tab={tab} />
+          <div className="slab mast-slab">
+            <img className="mast-iris" src={irisUrl} alt="" />
+            <SectionTabs tab={tab} onChange={goTab} />
+            <LockButton />
           </div>
-          <LockButton />
         </div>
       </header>
       <div className="doc">
