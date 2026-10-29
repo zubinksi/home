@@ -1975,18 +1975,6 @@ p {
     font-size: 0.625rem;
     letter-spacing: 0.08em;
   }
-}
-@media (max-width: 380px) {
-  /* the smallest phones: a little less air between the three */
-  .mast-slab {
-    gap: 0.625rem;
-  }
-  .mast-tabs {
-    gap: 0.5rem;
-  }
-  .mast-tabs button {
-    letter-spacing: 0.05em;
-  }
   .body {
     padding: 1.25rem 0.75rem 1.75rem;
     gap: 1.25rem;
@@ -2288,5 +2276,18 @@ p {
   .cash-split .refill,
   .cash-split .refill:nth-child(n) {
     grid-template-columns: 3.25rem 1fr 3.25rem 4.75rem;
+  }
+}
+
+/* the smallest phones: a little less air between the masthead's three */
+@media (max-width: 380px) {
+  .mast-slab {
+    gap: 0.625rem;
+  }
+  .mast-tabs {
+    gap: 0.5rem;
+  }
+  .mast-tabs button {
+    letter-spacing: 0.05em;
   }
 }
