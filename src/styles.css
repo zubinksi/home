@@ -2192,6 +2192,13 @@ p {
   }
 }
 
+/* a chart still loading takes the chart's own height, so nothing below jumps */
+.chart-empty {
+  height: calc(1.25rem + 14.375rem + 1.6rem + 0.1875rem);
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 /* the chart switch in a held asset's subheader: a soft pill, the choice raised and sliding */
 .seg {
   position: relative;
@@ -2233,10 +2240,14 @@ p {
     transition: none;
   }
 }
-/* which line is which average */
+/* which line is the average: a note in the chart's top left */
+.chart-tip.has-corner {
+  text-align: left;
+}
 .ma-key {
-  display: flex;
-  gap: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
   font-family: var(--mono);
   font-size: 0.5938rem;
   letter-spacing: 0.1em;
@@ -2245,7 +2256,6 @@ p {
 .ma-key i {
   display: inline-block;
   width: 1rem;
-  margin-right: 0.25rem;
   vertical-align: middle;
   border-top: 1.25px solid var(--accent);
 }

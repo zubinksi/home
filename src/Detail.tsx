@@ -567,10 +567,7 @@ function PriceChart({
   }, [history, show, levels, average]);
   if (points.length < 2) {
     return (
-      <div className="module">
-        <div className="module-head">
-          <span className="label">{title}</span>
-        </div>
+      <div className="module chart-empty">
         <div className="module-note">
           {average !== undefined
             ? `The ${title} chart is still loading. The first time, it takes a few minutes to gather.`
@@ -582,14 +579,21 @@ function PriceChart({
   // no title or price above: the page names the asset, and the latest price sits at the line's end
   return (
     <div className="module">
-      <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
-      {average && (
-        <div className="ma-key">
-          <span>
-            <i /> EMA 20 · WEEKLY
-          </span>
-        </div>
-      )}
+      <Chart
+        points={points}
+        overlays={overlays}
+        yFormat={axisFmt}
+        format={fmt}
+        endLabel
+        // the key sits inside the chart, so every chart is the same height and switching doesn't shift the page
+        corner={
+          average && (
+            <span className="ma-key">
+              <i /> EMA 20W
+            </span>
+          )
+        }
+      />
     </div>
   );
 }

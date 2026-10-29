@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { useLamplight } from './lamplight';
 import { dayMon, longDate } from './model';
 
@@ -91,7 +91,10 @@ export function Chart({
   yFormat,
   format,
   endLabel = false,
+  corner,
 }: {
+  /** a small note at the top left, in the readout's row (it gives way while scrubbing) */
+  corner?: ReactNode;
   points: Point[];
   /** how the y-axis values read, e.g. "$1.2M" */
   yFormat: (v: number) => string;
@@ -309,11 +312,13 @@ export function Chart({
   return (
     <div className="chart">
       {/* while scrubbing, the day and its value, together and centred above the plot */}
-      <div className="chart-tip" aria-live="polite">
-        {at && (
+      <div className={`chart-tip ${corner && !at ? 'has-corner' : ''}`} aria-live="polite">
+        {at ? (
           <>
             {longDate(new Date(at.date + 'T00:00:00'))} · <b>{format(at.total)}</b>
           </>
+        ) : (
+          corner
         )}
       </div>
       <div

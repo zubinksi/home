@@ -6,7 +6,7 @@
 //    server (/api/stock); Yahoo doesn't allow browsers to call it directly.
 // Anything that can't be fetched falls back to the latest review's price.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { equitiesSince, holdings, reviews } from './data';
 import { isoDay, type Asset, type LivePrices, type Quote, type Series } from './model';
 
@@ -42,15 +42,19 @@ export interface Comparisons {
   hypeCap?: History;
   /** the whole crypto market's cap, approximated as the top coins' caps summed */
   totalCap?: History;
+  /** each stand-in coin's market cap, kept as they arrive so the total can build up over visits */
+  caps?: Record<string, History>;
+  /** when each series above was last fetched */
+  fetchedAt?: Record<string, number>;
 }
 
 /** CoinGecko id for Lighter's token. */
 const LIGHTER_ID = 'lighter';
 /**
  * CoinGecko's free API has no history of the total crypto market cap, so the
- * largest coins stand in for it (together most of the market).
+ * six largest coins stand in for it (together most of the market).
  */
-const TOTAL_PROXY = ['bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana', 'usd-coin', 'dogecoin', 'tron', 'cardano'];
+const TOTAL_PROXY = ['bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana'];
 const COMPARISONS_EVERY = 6 * 3_600_000;
 /** CoinGecko's free tier allows about five calls a minute, shared with the live quotes */
 const COMPARISON_GAP = 13_000;
@@ -119,7 +123,7 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * The comparison charts' series. CoinGecko's free tier allows only a few calls
  * a minute, so these go one at a time with a pause between, a few times a day.
  */
-async function fetchComparisons(put: (c: Comparisons) => void): Promise<boolean> {
+async function fetchComparisons(have: Comparisons, put: (c: Comparisons) => void): Promise<boolean> {
   // one call, then a pause; refused for going too fast (or a blip), wait a minute and try once more
   const one = async <T,>(f: () => Promise<T>) => {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -134,37 +138,51 @@ async function fetchComparisons(put: (c: Comparisons) => void): Promise<boolean>
     }
     return undefined;
   };
+  // only what's missing or older than six hours is fetched, so an interrupted
+  // round picks up where it left off next time
+  const fetchedAt = { ...(have.fetchedAt ?? {}) };
+  const due = (key: string) => !fetchedAt[key] || Date.now() - fetchedAt[key] > COMPARISONS_EVERY;
+  const got = (key: string, h?: History) => {
+    if (h?.length) fetchedAt[key] = Date.now();
+    return h;
+  };
 
   // each series shows as soon as it arrives, the surest first
-  const zecBtc = await one(() => dailyCloses('zcash', 'btc', COMPARISON_DAYS));
-  put({ zecBtc });
-  let lit = await one(() => dailyCloses(LIGHTER_ID, 'usd', COMPARISON_DAYS));
-  if (!lit?.length) {
-    // in case CoinGecko files Lighter under another id: look LIT up by name
-    const found = await one(() => json(`${COINGECKO}/search?query=lighter`));
-    const id = (found?.coins ?? []).find((c: { symbol?: string }) => c.symbol?.toUpperCase() === 'LIT')?.id;
-    if (id && id !== LIGHTER_ID) lit = await one(() => dailyCloses(id, 'usd', COMPARISON_DAYS));
+  if (due('zecBtc')) put({ zecBtc: got('zecBtc', await one(() => dailyCloses('zcash', 'btc', COMPARISON_DAYS))), fetchedAt });
+  if (due('lit')) {
+    let lit = await one(() => dailyCloses(LIGHTER_ID, 'usd', COMPARISON_DAYS));
+    if (!lit?.length) {
+      // in case CoinGecko files Lighter under another id: look LIT up by name
+      const found = await one(() => json(`${COINGECKO}/search?query=lighter`));
+      const id = (found?.coins ?? []).find((c: { symbol?: string }) => c.symbol?.toUpperCase() === 'LIT')?.id;
+      if (id && id !== LIGHTER_ID) lit = await one(() => dailyCloses(id, 'usd', COMPARISON_DAYS));
+    }
+    put({ lit: got('lit', lit), fetchedAt });
   }
-  put({ lit });
-  const hypeCap = await one(() => dailyCaps('hyperliquid', COMPARISON_DAYS));
-  put({ hypeCap });
-  // the total only counts if every stand-in coin arrived
-  const caps: History[] = [];
+  if (due('hypeCap')) put({ hypeCap: got('hypeCap', await one(() => dailyCaps('hyperliquid', COMPARISON_DAYS))), fetchedAt });
+
+  const caps = { ...(have.caps ?? {}) };
   for (const id of TOTAL_PROXY) {
-    const h = await one(() => dailyCaps(id, COMPARISON_DAYS));
-    if (!h?.length) return false;
-    caps.push(h);
+    if (!due(`cap:${id}`) && caps[id]) continue;
+    const h = got(`cap:${id}`, await one(() => dailyCaps(id, COMPARISON_DAYS)));
+    if (h?.length) caps[id] = h;
+    put({ caps: { ...caps }, totalCap: sumCaps(caps), fetchedAt });
   }
+  const keys = ['zecBtc', 'lit', 'hypeCap', ...TOTAL_PROXY.map((id) => `cap:${id}`)];
+  return keys.every((k) => !due(k));
+}
+
+/** The stand-in coins' caps added up, on the days every one of them has; none until all are in. */
+function sumCaps(caps: Record<string, History>): History | undefined {
+  if (!TOTAL_PROXY.every((id) => caps[id]?.length)) return undefined;
   const sum = new Map<string, number>();
   const count = new Map<string, number>();
-  for (const h of caps)
-    for (const [d, v] of h) {
+  for (const id of TOTAL_PROXY)
+    for (const [d, v] of caps[id]) {
       sum.set(d, (sum.get(d) ?? 0) + v);
       count.set(d, (count.get(d) ?? 0) + 1);
     }
-  const totalCap: History = [...sum.entries()].filter(([d]) => count.get(d) === caps.length).sort();
-  put({ totalCap });
-  return Boolean(zecBtc?.length && lit?.length && hypeCap?.length && totalCap.length);
+  return [...sum.entries()].filter(([d]) => count.get(d) === TOTAL_PROXY.length).sort();
 }
 
 /** A daily series as weekly closes: each week's last day (weeks start Monday). */
@@ -321,6 +339,9 @@ function loadCache(): MarketState {
 
 export function useMarket() {
   const [state, setState] = useState<MarketState>(loadCache);
+  // the latest state, for the slow comparison fetch to see what it already has
+  const latest = useRef(state);
+  latest.current = state;
 
   useEffect(() => {
     let alive = true;
@@ -373,13 +394,17 @@ export function useMarket() {
     let retry: ReturnType<typeof setTimeout> | undefined;
     const refreshComparisons = async () => {
       clearTimeout(retry);
+      const have = latest.current.comparisons ?? {};
       const put = (c: Comparisons) =>
         merge((s) => ({
           ...s,
           // keep what we had for anything this round couldn't fetch
-          comparisons: { ...s.comparisons, ...Object.fromEntries(Object.entries(c).filter(([, v]) => v?.length)) },
+          comparisons: {
+            ...s.comparisons,
+            ...Object.fromEntries(Object.entries(c).filter(([, v]) => v != null && (!Array.isArray(v) || v.length))),
+          },
         }));
-      const complete = await fetchComparisons(put);
+      const complete = await fetchComparisons(have, put);
       // only a full set counts as fresh; otherwise come back for the rest soon
       if (complete) merge((s) => ({ ...s, comparisonsAt: Date.now() }));
       else if (alive) retry = setTimeout(refreshComparisons, COMPARISONS_RETRY);
