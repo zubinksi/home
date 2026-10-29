@@ -520,20 +520,18 @@ p {
 .side-caret {
   justify-self: start;
   align-self: center;
-  width: 1rem;
-  aspect-ratio: 256 / 233;
-  /* nudged left into the margin for more room before the name */
-  margin-left: -0.375rem;
-  background: var(--iris);
-  mask: url('./assets/iris-white.png') center / contain no-repeat;
-  -webkit-mask: url('./assets/iris-white.png') center / contain no-repeat;
+  /* the selected row's dot, in the room's trim colour */
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--piping);
   opacity: 0;
   transition: opacity 0.15s;
 }
 .side-row.is-sel .side-caret {
   opacity: 1;
 }
-/* hovering an unselected row shows a faint iris where it would go */
+/* hovering an unselected row shows a faint dot where it would go */
 @media (hover: hover) {
   .side-row:not(.is-sel):not(.static):hover .side-caret {
     opacity: 0.3;
@@ -1673,8 +1671,18 @@ p {
   }
 }
 /* servicing: the house's recurring upkeep */
-.service-slab .detail {
-  max-width: 48rem;
+.side-row.svc-row {
+  grid-template-columns: var(--caret-col) 1fr auto 2.25rem;
+  align-items: center;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0;
+}
+.svc-row-note {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+}
+.svc-row .side-amt {
+  text-align: right;
 }
 .svc-list {
   display: flex;

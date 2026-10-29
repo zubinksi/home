@@ -41,8 +41,8 @@ export const serviceTasks: ServiceTask[] = [
     id: 'hvac-dampers',
     name: 'Set the dampers for the season',
     area: 'HVAC',
-    byMonths: [5, 10],
-    cadence: 'SPRING AND FALL',
+    byMonths: [5, 11],
+    cadence: 'MAY AND NOVEMBER',
     how: 'Summer: open the upstairs dampers, close down the basement. Winter: the reverse, since heat rises. Ask the tech to label each damper at the tune-up.',
   },
   {
@@ -62,18 +62,10 @@ export const serviceTasks: ServiceTask[] = [
     how: 'The same service as on move-in. Spring is easiest, so everything dries with the windows open.',
   },
   {
-    id: 'pressure-wash',
-    name: 'Pressure wash the house and patio',
-    area: 'EXTERIOR',
-    byMonths: [4, 10],
-    cadence: 'SPRING AND FALL',
-    how: 'Siding, walks and the patio. Low pressure near windows and the new roof’s trim.',
-  },
-  {
     id: 'gutters',
     name: 'Clear the gutters and downspouts',
     area: 'EXTERIOR',
-    byMonths: [4, 11],
+    byMonths: [4, 12],
     cadence: 'SPRING AND AFTER LEAF FALL',
     how: 'Run a hose down each downspout to check it drains. The front one clogged before.',
   },
@@ -144,7 +136,16 @@ export const serviceTasks: ServiceTask[] = [
 ];
 
 /** When each job was last done (YYYY-MM-DD). Add a line when one's done. */
-export const serviceLog: Record<string, string> = {};
+export const serviceLog: Record<string, string> = {
+  // done in August 2026 (the day wasn't noted; mid-month stands in)
+  'hvac-filters': '2026-08-15',
+  'hvac-service': '2026-08-15',
+  'deep-clean': '2026-08-15',
+  carpets: '2026-08-15',
+  pest: '2026-08-15',
+  'dryer-duct': '2026-08-15',
+  detectors: '2026-08-15',
+};
 
 const DAY = 86_400_000;
 const at = (iso: string) => new Date(iso + 'T00:00:00');
@@ -153,13 +154,15 @@ const at = (iso: string) => new Date(iso + 'T00:00:00');
 export function nextDue(t: ServiceTask, today = new Date()): Date | null {
   const last = serviceLog[t.id];
   if (t.every) return last ? new Date(at(last).getTime() + t.every * DAY) : null;
-  // the first window after it was last done; never logged, a window in the last
-  // six weeks still counts as due, since we can't say it was done
+  // the first window it hasn't covered: done up to two months ahead counts (a
+  // tune-up booked in August covers October). Never logged, a window in the
+  // last six weeks still counts as due, since we can't say it was done
   const from = last ? at(last) : new Date(today.getTime() - 45 * DAY);
+  const ahead = last ? 60 * DAY : 0;
   for (let y = from.getFullYear(); y <= from.getFullYear() + 1; y++)
     for (const m of [...(t.byMonths ?? [])].sort((a, b) => a - b)) {
       const d = new Date(y, m - 1, 1);
-      if (d > from) return d;
+      if (d.getTime() > from.getTime() + ahead) return d;
     }
   return null;
 }

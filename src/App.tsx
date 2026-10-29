@@ -169,7 +169,9 @@ export function App() {
         </div>
       </header>
       <div className="doc">
-      {tab === 'servicing' && <Servicing />}
+      {tab === 'servicing' && (
+        <Servicing narrow={narrow} sub={route.sub} openSub={openSub} replaceSub={replaceSub} closeSub={closeSub} />
+      )}
       {tab === 'projects' && (
         <Projects narrow={narrow} sub={route.sub} openSub={openSub} replaceSub={replaceSub} closeSub={closeSub} />
       )}
