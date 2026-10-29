@@ -1,6 +1,6 @@
 // Derives everything the page shows from src/data.ts + the policy rules.
 
-import { basis, diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, zecSales, zecTrimWaived } from './data';
+import { basis, diversifiedGoalDate, evergreenReceived, fortressYield, holdings, household, items, reviewDate, snapshots, hypeCeilingWaived, zecSales, zecTrimWaived } from './data';
 
 export type Status = 'green' | 'amber' | 'red' | 'muted';
 export type When = 'this week' | 'this month' | 'before fill' | 'q1 review';
@@ -228,7 +228,9 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const crypto = hypeShare + share(zec);
 
   // ── HYPE: the 45% ceiling is HYPE's alone; ZEC has its own 10% line
-  const hypeStatus: Status = hypeShare >= RULES.hypeCeiling ? 'red' : hypeShare >= RULES.hypeCeiling - 0.05 ? 'amber' : 'green';
+  // a waived quarter: the ladder's rungs are expected to bring HYPE back under the ceiling
+  const hypeWaived = hypeCeilingWaived.includes(reviewDate);
+  const hypeStatus: Status = hypeWaived ? 'muted' : hypeShare >= RULES.hypeCeiling ? 'red' : hypeShare >= RULES.hypeCeiling - 0.05 ? 'amber' : 'green';
   const ladderTotal = LADDER.reduce((s, r) => s + r.price * r.tokens, 0);
   const nextRung = h.hype.rungsSold < LADDER.length ? h.hype.rungsSold : -1;
   const hypeGain = h.hype.basis == null ? null : hype - h.hype.basis;
@@ -252,7 +254,7 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
   const plan: PlanStep[] = [];
   const zecTrimTokens = !zecWaived && zecShare > RULES.zecTrimAt ? Math.ceil((zec - RULES.zecTrimTo * total) / h.zec.price) : 0;
   const hypeTrimTokens =
-    hypeShare > RULES.hypeCeiling
+    !hypeWaived && hypeShare > RULES.hypeCeiling
       ? Math.min(h.hype.tokens - RULES.hypeKeep, Math.max(0, Math.ceil((hype - RULES.hypeTrimTo * total) / h.hype.price)))
       : 0;
   if (zecTrimTokens > 0)
@@ -318,7 +320,11 @@ export function buildSleeves(live: LivePrices = {}, series: Series | null = null
       pct: share(hype),
       roleTitle: `Our biggest bet — ${num(h.hype.tokens)} tokens, skimmed on the way up`,
       status: hypeStatus,
-      alloc: hypeShare > RULES.hypeCeiling ? `${pct(hypeShare, 1)} · OVER ${pct(RULES.hypeCeiling)} CEILING` : `${pct(hypeShare, 1)} OF ${pct(RULES.hypeCeiling)} CEILING`,
+      alloc: hypeWaived
+        ? `${pct(hypeShare, 1)} · CEILING WAIVED THIS QUARTER`
+        : hypeShare > RULES.hypeCeiling
+          ? `${pct(hypeShare, 1)} · OVER ${pct(RULES.hypeCeiling)} CEILING`
+          : `${pct(hypeShare, 1)} OF ${pct(RULES.hypeCeiling)} CEILING`,
       cap: { cap: RULES.hypeCeiling, kind: 'cap' },
       kv: [
         { k: 'PRICE', v: priceFmt(h.hype.price), d: `FLOOR $${RULES.hypeFloor}`, ...changeKV(live.hype, '24H') },

@@ -121,6 +121,9 @@ export const equityPositions: EquityPosition[] = [
 /** ZEC tranches sold, oldest first. Add one line per sale (and lower the next review's token count). */
 export const zecSales: { date: string; price: number; tokens: number }[] = [];
 
+/** Reviews at which we've agreed to skip the HYPE 45% ceiling trim (the rungs should do the work). */
+export const hypeCeilingWaived: string[] = ['2026-11-01'];
+
 /** Reviews at which we've agreed to skip the ZEC 10% trim (by review date). */
 export const zecTrimWaived: string[] = ['2026-11-01'];
 
