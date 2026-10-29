@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
-import irisUrl from './assets/iris.png';
+import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
 import { SectionTabs, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
@@ -158,10 +158,11 @@ export function App() {
   return (
     <>
       <header className="masthead">
-        {/* a slab like the page's: the iris, the three sections, the lock */}
+        {/* straight on the wall: the iris, the three sections, the lock */}
         <div className="mast-inner">
-          <div className="slab mast-slab">
-            <img className="mast-iris" src={irisUrl} alt="" />
+          <div className="mast-bar">
+            {/* the iris from our mudroom wallpaper, in the wall's white */}
+            <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
             <SectionTabs tab={tab} onChange={goTab} />
             <LockButton />
           </div>
