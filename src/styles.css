@@ -2247,7 +2247,7 @@ p {
   width: 1rem;
   margin-right: 0.25rem;
   vertical-align: middle;
-  border-top: 1.25px solid;
+  border-top: 1.25px solid var(--accent);
 }
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
 .cash-split .module-head {

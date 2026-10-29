@@ -305,13 +305,13 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
-  // the comparison charts are weekly
-  const hypeLit = useMemo(() => weekly(ratio(market.hypeLong, market.comparisons?.lit)), [market.hypeLong, market.comparisons?.lit]);
+  // the comparison charts are weekly, with the daily 20-day average read off at each week
+  const hypeLit = useMemo(() => weeklyWithAverage(ratio(market.hypeLong, market.comparisons?.lit)), [market.hypeLong, market.comparisons?.lit]);
   const hypeTotal = useMemo(
-    () => weekly(ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap)),
+    () => weeklyWithAverage(ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap)),
     [market.comparisons?.hypeCap, market.comparisons?.totalCap],
   );
-  const zecBtcW = useMemo(() => weekly(market.comparisons?.zecBtc), [market.comparisons?.zecBtc]);
+  const zecBtcW = useMemo(() => weeklyWithAverage(market.comparisons?.zecBtc), [market.comparisons?.zecBtc]);
   const charted = s.key === 'HYPE' || s.key === 'ZEC';
   // HYPE and ZEC can switch their chart to a comparison
   const views = s.key === 'HYPE' ? HYPE_VIEWS : ZEC_VIEWS;
@@ -367,15 +367,15 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
       {s.key === 'ZEC' &&
         (view === 'BTC' ? (
-          <PriceChart title="ZEC / BTC" history={zecBtcW} show={WEEKS} averages={AVERAGES} unit="W" fmt={btcFmt} axisFmt={btcAxis} />
+          <PriceChart title="ZEC / BTC" history={zecBtcW.history} average={zecBtcW.average} show={WEEKS} fmt={btcFmt} axisFmt={btcAxis} />
         ) : (
           <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
         ))}
       {s.key === 'HYPE' &&
         (view === 'LIT' ? (
-          <PriceChart title="HYPE / LIT" history={hypeLit} show={WEEKS} averages={AVERAGES} unit="W" fmt={ratioFmt} axisFmt={ratioAxis} />
+          <PriceChart title="HYPE / LIT" history={hypeLit.history} average={hypeLit.average} show={WEEKS} fmt={ratioFmt} axisFmt={ratioAxis} />
         ) : view === 'TOTAL' ? (
-          <PriceChart title="HYPE / TOTAL" history={hypeTotal} show={WEEKS} averages={AVERAGES} unit="W" fmt={shareFmt} axisFmt={shareAxis} />
+          <PriceChart title="HYPE / TOTAL" history={hypeTotal.history} average={hypeTotal.average} show={WEEKS} fmt={shareFmt} axisFmt={shareAxis} />
         ) : (
           <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
         ))}
@@ -485,11 +485,20 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
 
 // a stable empty default: a fresh [] each render would redraw the chart on every scrub
 const NO_LEVELS: { price: number; next?: boolean }[] = [];
-const NO_AVERAGES: number[] = [];
-/** the comparison charts: a year of weekly closes, with a 20-week average */
-const AVERAGES = [20];
+/** the comparison charts: a year of weekly closes */
 const WEEKS = 53;
-const MA_COLORS: Record<number, string> = { 20: '--accent' };
+
+/**
+ * A daily series as weekly closes, with its 20-day moving average (taken on
+ * the daily values) read off at each week's close.
+ */
+function weeklyWithAverage(daily?: [string, number][]) {
+  if (!daily?.length) return { history: undefined, average: [] as (number | null)[] };
+  const ma = movingAverage(daily, 20);
+  const at = new Map(daily.map(([d], i) => [d, ma[i]]));
+  const history = weekly(daily)!;
+  return { history, average: history.map(([d]) => at.get(d) ?? null) };
+}
 
 /** Trailing n-day average at each point (null until n days are in). */
 function movingAverage(h: [string, number][], n: number) {
@@ -525,18 +534,15 @@ function PriceChart({
   history,
   show,
   levels = NO_LEVELS,
-  averages = NO_AVERAGES,
-  unit = 'D',
+  average,
   fmt,
   axisFmt,
 }: {
   title: string;
   history?: [string, number][];
   show: number;
-  /** moving averages to draw over the line, in points (days, or weeks on a weekly chart) */
-  averages?: number[];
-  /** what one point is, for the averages' key: D(ay) or W(eek) */
-  unit?: 'D' | 'W';
+  /** the 20-day average, one value per point of `history` (null where it isn't whole yet) */
+  average?: (number | null)[];
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
   levels?: { price: number; next?: boolean }[];
   fmt: (v: number) => string;
@@ -549,7 +555,7 @@ function PriceChart({
     return {
       points: h.slice(from).map(([date, total]) => ({ date, total })),
       overlays: [
-        ...averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
+        ...(average ? [{ values: average.slice(from), color: '--accent' }] : []),
         ...levels.map((l) => ({
           values: h.slice(from).map(() => l.price),
           color: l.next ? '--accent' : '--muted',
@@ -558,7 +564,7 @@ function PriceChart({
         })),
       ],
     };
-  }, [history, show, levels, averages]);
+  }, [history, show, levels, average]);
   if (points.length < 2) {
     return (
       <div className="module">
@@ -566,7 +572,7 @@ function PriceChart({
           <span className="label">{title}</span>
         </div>
         <div className="module-note">
-          {averages.length
+          {average !== undefined
             ? `The ${title} chart is still loading. The first time, it takes a few minutes to gather.`
             : `The ${title} price history isn’t available right now.`}
         </div>
@@ -577,14 +583,11 @@ function PriceChart({
   return (
     <div className="module">
       <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
-      {averages.length > 0 && (
+      {average && (
         <div className="ma-key">
-          {averages.map((n) => (
-            <span key={n}>
-              <i style={{ borderColor: `var(${MA_COLORS[n] ?? '--accent'})` }} /> {n}
-              {unit} AVG
-            </span>
-          ))}
+          <span>
+            <i /> 20D AVG
+          </span>
         </div>
       )}
     </div>
