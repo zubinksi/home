@@ -565,7 +565,11 @@ function PriceChart({
         <div className="module-head">
           <span className="label">{title}</span>
         </div>
-        <div className="module-note">The {title} price history isn’t available right now.</div>
+        <div className="module-note">
+          {averages.length
+            ? `The ${title} chart is still loading. The first time, it takes a few minutes to gather.`
+            : `The ${title} price history isn’t available right now.`}
+        </div>
       </div>
     );
   }

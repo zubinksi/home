@@ -52,6 +52,10 @@ const LIGHTER_ID = 'lighter';
  */
 const TOTAL_PROXY = ['bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana', 'usd-coin', 'dogecoin', 'tron', 'cardano'];
 const COMPARISONS_EVERY = 6 * 3_600_000;
+/** CoinGecko's free tier allows about five calls a minute, shared with the live quotes */
+const COMPARISON_GAP = 13_000;
+/** if a round comes back incomplete, try again this much later */
+const COMPARISONS_RETRY = 10 * 60_000;
 // a year: as far back as CoinGecko's free tier goes, for a weekly chart with a 20-week average
 const COMPARISON_DAYS = 365;
 
@@ -115,28 +119,40 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * The comparison charts' series. CoinGecko's free tier allows only a few calls
  * a minute, so these go one at a time with a pause between, a few times a day.
  */
-async function fetchComparisons(put: (c: Comparisons) => void): Promise<Comparisons> {
-  const out: Comparisons = {};
+async function fetchComparisons(put: (c: Comparisons) => void): Promise<boolean> {
+  // one call, then a pause; refused for going too fast (or a blip), wait a minute and try once more
   const one = async <T,>(f: () => Promise<T>) => {
-    try {
-      return await f();
-    } catch {
-      return undefined;
-    } finally {
-      await pause(2_500);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const v = await f();
+        await pause(COMPARISON_GAP);
+        return v;
+      } catch (e) {
+        if (e instanceof Error && e.message === 'HTTP 404') return undefined; // no such coin: retrying won't help
+        await pause(60_000);
+      }
     }
+    return undefined;
   };
-  // each series shows as soon as it arrives
-  out.lit = await one(() => dailyCloses(LIGHTER_ID, 'usd', COMPARISON_DAYS));
-  put({ lit: out.lit });
-  out.zecBtc = await one(() => dailyCloses('zcash', 'btc', COMPARISON_DAYS));
-  put({ zecBtc: out.zecBtc });
-  out.hypeCap = await one(() => dailyCaps('hyperliquid', COMPARISON_DAYS));
+
+  // each series shows as soon as it arrives, the surest first
+  const zecBtc = await one(() => dailyCloses('zcash', 'btc', COMPARISON_DAYS));
+  put({ zecBtc });
+  let lit = await one(() => dailyCloses(LIGHTER_ID, 'usd', COMPARISON_DAYS));
+  if (!lit?.length) {
+    // in case CoinGecko files Lighter under another id: look LIT up by name
+    const found = await one(() => json(`${COINGECKO}/search?query=lighter`));
+    const id = (found?.coins ?? []).find((c: { symbol?: string }) => c.symbol?.toUpperCase() === 'LIT')?.id;
+    if (id && id !== LIGHTER_ID) lit = await one(() => dailyCloses(id, 'usd', COMPARISON_DAYS));
+  }
+  put({ lit });
+  const hypeCap = await one(() => dailyCaps('hyperliquid', COMPARISON_DAYS));
+  put({ hypeCap });
   // the total only counts if every stand-in coin arrived
   const caps: History[] = [];
   for (const id of TOTAL_PROXY) {
     const h = await one(() => dailyCaps(id, COMPARISON_DAYS));
-    if (!h?.length) return out;
+    if (!h?.length) return false;
     caps.push(h);
   }
   const sum = new Map<string, number>();
@@ -146,9 +162,9 @@ async function fetchComparisons(put: (c: Comparisons) => void): Promise<Comparis
       sum.set(d, (sum.get(d) ?? 0) + v);
       count.set(d, (count.get(d) ?? 0) + 1);
     }
-  out.totalCap = [...sum.entries()].filter(([d]) => count.get(d) === caps.length).sort();
-  put({ hypeCap: out.hypeCap, totalCap: out.totalCap });
-  return out;
+  const totalCap: History = [...sum.entries()].filter(([d]) => count.get(d) === caps.length).sort();
+  put({ totalCap });
+  return Boolean(zecBtc?.length && lit?.length && hypeCap?.length && totalCap.length);
 }
 
 /** A daily series as weekly closes: each week's last day (weeks start Monday). */
@@ -354,22 +370,28 @@ export function useMarket() {
       }));
     };
 
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const refreshComparisons = async () => {
+      clearTimeout(retry);
       const put = (c: Comparisons) =>
         merge((s) => ({
           ...s,
           // keep what we had for anything this round couldn't fetch
           comparisons: { ...s.comparisons, ...Object.fromEntries(Object.entries(c).filter(([, v]) => v?.length)) },
         }));
-      await fetchComparisons(put);
-      merge((s) => ({ ...s, comparisonsAt: Date.now() }));
+      const complete = await fetchComparisons(put);
+      // only a full set counts as fresh; otherwise come back for the rest soon
+      if (complete) merge((s) => ({ ...s, comparisonsAt: Date.now() }));
+      else if (alive) retry = setTimeout(refreshComparisons, COMPARISONS_RETRY);
     };
 
     refreshQuotes();
     refreshHistory();
     // the comparison series change slowly; skip the fetch if the saved copy is recent
-    const fresh = state.comparisonsAt && Date.now() - state.comparisonsAt < COMPARISONS_EVERY;
-    const firstComparisons = setTimeout(refreshComparisons, fresh ? COMPARISONS_EVERY - (Date.now() - state.comparisonsAt!) : 4_000);
+    // (after the live quotes and histories have had their turn at CoinGecko)
+    const c = state.comparisons;
+    const fresh = state.comparisonsAt && Date.now() - state.comparisonsAt < COMPARISONS_EVERY && c?.zecBtc && c.lit && c.totalCap;
+    const firstComparisons = setTimeout(refreshComparisons, fresh ? COMPARISONS_EVERY - (Date.now() - state.comparisonsAt!) : 15_000);
     const q = setInterval(refreshQuotes, QUOTE_EVERY);
     const hst = setInterval(refreshHistory, HISTORY_EVERY);
     const cmp = setInterval(refreshComparisons, COMPARISONS_EVERY);
@@ -379,6 +401,7 @@ export function useMarket() {
       clearInterval(hst);
       clearInterval(cmp);
       clearTimeout(firstComparisons);
+      clearTimeout(retry);
     };
   }, []);
 
