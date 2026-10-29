@@ -162,13 +162,8 @@ export function App() {
           <div className="mast-brand">
             {/* the iris from our mudroom wallpaper, in the title's colour */}
             <IrisSwitch tab={tab} onChange={goTab} icon={irisWhite} />
-            <div>
-              <SectionTitle tab={tab} />
-              <div className="mast-line2">
-                <span className="mast-of">of</span>
-                <span className="mast-title">THE BROWNS</span>
-              </div>
-            </div>
+            {/* just the section's name; "of THE BROWNS" lives on the PIN pad */}
+            <SectionTitle tab={tab} />
           </div>
           <LockButton />
         </div>

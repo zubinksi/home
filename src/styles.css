@@ -150,7 +150,7 @@ p {
   padding: 1.25rem 2.125rem 1.375rem;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center; /* one line now: the iris, title and lock share a centre */
 }
 .mast-title {
   font-family: var(--serif);
@@ -168,15 +168,14 @@ p {
 }
 .mast-brand {
   display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
+  align-items: center;
+  gap: 0.625rem;
 }
 .mast-iris {
   flex: none;
   display: block;
-  height: 2.625rem; /* about the height of the two title lines */
+  height: 1.375rem; /* the height of the one title line */
   aspect-ratio: 256 / 233;
-  margin-top: 0.0625rem;
   /* the white cut-out is used as a mask, so it takes the title's exact colour */
   background: var(--mast-ink);
   mask-size: contain;
@@ -1192,7 +1191,6 @@ p {
 }
 .mast-lock {
   display: inline-flex;
-  margin-top: 0.0625rem; /* centred on the title's first line */
   border-radius: 1rem;
   transition: filter 0.15s;
 }
