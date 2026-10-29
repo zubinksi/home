@@ -1,6 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Chart } from './Chart';
-import { buildEquitiesSeries, type MarketState } from './prices';
+import { buildEquitiesSeries, ratio, type MarketState } from './prices';
 import {
   compact,
   longDate,
@@ -305,7 +305,15 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
+  const hypeLit = useMemo(() => ratio(market.hypeLong, market.comparisons?.lit), [market.hypeLong, market.comparisons?.lit]);
+  const hypeTotal = useMemo(
+    () => ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap),
+    [market.comparisons?.hypeCap, market.comparisons?.totalCap],
+  );
   const charted = s.key === 'HYPE' || s.key === 'ZEC';
+  // HYPE and ZEC can switch their chart to a comparison
+  const views = s.key === 'HYPE' ? HYPE_VIEWS : ZEC_VIEWS;
+  const [view, setView] = useState('USD');
   // the Equities positions together, daily since they were bought
   const equities = useMemo(
     () => (s.key === 'EQUITIES' ? buildEquitiesSeries(market.live, market.stockHistories) : null),
@@ -327,7 +335,11 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
               {s.alloc}
             </span>
           ) : (
-            <span>{!charted && s.position.holding}</span>
+            charted ? (
+              <ChartToggle options={views} value={view} onChange={setView} />
+            ) : (
+              <span>{s.position.holding}</span>
+            )
           )}
           {s.position.gain && <span style={{ color: STATUS_COLOR[s.position.gain.color] }}>{s.position.gain.text}</span>}
         </div>
@@ -351,10 +363,20 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       )}
       {/* returns sit under the chart where there is one, as on the Total page */}
       {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
-      {s.key === 'ZEC' && <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />}
-      {s.key === 'HYPE' && (
-        <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
-      )}
+      {s.key === 'ZEC' &&
+        (view === 'BTC' ? (
+          <PriceChart title="ZEC / BTC" history={market.comparisons?.zecBtc} show={90} averages={AVERAGES} fmt={btcFmt} axisFmt={btcAxis} />
+        ) : (
+          <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
+        ))}
+      {s.key === 'HYPE' &&
+        (view === 'LIT' ? (
+          <PriceChart title="HYPE / LIT" history={hypeLit} show={90} averages={AVERAGES} fmt={ratioFmt} axisFmt={ratioAxis} />
+        ) : view === 'TOTAL' ? (
+          <PriceChart title="HYPE / TOTAL" history={hypeTotal} show={90} averages={AVERAGES} fmt={shareFmt} axisFmt={shareAxis} />
+        ) : (
+          <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
+        ))}
       {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
       {s.key === 'EQUITIES' && <EquitiesChart series={equities} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} market={market} />}
@@ -461,6 +483,38 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
 
 // a stable empty default: a fresh [] each render would redraw the chart on every scrub
 const NO_LEVELS: { price: number; next?: boolean }[] = [];
+const NO_AVERAGES: number[] = [];
+/** the comparison charts' moving averages: a week and twenty days */
+const AVERAGES = [7, 20];
+const MA_COLORS: Record<number, string> = { 7: '--iris', 20: '--accent' };
+
+/** Trailing n-day average at each point (null until n days are in). */
+function movingAverage(h: [string, number][], n: number) {
+  let sum = 0;
+  return h.map(([, v], i) => {
+    sum += v;
+    if (i >= n) sum -= h[i - n][1];
+    return i >= n - 1 ? sum / n : null;
+  });
+}
+
+const HYPE_VIEWS = ['USD', 'LIT', 'TOTAL'];
+const ZEC_VIEWS = ['USD', 'BTC'];
+
+/** A small segmented switch: the choice sits raised in a soft recessed pill, and slides. */
+function ChartToggle({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  const at = Math.max(0, options.indexOf(value));
+  return (
+    <span className="seg" role="group" aria-label="Chart" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      <span className="seg-thumb" style={{ width: `calc((100% - 0.25rem) / ${options.length})`, transform: `translateX(${at * 100}%)` }} aria-hidden />
+      {options.map((o) => (
+        <button key={o} className={o === value ? 'on' : ''} aria-pressed={o === value} onClick={() => onChange(o)}>
+          {o}
+        </button>
+      ))}
+    </span>
+  );
+}
 
 /** A daily price line for the last `show` days, with any fixed price levels across it. */
 function PriceChart({
@@ -468,12 +522,15 @@ function PriceChart({
   history,
   show,
   levels = NO_LEVELS,
+  averages = NO_AVERAGES,
   fmt,
   axisFmt,
 }: {
   title: string;
   history?: [string, number][];
   show: number;
+  /** moving averages to draw over the line, in days */
+  averages?: number[];
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
   levels?: { price: number; next?: boolean }[];
   fmt: (v: number) => string;
@@ -486,6 +543,7 @@ function PriceChart({
     return {
       points: h.slice(from).map(([date, total]) => ({ date, total })),
       overlays: [
+        ...averages.map((n) => ({ values: movingAverage(h, n).slice(from), color: MA_COLORS[n] ?? '--accent' })),
         ...levels.map((l) => ({
           values: h.slice(from).map(() => l.price),
           color: l.next ? '--accent' : '--muted',
@@ -494,7 +552,7 @@ function PriceChart({
         })),
       ],
     };
-  }, [history, show, levels]);
+  }, [history, show, levels, averages]);
   if (points.length < 2) {
     return (
       <div className="module">
@@ -509,6 +567,15 @@ function PriceChart({
   return (
     <div className="module">
       <Chart points={points} overlays={overlays} yFormat={axisFmt} format={fmt} endLabel />
+      {averages.length > 0 && (
+        <div className="ma-key">
+          {averages.map((n) => (
+            <span key={n}>
+              <i style={{ borderColor: `var(${MA_COLORS[n] ?? '--accent'})` }} /> {n}D AVG
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -526,6 +593,12 @@ function EquitiesChart({ series }: { series: Series | null }) {
 }
 
 // stable formatters (the chart redraws when they change)
+const btcFmt = (v: number) => `${v.toFixed(4)} BTC`;
+const btcAxis = (v: number) => `${+v.toFixed(4)}`;
+const ratioFmt = (v: number) => v.toFixed(2);
+const ratioAxis = (v: number) => `${+v.toFixed(2)}`;
+const shareFmt = (v: number) => `${(v * 100).toFixed(3)}%`;
+const shareAxis = (v: number) => `${+(v * 100).toFixed(2)}%`;
 const dollarAxis = (v: number) => `$${+v.toFixed(2)}`;
 const kAxis = (v: number) => `$${+(v / 1e3).toFixed(1)}K`;
 const fullMoney = (v: number) => `$${Math.round(v).toLocaleString()}`;

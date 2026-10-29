@@ -28,7 +28,31 @@ export interface MarketState {
   hypeLong?: History;
   /** daily closes for each Equities position, by ticker */
   stockHistories?: Record<string, History>;
+  /** daily series for the HYPE and ZEC comparison charts (about 120 days, so a 20-day average is whole) */
+  comparisons?: Comparisons;
+  comparisonsAt?: number;
 }
+
+export interface Comparisons {
+  /** Lighter's LIT in USD */
+  lit?: History;
+  /** ZEC priced in BTC */
+  zecBtc?: History;
+  /** HYPE's market cap */
+  hypeCap?: History;
+  /** the whole crypto market's cap, approximated as the top coins' caps summed */
+  totalCap?: History;
+}
+
+/** CoinGecko id for Lighter's token. */
+const LIGHTER_ID = 'lighter';
+/**
+ * CoinGecko's free API has no history of the total crypto market cap, so the
+ * largest coins stand in for it (together most of the market).
+ */
+const TOTAL_PROXY = ['bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana', 'usd-coin', 'dogecoin', 'tron', 'cardano'];
+const COMPARISONS_EVERY = 6 * 3_600_000;
+const COMPARISON_DAYS = 120;
 
 const firstDay = reviews[0].date;
 const daysSince = (iso: string) => Math.max(1, Math.ceil((Date.now() - new Date(iso + 'T00:00:00').getTime()) / 86_400_000) + 1);
@@ -74,6 +98,68 @@ async function dailyCloses(id: string, vs: string, days: number): Promise<Histor
   const byDay = new Map<string, number>();
   for (const [ms, price] of (data?.prices ?? []) as [number, number][]) byDay.set(isoDay(new Date(ms)), price);
   return [...byDay.entries()].sort();
+}
+
+/** A coin's daily market caps from CoinGecko, in USD, over `days` days. */
+async function dailyCaps(id: string, days: number): Promise<History> {
+  const data = await json(`${COINGECKO}/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=daily`);
+  const byDay = new Map<string, number>();
+  for (const [ms, cap] of (data?.market_caps ?? []) as [number, number][]) byDay.set(isoDay(new Date(ms)), cap);
+  return [...byDay.entries()].sort();
+}
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * The comparison charts' series. CoinGecko's free tier allows only a few calls
+ * a minute, so these go one at a time with a pause between, a few times a day.
+ */
+async function fetchComparisons(put: (c: Comparisons) => void): Promise<Comparisons> {
+  const out: Comparisons = {};
+  const one = async <T,>(f: () => Promise<T>) => {
+    try {
+      return await f();
+    } catch {
+      return undefined;
+    } finally {
+      await pause(2_500);
+    }
+  };
+  // each series shows as soon as it arrives
+  out.lit = await one(() => dailyCloses(LIGHTER_ID, 'usd', COMPARISON_DAYS));
+  put({ lit: out.lit });
+  out.zecBtc = await one(() => dailyCloses('zcash', 'btc', COMPARISON_DAYS));
+  put({ zecBtc: out.zecBtc });
+  out.hypeCap = await one(() => dailyCaps('hyperliquid', COMPARISON_DAYS));
+  // the total only counts if every stand-in coin arrived
+  const caps: History[] = [];
+  for (const id of TOTAL_PROXY) {
+    const h = await one(() => dailyCaps(id, COMPARISON_DAYS));
+    if (!h?.length) return out;
+    caps.push(h);
+  }
+  const sum = new Map<string, number>();
+  const count = new Map<string, number>();
+  for (const h of caps)
+    for (const [d, v] of h) {
+      sum.set(d, (sum.get(d) ?? 0) + v);
+      count.set(d, (count.get(d) ?? 0) + 1);
+    }
+  out.totalCap = [...sum.entries()].filter(([d]) => count.get(d) === caps.length).sort();
+  put({ hypeCap: out.hypeCap, totalCap: out.totalCap });
+  return out;
+}
+
+/** a ÷ b day by day, on the days both have. */
+export function ratio(a?: History, b?: History): History | undefined {
+  if (!a?.length || !b?.length) return undefined;
+  const bs = new Map(b);
+  const out: History = [];
+  for (const [d, v] of a) {
+    const w = bs.get(d);
+    if (w) out.push([d, v / w]);
+  }
+  return out.length ? out : undefined;
 }
 
 /** AAPL via this site's server. Returns the quote and daily closes. */
@@ -250,14 +336,31 @@ export function useMarket() {
       }));
     };
 
+    const refreshComparisons = async () => {
+      const put = (c: Comparisons) =>
+        merge((s) => ({
+          ...s,
+          // keep what we had for anything this round couldn't fetch
+          comparisons: { ...s.comparisons, ...Object.fromEntries(Object.entries(c).filter(([, v]) => v?.length)) },
+        }));
+      await fetchComparisons(put);
+      merge((s) => ({ ...s, comparisonsAt: Date.now() }));
+    };
+
     refreshQuotes();
     refreshHistory();
+    // the comparison series change slowly; skip the fetch if the saved copy is recent
+    const fresh = state.comparisonsAt && Date.now() - state.comparisonsAt < COMPARISONS_EVERY;
+    const firstComparisons = setTimeout(refreshComparisons, fresh ? COMPARISONS_EVERY - (Date.now() - state.comparisonsAt!) : 4_000);
     const q = setInterval(refreshQuotes, QUOTE_EVERY);
     const hst = setInterval(refreshHistory, HISTORY_EVERY);
+    const cmp = setInterval(refreshComparisons, COMPARISONS_EVERY);
     return () => {
       alive = false;
       clearInterval(q);
       clearInterval(hst);
+      clearInterval(cmp);
+      clearTimeout(firstComparisons);
     };
   }, []);
 

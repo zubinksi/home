@@ -2125,6 +2125,63 @@ p {
   }
 }
 
+/* the chart switch in a held asset's subheader: a soft pill, the choice raised and sliding */
+.seg {
+  position: relative;
+  display: inline-grid;
+  padding: 0.125rem;
+  border-radius: 0.75rem;
+  background: var(--inset);
+  box-shadow: inset 0 0.0625rem 0.125rem rgba(70, 52, 24, 0.14);
+}
+.seg-thumb {
+  position: absolute;
+  top: 0.125rem;
+  bottom: 0.125rem;
+  left: 0.125rem;
+  border-radius: 0.625rem;
+  background: var(--card);
+  box-shadow: 0 0.0625rem 0.125rem rgba(70, 52, 24, 0.18);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.seg button {
+  position: relative;
+  padding: 0.25rem 0.625rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--muted);
+  opacity: 0.75;
+  transition:
+    color 0.2s,
+    opacity 0.2s;
+}
+.seg button.on {
+  color: var(--ink);
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg-thumb {
+    transition: none;
+  }
+}
+/* which line is which average */
+.ma-key {
+  display: flex;
+  gap: 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.5938rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.ma-key i {
+  display: inline-block;
+  width: 1rem;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+  border-top: 1.25px solid;
+}
 /* where the Fortress cash sits: label, share bar, amount, a year's interest */
 .cash-split .module-head {
   margin-bottom: 0.375rem;
