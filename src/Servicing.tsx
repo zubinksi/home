@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { MobileNav } from './MobileNav';
+import { PagedSidebar } from './Nav';
 import { dayMon, isoDay } from './model';
 import { serviceLog, serviceStatus, serviceTasks, type Area, type ServiceStatus, type ServiceTask } from './servicing';
 import { useDrill } from './useDrill';
@@ -82,10 +83,10 @@ export function Servicing(props: {
       <section className="slab sleeves" ref={panelRef}>
         <div className={`sleeves-grid ${drill.gridClass}`}>
           {drill.showList && (
-            <nav className={`sidebar ${drill.listClass}`}>
+            <PagedSidebar className={`sidebar ${drill.listClass}`} tab="servicing">
               <button className={`side-row total ${!props.narrow && !active ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">ALL SERVICING</span>
+                <span className="side-name">SERVICING</span>
                 <span />
                 <span className="side-amt">{rows.length}</span>
               </button>
@@ -95,7 +96,7 @@ export function Servicing(props: {
               <div className="side-rule" />
               <div className="label side-section">THE JOBS</div>
               {areas.map(areaRow)}
-            </nav>
+            </PagedSidebar>
           )}
 
           {drill.showDetail && (

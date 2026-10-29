@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import snapshotCsv from './assets/projects-snapshot.csv?raw';
 import { MobileNav } from './MobileNav';
+import { PagedSidebar } from './Nav';
 import { compact } from './model';
 import { areaStats, parseCsv, parseProjects, totals, type Area, type ProjectItem } from './projectsModel';
 import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
@@ -184,10 +185,10 @@ export function Projects(props: {
       <section className="slab sleeves projects" ref={panelRef}>
         <div className={`sleeves-grid ${drill.gridClass}`}>
           {drill.showList && (
-            <nav className={`sidebar ${drill.listClass}`}>
+            <PagedSidebar className={`sidebar ${drill.listClass}`} tab="projects">
               <button className={`side-row total ${!props.narrow && showAll ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">ALL PROJECTS</span>
+                <span className="side-name">PROJECTS</span>
                 <span />
                 <span className="side-amt">{compact(t.spent)}</span>
               </button>
@@ -238,7 +239,7 @@ export function Projects(props: {
                 </div>
                 {source.kind === 'error' && <div className="proj-hint">{source.hint}</div>}
               </div>
-            </nav>
+            </PagedSidebar>
           )}
 
           {drill.showDetail && (
@@ -285,7 +286,7 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
   return (
     <>
       <div className="d-title">
-        <span className="d-name proj-name">ALL PROJECTS</span>
+        <span className="d-name proj-name">PROJECTS</span>
         <span className="d-amt">{money(t.spent)}</span>
       </div>
       <div className="d-sub">

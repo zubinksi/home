@@ -209,107 +209,6 @@ p {
   flex: none;
 }
 
-/* the menu: three lines in the masthead; the pages drop down as a stack */
-.site-menu {
-  position: relative;
-  flex: none;
-}
-.site-menu-button {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.3125rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0 0.4375rem;
-  border-radius: 0.125rem;
-}
-.site-menu-button span {
-  display: block;
-  height: 1.5px;
-  border-radius: 1px;
-  background: var(--mast-ink);
-  transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s;
-}
-/* open: the outer lines cross and the middle one fades */
-.site-menu-button.is-open span:nth-child(1) {
-  transform: translateY(calc(0.3125rem + 1.5px)) rotate(45deg);
-}
-.site-menu-button.is-open span:nth-child(2) {
-  opacity: 0;
-}
-.site-menu-button.is-open span:nth-child(3) {
-  transform: translateY(calc(-0.3125rem - 1.5px)) rotate(-45deg);
-}
-.site-menu-button:focus-visible {
-  outline: 2px solid var(--mast-ink);
-  outline-offset: 2px;
-}
-/* the card: the slab's paper and shadow, under the button's right edge */
-.site-menu-list {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  z-index: 40;
-  min-width: 12.5rem;
-  display: flex;
-  flex-direction: column;
-  padding: 0.375rem;
-  background: var(--slab);
-  box-shadow: var(--shadow);
-  animation: menu-in 0.18s ease-out;
-}
-@keyframes menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.25rem);
-  }
-}
-.site-menu-list button {
-  display: grid;
-  grid-template-columns: 1rem 1fr;
-  align-items: center;
-  padding: 0.625rem 0.75rem 0.625rem 0.5rem;
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 1rem;
-  letter-spacing: 0.01em;
-  color: var(--ink3);
-  border-radius: 0.125rem;
-}
-.site-menu-list button.on {
-  color: var(--ink);
-}
-@media (hover: hover) {
-  .site-menu-list button:hover {
-    background: var(--inset);
-    color: var(--ink);
-  }
-}
-.site-menu-list button:focus-visible {
-  outline: none;
-  background: var(--inset);
-}
-/* the page you're in: the room's trim-coloured dot, as in the side menus */
-.site-menu-dot {
-  width: 0.4375rem;
-  height: 0.4375rem;
-  border-radius: 50%;
-  background: var(--piping);
-  opacity: 0;
-}
-.site-menu-list button.on .site-menu-dot {
-  opacity: 1;
-}
-@media (prefers-reduced-motion: reduce) {
-  .site-menu-button span,
-  .site-menu-list {
-    transition: none;
-    animation: none;
-  }
-}
 /* the PIN pad's title */
 .mast-title {
   font-family: var(--serif);
@@ -1528,6 +1427,73 @@ p {
   width: 3.25rem;
   height: auto;
   margin: 0 auto 0.875rem;
+}
+
+/* the site's menu, at the head of each page's left column: three lines that
+   swap the column for the list of pages */
+.pages-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  /* a comfortable target around a small icon */
+  margin: -0.625rem 0 0.375rem -0.5rem;
+  padding: 0.5rem;
+  color: var(--muted);
+}
+@media (hover: hover) {
+  .pages-toggle:hover {
+    color: var(--ink);
+  }
+}
+.pages-icon {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 1.125rem;
+}
+.pages-icon span {
+  height: 1.25px;
+  background: currentColor;
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s;
+}
+.pages-open .pages-icon span:nth-child(1) {
+  transform: translateY(calc(0.25rem + 1.25px)) rotate(45deg);
+}
+.pages-open .pages-icon span:nth-child(2) {
+  opacity: 0;
+}
+.pages-open .pages-icon span:nth-child(3) {
+  transform: translateY(calc(-0.25rem - 1.25px)) rotate(-45deg);
+}
+.pages-list {
+  display: flex;
+  flex-direction: column;
+  animation: slide-from-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.side-row.pages-row {
+  font-size: 1.1875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--b1);
+}
+/* the list of pages keeps its dot column even on phones */
+.pages-list {
+  --caret-col: 1.25rem;
+}
+.pages-list .side-row {
+  grid-template-columns: var(--caret-col) 1fr;
+}
+.pages-list .side-row .side-caret {
+  visibility: visible;
+}
+/* while the pages are showing, the page beside them waits, dimmed */
+.sleeves-grid:has(.pages-open) > .detail {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.2s;
 }
 
 /* ── projects ───────────────────────────────────────── */

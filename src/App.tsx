@@ -3,7 +3,7 @@ import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
-import { SiteMenu, useNarrow, useRoute } from './Nav';
+import { PagedSidebar, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { Servicing } from './Servicing';
@@ -30,7 +30,7 @@ export function App() {
   const model = useMemo(() => buildSleeves(market.live, market.series, costs), [market.live, market.series, costs]);
   const allItems = useMemo(() => buildItems(market.live), [market.live]);
 
-  const { route, goTab, openSub, replaceSub, closeSub } = useRoute();
+  const { route, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
 
   // each section is a different room: Projects has the dark brown wall and a lamp
@@ -158,7 +158,7 @@ export function App() {
   return (
     <>
       <header className="masthead">
-        {/* straight on the wall: the iris and our name on the left, the menu and the lock on the right */}
+        {/* straight on the wall: the iris and our name on the left, the lock on the right (the menu lives in each page's slab) */}
         <div className="mast-inner">
           <div className="mast-bar">
             {/* the iris from our mudroom wallpaper, in the wall's white, as tall as the two lines */}
@@ -170,7 +170,6 @@ export function App() {
                 <span className="mast-title">THE BROWNS</span>
               </div>
             </div>
-            <SiteMenu tab={tab} onChange={goTab} />
             <LockButton />
           </div>
         </div>
@@ -188,10 +187,10 @@ export function App() {
         <section className="slab sleeves" ref={sleevesRef}>
           <div className={`sleeves-grid ${drill.gridClass}`}>
             {drill.showList && (
-            <nav className={`sidebar ${drill.listClass}`}>
+            <PagedSidebar className={`sidebar ${drill.listClass}`} tab="investments">
               <button className={`side-row total ${!narrow && sel === SEL_TOTAL ? 'is-sel' : ''}`} onClick={() => select(SEL_TOTAL)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">TOTAL</span>
+                <span className="side-name">INVESTMENTS</span>
                 <span />
                 <span className="side-amt">{compact(model.total)}</span>
               </button>
@@ -222,7 +221,7 @@ export function App() {
                   <span className="items-count">{open.length}</span>
                 </button>
               </div>
-            </nav>
+            </PagedSidebar>
             )}
 
             {drill.showDetail && (
