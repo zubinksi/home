@@ -46,14 +46,6 @@ export const serviceTasks: ServiceTask[] = [
     how: 'Summer: open the upstairs dampers, close down the basement. Winter: the reverse, since heat rises. Ask the tech to label each damper at the tune-up.',
   },
   {
-    id: 'deep-clean',
-    name: 'Deep clean',
-    area: 'CLEANING',
-    every: 60,
-    cadence: 'EVERY 60 DAYS',
-    how: 'Baseboards, vents, inside the oven and fridge, behind the appliances, and the mudroom.',
-  },
-  {
     id: 'carpets',
     name: 'Carpet and upholstery cleaning',
     area: 'CLEANING',
@@ -138,13 +130,13 @@ export const serviceTasks: ServiceTask[] = [
 /** When each job was last done (YYYY-MM-DD). Add a line when one's done. */
 export const serviceLog: Record<string, string> = {
   // done in August 2026 (the day wasn't noted; mid-month stands in)
-  'hvac-filters': '2026-08-15',
   'hvac-service': '2026-08-15',
-  'deep-clean': '2026-08-15',
   carpets: '2026-08-15',
-  pest: '2026-08-15',
   'dryer-duct': '2026-08-15',
-  detectors: '2026-08-15',
+  // done October 29
+  'hvac-filters': '2026-10-29',
+  pest: '2026-10-29',
+  detectors: '2026-10-29',
 };
 
 const DAY = 86_400_000;
