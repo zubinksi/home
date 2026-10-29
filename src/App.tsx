@@ -3,7 +3,7 @@ import { Detail, TotalDetail } from './Detail';
 import { ErrorBoundary } from './ErrorBoundary';
 import irisWhite from './assets/iris-white.png';
 import { LockButton } from './Gate';
-import { SectionTabs, useNarrow, useRoute } from './Nav';
+import { SiteMenu, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { Servicing } from './Servicing';
@@ -158,12 +158,19 @@ export function App() {
   return (
     <>
       <header className="masthead">
-        {/* straight on the wall: the iris, the three sections, the lock */}
+        {/* straight on the wall: the iris and our name on the left, the menu and the lock on the right */}
         <div className="mast-inner">
           <div className="mast-bar">
-            {/* the iris from our mudroom wallpaper, in the wall's white */}
+            {/* the iris from our mudroom wallpaper, in the wall's white, as tall as the two lines */}
             <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
-            <SectionTabs tab={tab} onChange={goTab} />
+            <div className="mast-name">
+              <div className="mast-title">HOME OFFICES</div>
+              <div className="mast-line2">
+                <span className="mast-of">of</span>
+                <span className="mast-title">THE BROWNS</span>
+              </div>
+            </div>
+            <SiteMenu tab={tab} onChange={goTab} />
             <LockButton />
           </div>
         </div>

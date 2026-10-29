@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
@@ -79,15 +79,81 @@ export function useNarrow(query = '(max-width: 860px)') {
   return narrow;
 }
 
-/** The three sections, side by side in the masthead; the one you're in is set in ink. */
-export function SectionTabs({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
+/**
+ * The site's pages behind a menu button in the masthead: tap it and the pages
+ * drop down as a stack on a small card, the one you're in marked with the
+ * room's dot. Closes on a choice, a tap elsewhere or Escape; arrow keys move
+ * through the list. More pages are just more entries in TABS.
+ */
+export function SiteMenu({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const current = TABS.find((t) => t.id === tab)!;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        button.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    // start on the page you're in, so arrows and Enter work straight away
+    wrap.current?.querySelector<HTMLButtonElement>('.site-menu-list .on')?.focus();
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const onListKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...e.currentTarget.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+  };
+
   return (
-    <nav className="mast-tabs" aria-label="Sections">
-      {TABS.map((t) => (
-        <button key={t.id} className={t.id === tab ? 'on' : ''} aria-current={t.id === tab ? 'page' : undefined} onClick={() => onChange(t.id)}>
-          {t.label}
-        </button>
-      ))}
-    </nav>
+    <div className="site-menu" ref={wrap}>
+      <button
+        ref={button}
+        className={`site-menu-button ${open ? 'is-open' : ''}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Menu: ${current.label.toLowerCase()}`}
+        onClick={() => setOpen(!open)}
+      >
+        {/* three lines that fold into a cross while the menu is open */}
+        <span aria-hidden />
+        <span aria-hidden />
+        <span aria-hidden />
+      </button>
+      {open && (
+        <div className="site-menu-list" role="menu" aria-label="Pages" onKeyDown={onListKey}>
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="menuitem"
+              className={t.id === tab ? 'on' : ''}
+              aria-current={t.id === tab ? 'page' : undefined}
+              onClick={() => {
+                setOpen(false);
+                onChange(t.id);
+              }}
+            >
+              <span className="site-menu-dot" aria-hidden />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

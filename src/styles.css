@@ -186,13 +186,13 @@ p {
 .mast-bar {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.875rem;
   padding: 0.875rem 0;
 }
 .mast-iris {
   flex: none;
   display: block;
-  height: 1.375rem;
+  height: 2.875rem; /* the two lines of the name beside it */
   aspect-ratio: 256 / 233;
   /* the white cut-out is used as a mask, so it takes the wall's white exactly */
   background: var(--mast-ink);
@@ -201,38 +201,114 @@ p {
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
 }
-.mast-tabs {
+.mast-name {
   flex: 1;
-  display: flex;
-  gap: 1.5rem;
+  min-width: 0;
 }
 .mast-bar .mast-lock {
-  flex: none; /* the lock keeps its size; the tabs make room */
+  flex: none;
 }
-/* the section you're in at full strength, the others at half */
-.mast-tabs button {
-  /* the masthead's serif, as the title was */
-  font-family: var(--serif);
-  font-weight: 600;
-  font-size: 1.1875rem;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-  color: var(--mast-ink);
-  opacity: 0.5;
-  padding: 0.25rem 0;
-  transition: opacity 0.2s;
+
+/* the menu: three lines in the masthead; the pages drop down as a stack */
+.site-menu {
+  position: relative;
+  flex: none;
 }
-.mast-tabs button.on {
-  opacity: 1;
+.site-menu-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3125rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.4375rem;
+  border-radius: 0.125rem;
 }
-@media (hover: hover) {
-  .mast-tabs button:not(.on):hover {
-    opacity: 0.8;
+.site-menu-button span {
+  display: block;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--mast-ink);
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s;
+}
+/* open: the outer lines cross and the middle one fades */
+.site-menu-button.is-open span:nth-child(1) {
+  transform: translateY(calc(0.3125rem + 1.5px)) rotate(45deg);
+}
+.site-menu-button.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.site-menu-button.is-open span:nth-child(3) {
+  transform: translateY(calc(-0.3125rem - 1.5px)) rotate(-45deg);
+}
+.site-menu-button:focus-visible {
+  outline: 2px solid var(--mast-ink);
+  outline-offset: 2px;
+}
+/* the card: the slab's paper and shadow, under the button's right edge */
+.site-menu-list {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 40;
+  min-width: 12.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.375rem;
+  background: var(--slab);
+  box-shadow: var(--shadow);
+  animation: menu-in 0.18s ease-out;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
   }
 }
-.mast-tabs button:focus-visible {
-  outline: 2px solid var(--mast-ink);
-  outline-offset: 3px;
+.site-menu-list button {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  align-items: center;
+  padding: 0.625rem 0.75rem 0.625rem 0.5rem;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  color: var(--ink3);
+  border-radius: 0.125rem;
+}
+.site-menu-list button.on {
+  color: var(--ink);
+}
+@media (hover: hover) {
+  .site-menu-list button:hover {
+    background: var(--inset);
+    color: var(--ink);
+  }
+}
+.site-menu-list button:focus-visible {
+  outline: none;
+  background: var(--inset);
+}
+/* the page you're in: the room's trim-coloured dot, as in the side menus */
+.site-menu-dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--piping);
+  opacity: 0;
+}
+.site-menu-list button.on .site-menu-dot {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-menu-button span,
+  .site-menu-list {
+    transition: none;
+    animation: none;
+  }
 }
 /* the PIN pad's title */
 .mast-title {
@@ -2018,12 +2094,7 @@ p {
     gap: 0.625rem;
     padding: 0.5rem 0;
   }
-  .mast-tabs {
-    gap: 0.75rem;
-  }
-  .mast-tabs button {
-    font-size: 0.875rem;
-  }
+
   .body {
     padding: 1.25rem 0.75rem 1.75rem;
     gap: 1.25rem;
@@ -2325,19 +2396,5 @@ p {
   .cash-split .refill,
   .cash-split .refill:nth-child(n) {
     grid-template-columns: 3.25rem 1fr 3.25rem 4.75rem;
-  }
-}
-
-/* the smallest phones: a little less air between the masthead's three */
-@media (max-width: 380px) {
-  .mast-bar {
-    gap: 0.625rem;
-  }
-  .mast-tabs {
-    gap: 0.5rem;
-  }
-  .mast-tabs button {
-    font-size: 0.8125rem;
-    letter-spacing: 0;
   }
 }
