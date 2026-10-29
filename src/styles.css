@@ -1841,6 +1841,8 @@ p {
 
 /* ── change over 1D / 1W / 1M / 3M under the portfolio chart ─────── */
 .periods {
+  width: 100%;
+  text-align: left;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--b1);

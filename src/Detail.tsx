@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Chart } from './Chart';
 import { buildEquitiesSeries, type MarketState } from './prices';
 import {
@@ -102,7 +102,7 @@ function Positions({ rows, market }: { rows: PositionRow[]; market: MarketState 
               {isOpen && (
                 <div className="eq-body">
                   {/* the stock's own moves, quieter than the sleeve's boxes */}
-                  <Periods periods={stockPeriods(market, p.ticker)} soft />
+                  <Periods periods={stockPeriods(market, p.ticker)} value={p.value} soft />
                   <div className="eq-field">
                     <span className="label">THESIS</span>
                     {p.thesis ? <p>{p.thesis}</p> : <p className="eq-missing">Not written yet.</p>}
@@ -350,12 +350,12 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
         </>
       )}
       {/* returns sit under the chart where there is one, as on the Total page */}
-      {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
       {s.key === 'ZEC' && <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />}
       {s.key === 'HYPE' && (
         <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
       )}
-      {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} />}
+      {s.asset && charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
       {s.key === 'EQUITIES' && <EquitiesChart series={equities} />}
       {s.runway ? <FortressBars r={s.runway} /> : s.module && <ModuleView m={s.module} market={market} />}
       <Policy lines={s.policy} />
@@ -520,7 +520,7 @@ function EquitiesChart({ series }: { series: Series | null }) {
     <>
       <PriceChart title="Equities" history={history} show={history.length} fmt={fullMoney} axisFmt={kAxis} />
       {/* no partial 3M figure: a dash until the positions have three months behind them */}
-      <Periods periods={periodChanges(series ?? [], false)} />
+      <Periods periods={periodChanges(series ?? [], false)} value={series?.[series.length - 1]?.total ?? 0} />
     </>
   );
 }
@@ -539,18 +539,63 @@ function rungLevels(s: Sleeve) {
 }
 
 /** Change in the line over 1D / 1W / 1M / 3M. */
-function Periods({ periods, soft = false }: { periods: Model['periods']; soft?: boolean }) {
+// returns read as % or $ — one choice for every row, remembered on this device
+const RETURNS_KEY = 'browns.returns.v1';
+const returnsListeners = new Set<() => void>();
+function readReturnsMode(): 'pct' | 'usd' {
+  try {
+    return localStorage.getItem(RETURNS_KEY) === 'usd' ? 'usd' : 'pct';
+  } catch {
+    return 'pct';
+  }
+}
+let returnsMode = readReturnsMode();
+function useReturnsMode() {
+  const mode = useSyncExternalStore(
+    (fn) => {
+      returnsListeners.add(fn);
+      return () => returnsListeners.delete(fn);
+    },
+    () => returnsMode,
+  );
+  const toggle = () => {
+    returnsMode = returnsMode === 'pct' ? 'usd' : 'pct';
+    try {
+      localStorage.setItem(RETURNS_KEY, returnsMode);
+    } catch {
+      /* private mode: lasts until reload */
+    }
+    returnsListeners.forEach((fn) => fn());
+  };
+  return [mode, toggle] as const;
+}
+
+/**
+ * 1D / 1W / 1M / 3M returns. Tapping the row switches every row between
+ * percent and dollars; `value` is what the holding is worth now, so a change
+ * of c means value × c / (1 + c) gained.
+ */
+function Periods({ periods, value, soft = false }: { periods: Model['periods']; value: number; soft?: boolean }) {
+  const [mode, toggle] = useReturnsMode();
+  const show = (c: number) => {
+    const sign = c >= 0 ? '+' : '−';
+    return mode === 'usd' ? `${sign}${money(Math.abs((value * c) / (1 + c)))}` : `${sign}${(Math.abs(c) * 100).toFixed(1)}%`;
+  };
   return (
-    <div className={`periods ${soft ? 'is-soft' : ''}`}>
+    <button
+      className={`periods ${soft ? 'is-soft' : ''}`}
+      onClick={toggle}
+      aria-label={mode === 'usd' ? 'Returns in dollars. Show percent' : 'Returns in percent. Show dollars'}
+    >
       {periods.map((p) => (
-        <div key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
+        <span key={p.label} className="period" title={p.change === null ? 'The chart doesn’t reach back that far yet' : undefined}>
           <span className="label">{p.label}</span>
           <span className="period-v" style={p.change === null ? undefined : { color: STATUS_COLOR[p.change >= 0 ? 'green' : 'red'] }}>
-            {p.change === null ? '—' : `${p.change >= 0 ? '+' : '−'}${(Math.abs(p.change) * 100).toFixed(1)}%`}
+            {p.change === null ? '—' : show(p.change)}
           </span>
-        </div>
+        </span>
       ))}
-    </div>
+    </button>
   );
 }
 
@@ -566,7 +611,7 @@ export function TotalDetail({ model }: { model: Model }) {
       </div>
       <div className="module">
         <Chart points={model.history} yFormat={moneyAxis} format={fullMoney} />
-        <Periods periods={model.periods} />
+        <Periods periods={model.periods} value={model.total} />
       </div>
       <div className="cards cards-two">
         {model.totalCards.map((c) => (
