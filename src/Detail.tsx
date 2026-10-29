@@ -1,6 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Chart } from './Chart';
-import { buildEquitiesSeries, ratio, type MarketState } from './prices';
+import { buildEquitiesSeries, ratio, weekly, type MarketState } from './prices';
 import {
   compact,
   longDate,
@@ -305,11 +305,13 @@ function assetPeriods(market: MarketState, asset: NonNullable<Sleeve['asset']>) 
 
 export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketState }) {
   const levels = useMemo(() => rungLevels(s), [s]);
-  const hypeLit = useMemo(() => ratio(market.hypeLong, market.comparisons?.lit), [market.hypeLong, market.comparisons?.lit]);
+  // the comparison charts are weekly
+  const hypeLit = useMemo(() => weekly(ratio(market.hypeLong, market.comparisons?.lit)), [market.hypeLong, market.comparisons?.lit]);
   const hypeTotal = useMemo(
-    () => ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap),
+    () => weekly(ratio(market.comparisons?.hypeCap, market.comparisons?.totalCap)),
     [market.comparisons?.hypeCap, market.comparisons?.totalCap],
   );
+  const zecBtcW = useMemo(() => weekly(market.comparisons?.zecBtc), [market.comparisons?.zecBtc]);
   const charted = s.key === 'HYPE' || s.key === 'ZEC';
   // HYPE and ZEC can switch their chart to a comparison
   const views = s.key === 'HYPE' ? HYPE_VIEWS : ZEC_VIEWS;
@@ -365,15 +367,15 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
       {s.asset && !charted && <Periods periods={assetPeriods(market, s.asset)} value={s.amount} />}
       {s.key === 'ZEC' &&
         (view === 'BTC' ? (
-          <PriceChart title="ZEC / BTC" history={market.comparisons?.zecBtc} show={90} averages={AVERAGES} fmt={btcFmt} axisFmt={btcAxis} />
+          <PriceChart title="ZEC / BTC" history={zecBtcW} show={WEEKS} averages={AVERAGES} unit="W" fmt={btcFmt} axisFmt={btcAxis} />
         ) : (
           <PriceChart title="ZEC" history={market.histories.zec} show={90} fmt={priceFmt} axisFmt={dollarAxis} />
         ))}
       {s.key === 'HYPE' &&
         (view === 'LIT' ? (
-          <PriceChart title="HYPE / LIT" history={hypeLit} show={90} averages={AVERAGES} fmt={ratioFmt} axisFmt={ratioAxis} />
+          <PriceChart title="HYPE / LIT" history={hypeLit} show={WEEKS} averages={AVERAGES} unit="W" fmt={ratioFmt} axisFmt={ratioAxis} />
         ) : view === 'TOTAL' ? (
-          <PriceChart title="HYPE / TOTAL" history={hypeTotal} show={90} averages={AVERAGES} fmt={shareFmt} axisFmt={shareAxis} />
+          <PriceChart title="HYPE / TOTAL" history={hypeTotal} show={WEEKS} averages={AVERAGES} unit="W" fmt={shareFmt} axisFmt={shareAxis} />
         ) : (
           <PriceChart title="HYPE" history={market.hypeLong} show={180} levels={levels} fmt={priceFmt} axisFmt={dollarAxis} />
         ))}
@@ -484,9 +486,10 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
 // a stable empty default: a fresh [] each render would redraw the chart on every scrub
 const NO_LEVELS: { price: number; next?: boolean }[] = [];
 const NO_AVERAGES: number[] = [];
-/** the comparison charts' moving averages: a week and twenty days */
-const AVERAGES = [7, 20];
-const MA_COLORS: Record<number, string> = { 7: '--iris', 20: '--accent' };
+/** the comparison charts: a year of weekly closes, with a 20-week average */
+const AVERAGES = [20];
+const WEEKS = 53;
+const MA_COLORS: Record<number, string> = { 20: '--accent' };
 
 /** Trailing n-day average at each point (null until n days are in). */
 function movingAverage(h: [string, number][], n: number) {
@@ -523,14 +526,17 @@ function PriceChart({
   show,
   levels = NO_LEVELS,
   averages = NO_AVERAGES,
+  unit = 'D',
   fmt,
   axisFmt,
 }: {
   title: string;
   history?: [string, number][];
   show: number;
-  /** moving averages to draw over the line, in days */
+  /** moving averages to draw over the line, in points (days, or weeks on a weekly chart) */
   averages?: number[];
+  /** what one point is, for the averages' key: D(ay) or W(eek) */
+  unit?: 'D' | 'W';
   /** fixed price levels drawn across the chart, e.g. the sell rungs */
   levels?: { price: number; next?: boolean }[];
   fmt: (v: number) => string;
@@ -571,7 +577,8 @@ function PriceChart({
         <div className="ma-key">
           {averages.map((n) => (
             <span key={n}>
-              <i style={{ borderColor: `var(${MA_COLORS[n] ?? '--accent'})` }} /> {n}D AVG
+              <i style={{ borderColor: `var(${MA_COLORS[n] ?? '--accent'})` }} /> {n}
+              {unit} AVG
             </span>
           ))}
         </div>

@@ -24,11 +24,11 @@ export interface MarketState {
   histories: Histories;
   problems: Partial<Record<Asset, string>>;
   at: number | null; // last successful quote refresh
-  /** HYPE in USD, daily, about 300 days, for the HYPE chart's 100-day average */
+  /** HYPE in USD, daily, a year back (the HYPE chart, and HYPE / LIT) */
   hypeLong?: History;
   /** daily closes for each Equities position, by ticker */
   stockHistories?: Record<string, History>;
-  /** daily series for the HYPE and ZEC comparison charts (about 120 days, so a 20-day average is whole) */
+  /** daily series for the HYPE and ZEC comparison charts, a year back (charted weekly) */
   comparisons?: Comparisons;
   comparisonsAt?: number;
 }
@@ -52,7 +52,8 @@ const LIGHTER_ID = 'lighter';
  */
 const TOTAL_PROXY = ['bitcoin', 'ethereum', 'tether', 'ripple', 'binancecoin', 'solana', 'usd-coin', 'dogecoin', 'tron', 'cardano'];
 const COMPARISONS_EVERY = 6 * 3_600_000;
-const COMPARISON_DAYS = 120;
+// a year: as far back as CoinGecko's free tier goes, for a weekly chart with a 20-week average
+const COMPARISON_DAYS = 365;
 
 const firstDay = reviews[0].date;
 const daysSince = (iso: string) => Math.max(1, Math.ceil((Date.now() - new Date(iso + 'T00:00:00').getTime()) / 86_400_000) + 1);
@@ -147,6 +148,23 @@ async function fetchComparisons(put: (c: Comparisons) => void): Promise<Comparis
     }
   out.totalCap = [...sum.entries()].filter(([d]) => count.get(d) === caps.length).sort();
   put({ hypeCap: out.hypeCap, totalCap: out.totalCap });
+  return out;
+}
+
+/** A daily series as weekly closes: each week's last day (weeks start Monday). */
+export function weekly(h?: History): History | undefined {
+  if (!h?.length) return undefined;
+  const out: History = [];
+  let week = '';
+  for (const [d, v] of h) {
+    const day = new Date(d + 'T00:00:00');
+    const monday = new Date(day);
+    monday.setDate(day.getDate() - ((day.getDay() + 6) % 7));
+    const key = isoDay(monday);
+    if (key === week) out[out.length - 1] = [d, v];
+    else out.push([d, v]);
+    week = key;
+  }
   return out;
 }
 
@@ -324,7 +342,7 @@ export function useMarket() {
     };
 
     const refreshHistory = async () => {
-      const [h, z, hl] = await Promise.allSettled([cryptoHistory('hype'), cryptoHistory('zec'), dailyCloses('hyperliquid', 'usd', 300)]);
+      const [h, z, hl] = await Promise.allSettled([cryptoHistory('hype'), cryptoHistory('zec'), dailyCloses('hyperliquid', 'usd', 365)]);
       merge((s) => ({
         ...s,
         ...(hl.status === 'fulfilled' && hl.value.length ? { hypeLong: hl.value } : {}),
