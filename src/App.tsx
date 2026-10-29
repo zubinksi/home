@@ -6,6 +6,7 @@ import { LockButton } from './Gate';
 import { IrisSwitch, SectionTitle, useNarrow, useRoute } from './Nav';
 import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
+import { Servicing } from './Servicing';
 import { purchaseCosts, useMarket } from './prices';
 import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
@@ -173,6 +174,7 @@ export function App() {
         </div>
       </header>
       <div className="doc">
+      {tab === 'servicing' && <Servicing />}
       {tab === 'projects' && (
         <Projects narrow={narrow} sub={route.sub} openSub={openSub} replaceSub={replaceSub} closeSub={closeSub} />
       )}

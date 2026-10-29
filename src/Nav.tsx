@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 export const TABS = [
   { id: 'investments', label: 'INVESTMENTS' },
   { id: 'projects', label: 'PROJECTS' },
+  { id: 'servicing', label: 'SERVICING' },
   // { id: 'ask', label: 'POLICY' }, // off for now; the page lives in src/Ask.tsx
 ] as const;
 
@@ -79,12 +80,13 @@ export function useNarrow(query = '(max-width: 860px)') {
 }
 
 /**
- * The iris is the site's navigation: tapping it nods the flower and flips
- * the title between "INVESTMENTS of THE BROWNS" and "PROJECTS of THE BROWNS".
+ * The iris is the site's navigation: tapping it nods the flower and moves the
+ * title on to the next section, "INVESTMENTS", "PROJECTS", "SERVICING" of THE BROWNS.
  */
 export function IrisSwitch({ tab, onChange, icon }: { tab: TabId; onChange: (t: TabId) => void; icon: string }) {
   const [taps, setTaps] = useState(0);
-  const other = TABS.find((t) => t.id !== tab)!;
+  // each tap moves on to the next section, round again after the last
+  const other = TABS[(TABS.findIndex((t) => t.id === tab) + 1) % TABS.length];
   return (
     <button
       className="mast-iris-btn"

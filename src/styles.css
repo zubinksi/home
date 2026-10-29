@@ -51,6 +51,7 @@
 }
 /* Investments and the PIN pad: burgundy piping, the iris's own colour */
 :root[data-room='investments'],
+:root[data-room='servicing'],
 .gate-card {
   --piping: var(--iris);
   --piping-width: 1.5px;
@@ -1656,6 +1657,72 @@ p {
   .psum-chip:hover {
     background: var(--hover);
   }
+}
+/* servicing: the house's recurring upkeep */
+.service-slab .detail {
+  max-width: 48rem;
+}
+.svc-list {
+  display: flex;
+  flex-direction: column;
+}
+.svc {
+  border-bottom: 1px solid var(--b1);
+}
+.svc-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6875rem 0;
+}
+@media (hover: hover) {
+  .svc-head:hover .svc-name {
+    color: var(--ink);
+  }
+}
+.svc-name {
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  color: var(--ink2);
+}
+.svc-area {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.svc-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1875rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.svc-cadence {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.svc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0 0.875rem;
+}
+.svc-body p {
+  font-family: var(--serif);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ink3);
+  max-width: 36rem;
 }
 /* the count in the summary opens the to-do table */
 .todo-link {
