@@ -8,6 +8,7 @@ import { MobileNav } from './MobileNav';
 import { Projects } from './Projects';
 import { Servicing } from './Servicing';
 import { purchaseCosts, useMarket } from './prices';
+import { nextTheme, THEMES, useTheme } from './theme';
 import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
@@ -33,17 +34,17 @@ export function App() {
   const { route, openSub, replaceSub, closeSub } = useRoute();
   const tab = route.tab;
 
-  // each section is a different room: Projects has the dark brown wall and a lamp
-  useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.room = tab;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    meta?.setAttribute('content', getComputedStyle(root).getPropertyValue('--ground').trim());
-    return () => {
-      delete root.dataset.room;
-      meta?.setAttribute('content', getComputedStyle(root).getPropertyValue('--ground').trim());
-    };
-  }, [tab]);
+  // the iris changes the site's theme; its name shows for a moment beneath it
+  const theme = useTheme();
+  const [themeShown, setThemeShown] = useState<string | null>(null);
+  const themeTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(themeTimer.current), []);
+  const changeTheme = () => {
+    const next = nextTheme();
+    setThemeShown(THEMES.find((t) => t.id === next)!.name);
+    clearTimeout(themeTimer.current);
+    themeTimer.current = setTimeout(() => setThemeShown(null), 1400);
+  };
   const narrow = useNarrow();
   const [expanded, setExpanded] = useState<string[]>([]);
   const [done, setDone] = useState<string[]>(loadDone);
@@ -161,8 +162,18 @@ export function App() {
         {/* straight on the wall: the iris and our name on the left, the lock on the right (the menu lives in each page's slab) */}
         <div className="mast-inner">
           <div className="mast-bar">
-            {/* the iris from our mudroom wallpaper, in the wall's white, as tall as the two lines */}
-            <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
+            {/* the iris from our mudroom wallpaper, in the wall's white, as tall as the two lines; tap it to change the theme */}
+            <button
+              className="mast-iris-btn"
+              onClick={changeTheme}
+              title="Change the theme"
+              aria-label={`Theme: ${THEMES.find((t) => t.id === theme)!.name.toLowerCase()}. Change the theme`}
+            >
+              <span className="mast-iris" style={{ maskImage: `url(${irisWhite})`, WebkitMaskImage: `url(${irisWhite})` }} aria-hidden />
+              <span key={themeShown ?? ''} className="mast-theme-name" aria-live="polite">
+                {themeShown}
+              </span>
+            </button>
             <div className="mast-name">
               <div className="mast-title">HOME OFFICES</div>
               <div className="mast-line2">

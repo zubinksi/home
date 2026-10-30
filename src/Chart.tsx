@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { useLamplight } from './lamplight';
+import { useTheme } from './theme';
 import { dayMon, longDate } from './model';
 
 /** At most five evenly spaced dates for the axis (first and last always). */
@@ -109,7 +109,7 @@ export function Chart({
   const canvas = useRef<HTMLCanvasElement>(null);
   const [{ width, height: HEIGHT }, setSize] = useState({ width: 0, height: 0 });
   const [scrub, setScrub] = useState<number | null>(null);
-  const light = useLamplight();
+  const theme = useTheme(); // the colours come from CSS; redraw when they change
   const last = points[points.length - 1];
   const endText = endLabel && last ? format(last.total) : '';
   // the y labels and the price tag share a gutter on the right, as wide as the widest of them
@@ -290,7 +290,7 @@ export function Chart({
       ctx.fillStyle = css.getPropertyValue('--slab').trim();
       ctx.fillText(endText, width - w / 2, tagY + 0.5);
     }
-  }, [width, HEIGHT, points, overlays, g, light, yFormat, endText, right]);
+  }, [width, HEIGHT, points, overlays, g, theme, yFormat, endText, right]);
 
   // a new series (fresh prices) drops any stale mark
   useEffect(() => setScrub(null), [points]);
