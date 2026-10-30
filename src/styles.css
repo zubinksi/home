@@ -1,3 +1,20 @@
+/* Geist Serif and Geist Mono, by Vercel (SIL Open Font License; see
+   assets/fonts/OFL.txt). The serif comes in one weight and no italic. */
+@font-face {
+  font-family: 'Geist Serif';
+  src: url('./assets/fonts/GeistSerif-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./assets/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* a warm brown wall, lighter by day; cream paper and brown-black ink in both */
   --ground: #8f9186;
@@ -48,8 +65,8 @@
   --tag-q1-b: #b6a686;
   --tag-done: #e2e5cb;
   --tag-done-b: #97a46a;
-  --serif: 'Source Serif 4', Georgia, serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --serif: 'Geist Serif', Georgia, serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
 }
 /* The themes, chosen by tapping the iris (theme.ts sets data-theme). Light is
    the default above: the soft gray wall. Dark: the dark brown wall. */
@@ -109,6 +126,9 @@ html {
 html,
 body {
   margin: 0;
+  /* the serif has one weight: titles set semibold stay regular rather than a
+     smudged fake bold; italics are allowed a slant */
+  font-synthesis: style;
   transition: background-color 0.6s ease;
   /* sideways swipes step between sleeves; don't let the browser treat them as Back */
   overscroll-behavior-x: none;
@@ -615,7 +635,7 @@ p {
     margin-top: -0.836rem;
   }
   .d-title:has(.proj-name) {
-    margin-top: -0.445rem;
+    margin-top: -0.523rem;
   }
 }
 .d-sub {
