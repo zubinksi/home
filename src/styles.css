@@ -1275,8 +1275,8 @@ p {
   border: 1px solid var(--b2);
   border-radius: 2px;
   text-align: center;
-  font-family: var(--mono);
-  font-size: 1.375rem;
+  font-family: var(--serif); /* the digits in the masthead's serif */
+  font-size: 1.625rem;
   color: var(--ink);
   transition: background 0.15s, border-color 0.15s;
 }
@@ -1294,6 +1294,7 @@ p {
 .key-fn {
   background: transparent;
   border-color: transparent;
+  font-family: var(--mono); /* CLEAR and ⌫ stay labels */
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   color: var(--muted);
