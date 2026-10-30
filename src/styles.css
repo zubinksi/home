@@ -453,9 +453,10 @@ p {
   color: var(--muted);
 }
 .items-empty {
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
+  /* a sentence, so in the serif */
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  line-height: 1.5;
   color: var(--green);
   padding: 1.125rem 0.75rem 0.25rem;
 }
@@ -692,10 +693,10 @@ p {
   letter-spacing: 0.12em;
 }
 .card-v {
-  font-family: var(--mono);
-  font-size: 1.625rem;
+  /* a card's headline figure, in the serif like the title's; its labels stay mono */
+  font-family: var(--serif);
+  font-size: 1.875rem;
   line-height: 1;
-  letter-spacing: -0.01em;
   margin-top: 0.6875rem;
 }
 .card-d {
@@ -847,9 +848,9 @@ p {
   gap: 0.625rem;
 }
 .gauge-now {
-  font-family: var(--mono);
-  font-weight: 500;
-  font-size: 2.125rem;
+  font-family: var(--serif); /* the headline figure, like the title's */
+  font-size: 2.5rem;
+  line-height: 1;
 }
 .gauge-track {
   position: relative;
@@ -1955,9 +1956,9 @@ p {
 }
 .svc-log-error {
   flex-basis: 100%;
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
+  font-family: var(--serif);
+  font-size: 0.875rem;
+  line-height: 1.4;
   color: var(--red);
 }
 /* the year ahead: a bar for each month, as tall as its share of the jobs */
@@ -2427,6 +2428,7 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .card-of {
+  font-family: var(--mono);
   font-size: 0.6875rem;
   letter-spacing: 0.1em;
   color: var(--muted);

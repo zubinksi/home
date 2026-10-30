@@ -94,7 +94,7 @@ export function App() {
 
   const itemsList = (
     <div className="items-body">
-      {open.length === 0 && <div className="items-empty">NOTHING OPEN. THE POLICY STANDS AS WRITTEN UNTIL THE Q1 REVIEW.</div>}
+      {open.length === 0 && <div className="items-empty">Nothing open. The policy stands as written until the Q1 review.</div>}
 
       {open.map((item) => {
         const isExp = expanded.includes(item.id);
