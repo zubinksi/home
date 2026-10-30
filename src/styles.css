@@ -31,7 +31,9 @@
   /* the column for the selected-row iris; phones have no selected row, so it folds away */
   --caret-col: 1.25rem;
   --iris: #8d4041; /* the iris's own burgundy */
-  --piping: #a9805f;
+  /* the trim on the slabs and the PIN pad: burgundy in every room */
+  --piping: var(--iris);
+  --piping-width: 1.5px;
   --green: #55652c;
   --amber: #8c5a17;
   --red: #7d2e2a;
@@ -49,28 +51,20 @@
   --serif: 'Source Serif 4', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
-/* Investments and the PIN pad: burgundy piping, the iris's own colour */
-:root[data-room='investments'],
-.gate-card {
-  --piping: var(--iris);
-  --piping-width: 1.5px;
-}
-/* Projects is another room: the dark brown wall and light blue piping
+/* Projects is another room: the dark brown wall
    (App.tsx sets data-room) */
 :root[data-room='projects'] {
   --ground: #29231b;
   --mast-ink: #eadcc0;
   --mast-ink2: #c9b99a;
   --mast-accent: #c9b99a;
-  --piping: #8fb3cf;
   --lock-channel: #1f1a14;
   --lock-engrave: #3b3228;
   --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
-  --piping-width: 1.5px;
 }
 /* Servicing is the plaid room: our Black Watch blanket on the wall (green
    ground, navy bands, fine black lines, crossed both ways), kept quiet so
-   the bands and lines are faint over the deep green; navy piping */
+   the bands and lines are faint over the deep green. */
 :root[data-room='servicing'] {
   --ground: #2c4d3e;
   --wall-pattern: repeating-linear-gradient(
@@ -95,8 +89,6 @@
     );
   --mast-ink: #ecead9;
   --mast-ink2: #c9c6b2;
-  --piping: #33467a;
-  --piping-width: 1.5px;
   --lock-channel: #213b2f;
   --lock-engrave: #3d5a4b;
   --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
@@ -573,8 +565,10 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-family: var(--mono);
-  font-weight: 500;
+  /* every section's title, name and figure, in the masthead's serif */
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .d-name {
   font-size: 2.125rem;
