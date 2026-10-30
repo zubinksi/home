@@ -1532,7 +1532,23 @@ p {
 .pages-list {
   display: flex;
   flex-direction: column;
-  animation: slide-from-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* the pages arrive in place, one after another: a short fade and a small step
+   in from the left, never sliding in from beyond the column */
+.pages-list .side-row {
+  animation: pages-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.pages-list .side-row:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.pages-list .side-row:nth-child(3) {
+  animation-delay: 0.08s;
+}
+@keyframes pages-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
 }
 .side-row.pages-row {
   font-size: 1.1875rem;
@@ -2026,7 +2042,8 @@ p {
   .detail.anim-push,
   .detail.anim-next,
   .detail.anim-prev,
-  .sidebar.anim-pop {
+  .sidebar.anim-pop,
+  .pages-list .side-row {
     animation: none;
   }
 }
