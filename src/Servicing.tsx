@@ -160,7 +160,7 @@ export function Servicing(props: {
                 <span className="side-amt">{rows.length}</span>
               </button>
               <div className="side-sub">
-                {count(rows, 'overdue')} OVERDUE · {count(rows, 'soon')} DUE THIS MONTH
+                {standing(count(rows, 'overdue'), count(rows, 'soon'))}
               </div>
               <div className="side-rule" />
               <div className="label side-section">THE JOBS</div>
@@ -182,6 +182,12 @@ export function Servicing(props: {
       </section>
     </main>
   );
+}
+
+/** The status line: only what there is ("2 OVERDUE · 1 DUE THIS MONTH"), or that nothing's due. */
+function standing(overdue: number, soon: number) {
+  const parts = [overdue && `${overdue} OVERDUE`, soon && `${soon} DUE THIS MONTH`].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'NOTHING DUE THIS MONTH';
 }
 
 /** When a job's next due, as a row shows it. */
@@ -273,7 +279,7 @@ function ServiceDetail({ title, rows, log, logJob }: { title: string; rows: Row[
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: count('overdue') ? 'var(--red)' : count('soon') ? 'var(--amber)' : 'var(--green)' }}>
-          {count('overdue')} OVERDUE · {count('soon')} DUE THIS MONTH
+          {standing(count('overdue'), count('soon'))}
         </span>
       </div>
 
@@ -312,8 +318,8 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
       .sort((a, b) => a.d.getTime() - b.d.getTime()),
   );
   const most = Math.max(1, ...byMonth.map((l) => l.length));
-  // open on the first month with something due
-  const [month, setMonth] = useState(() => Math.max(0, byMonth.findIndex((l) => l.length > 0)));
+  // no month open at first (Next up already says what's soonest); tap one to see its jobs
+  const [month, setMonth] = useState<number | null>(null);
   const [open, setOpen] = useState<string | null>(null);
 
   return (
@@ -324,7 +330,7 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: count('overdue') ? 'var(--red)' : count('soon') ? 'var(--amber)' : 'var(--green)' }}>
-          {count('overdue')} OVERDUE · {count('soon')} DUE THIS MONTH
+          {standing(count('overdue'), count('soon'))}
         </span>
       </div>
 
@@ -346,7 +352,7 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
               role="tab"
               aria-selected={month === i}
               className={`svc-month ${month === i ? 'is-sel' : ''}`}
-              onClick={() => setMonth(i)}
+              onClick={() => setMonth(month === i ? null : i)}
             >
               <span className="svc-month-bar">
                 <span style={{ height: `${(byMonth[i].length / most) * 100}%` }} />
@@ -356,20 +362,22 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
             </button>
           ))}
         </div>
-        <div className="svc-month-list">
-          <span className="label">
-            {MONTHS[months[month].getMonth()]} {months[month].getFullYear()} · {byMonth[month].length ? `${byMonth[month].length} DUE` : 'NOTHING DUE'}
-          </span>
-          {byMonth[month].map(({ r, d }) => (
-            <div key={r.t.id + d.getTime()} className="svc-month-row">
-              <span className="svc-name">
-                {r.t.name}
-                <span className="svc-area">{groupOf(r.t).name}</span>
-              </span>
-              <span className="svc-when">{dayMon(isoDay(d))}</span>
-            </div>
-          ))}
-        </div>
+        {month != null && (
+          <div className="svc-month-list">
+            <span className="label">
+              {MONTHS[months[month].getMonth()]} {months[month].getFullYear()} · {byMonth[month].length ? `${byMonth[month].length} DUE` : 'NOTHING DUE'}
+            </span>
+            {byMonth[month].map(({ r, d }) => (
+              <div key={r.t.id + d.getTime()} className="svc-month-row">
+                <span className="svc-name">
+                  {r.t.name}
+                  <span className="svc-area">{groupOf(r.t).name}</span>
+                </span>
+                <span className="svc-when">{dayMon(isoDay(d))}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {unlogged.length > 0 && (
