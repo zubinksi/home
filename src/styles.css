@@ -116,6 +116,10 @@
 /* Sizes are in rem. Desktop renders at 80% of the design; phones at 100%. */
 html {
   font-size: 12.8px;
+  /* Safari on iPhone and iPad enlarges text in some blocks of a wide layout on
+     its own, so rows set alike came out at different sizes; keep sizes as set */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 @media (max-width: 860px) {
   html {
