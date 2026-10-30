@@ -188,7 +188,7 @@ export function Projects(props: {
             <PagedSidebar className={`sidebar ${drill.listClass}`} tab="projects">
               <button className={`side-row total ${!props.narrow && showAll ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">PROJECTS</span>
+                <span className="side-name page-name">Projects</span>
                 <span />
                 <span className="side-amt">{compact(t.spent)}</span>
               </button>
@@ -286,7 +286,7 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
   return (
     <>
       <div className="d-title">
-        <span className="d-name proj-name">PROJECTS</span>
+        <span className="d-name proj-name page-name">Projects</span>
         <span className="d-amt">{money(t.spent)}</span>
       </div>
       <div className="d-sub">

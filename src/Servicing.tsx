@@ -86,7 +86,7 @@ export function Servicing(props: {
             <PagedSidebar className={`sidebar ${drill.listClass}`} tab="servicing">
               <button className={`side-row total ${!props.narrow && !active ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">SERVICING</span>
+                <span className="side-name page-name">Servicing</span>
                 <span />
                 <span className="side-amt">{rows.length}</span>
               </button>
@@ -102,7 +102,7 @@ export function Servicing(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              <ServiceDetail title={active ?? 'SERVICING'} rows={active ? rows.filter((r) => r.t.area === active) : rows} />
+              <ServiceDetail title={active ?? 'Servicing'} rows={active ? rows.filter((r) => r.t.area === active) : rows} />
             </div>
           )}
         </div>
@@ -128,7 +128,7 @@ function ServiceDetail({ title, rows }: { title: string; rows: Row[] }) {
   return (
     <>
       <div className="d-title">
-        <span className="d-name proj-name">{title}</span>
+        <span className={`d-name proj-name ${title === 'Servicing' ? 'page-name' : ''}`}>{title}</span>
         <span className="d-amt">{rows.length}</span>
       </div>
       <div className="d-sub">

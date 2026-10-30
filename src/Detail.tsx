@@ -697,7 +697,7 @@ export function TotalDetail({ model }: { model: Model }) {
   return (
     <>
       <div className="d-title">
-        <span className="d-name">INVESTMENTS</span>
+        <span className="d-name page-name">Investments</span>
         <span className="d-amt">${compact(model.total)}</span>
       </div>
       <div className="module">

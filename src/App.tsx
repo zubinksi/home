@@ -190,7 +190,7 @@ export function App() {
             <PagedSidebar className={`sidebar ${drill.listClass}`} tab="investments">
               <button className={`side-row total ${!narrow && sel === SEL_TOTAL ? 'is-sel' : ''}`} onClick={() => select(SEL_TOTAL)}>
                 <span className="side-caret" aria-hidden />
-                <span className="side-name">INVESTMENTS</span>
+                <span className="side-name page-name">Investments</span>
                 <span />
                 <span className="side-amt">{compact(model.total)}</span>
               </button>
@@ -216,7 +216,7 @@ export function App() {
                 <div className="side-rule" />
                 <button className={`side-row items-row ${!narrow && sel === SEL_ITEMS ? 'is-sel' : ''}`} onClick={() => select(SEL_ITEMS)}>
                   <span className="side-caret" aria-hidden />
-                  <span className="side-name">OPEN ITEMS</span>
+                  <span className="side-name page-name">Open Items</span>
                   <span />
                   <span className="items-count">{open.length}</span>
                 </button>
@@ -235,7 +235,7 @@ export function App() {
               {sel === SEL_ITEMS && (
                 <>
                   <div className="d-title">
-                    <span className="d-name items-name">OPEN ITEMS</span>
+                    <span className="d-name page-name">Open Items</span>
                   </div>
                   {itemsList}
                 </>

@@ -231,14 +231,16 @@ p {
   color: var(--mast-ink2);
 }
 
-/* open items, set apart in the masthead's serif; its count stays in mono */
-.items-row .side-name,
-.d-name.items-name {
+/* the page names (Investments, Projects, Servicing, Open Items) in the list,
+   the titles and the page menu: the masthead's serif, capitalised, not in caps */
+.page-name,
+.d-name.proj-name.page-name {
   font-family: var(--serif);
   font-weight: 600;
   letter-spacing: 0.01em;
+  text-transform: none;
 }
-.items-row .side-name {
+.items-row .page-name {
   font-size: 1rem;
 }
 

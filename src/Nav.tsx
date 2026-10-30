@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const TABS = [
-  { id: 'investments', label: 'INVESTMENTS' },
-  { id: 'projects', label: 'PROJECTS' },
-  { id: 'servicing', label: 'SERVICING' },
+  { id: 'investments', label: 'Investments' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'servicing', label: 'Servicing' },
   // { id: 'ask', label: 'POLICY' }, // off for now; the page lives in src/Ask.tsx
 ] as const;
 
@@ -120,7 +120,7 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
               }}
             >
               <span className="side-caret" aria-hidden />
-              <span className="side-name">{t.label}</span>
+              <span className="side-name page-name">{t.label}</span>
             </button>
           ))}
         </div>
