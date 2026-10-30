@@ -235,7 +235,7 @@ export function App() {
               {sel === SEL_ITEMS && (
                 <>
                   <div className="d-title">
-                    <span className="d-name">OPEN ITEMS</span>
+                    <span className="d-name items-name">OPEN ITEMS</span>
                   </div>
                   {itemsList}
                 </>

@@ -231,19 +231,15 @@ p {
   color: var(--mast-ink2);
 }
 
-/* the names in the menus and the slab titles share the masthead's serif; figures stay in mono */
-.side-name,
-.d-name {
+/* open items, set apart in the masthead's serif; its count stays in mono */
+.items-row .side-name,
+.d-name.items-name {
   font-family: var(--serif);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-.side-row .side-name {
+.items-row .side-name {
   font-size: 1rem;
-}
-.side-row.total .side-name,
-.side-row.pages-row .side-name {
-  font-size: 1.1875rem;
 }
 
 /* ── body + slabs ─────────────────────────────────────── */
