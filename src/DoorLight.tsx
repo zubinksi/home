@@ -33,7 +33,7 @@ float flecks(vec2 p, float size, float flutter) {
       vec2 n = vec2(x, y), id = i + n, h = hash2(id);
       vec2 o = 0.15 + 0.7 * h;
       float r = size * (0.55 + 0.6 * h.x);
-      float flicker = 1.0 - flutter * (0.5 + 0.5 * sin(t * (2.2 + 3.5 * h.x) + 6.2831 * h.y));
+      float flicker = 1.0 - flutter * (0.5 + 0.5 * sin(t * (1.6 + 2.4 * h.x) + 6.2831 * h.y));
       float d = length(n + o - f);
       light = max(light, smoothstep(r, r * 0.35, d) * (0.6 + 0.4 * h.y) * flicker);
     }
@@ -62,13 +62,13 @@ void main() {
   // a fixed warp makes the round flecks lumpy, like light through real leaves
   vec2 w = q + 0.09 * (vec2(fbm(q * 3.0), fbm(q * 3.0 + 5.2)) - 0.5);
   vec2 w2 = q2 + 0.09 * (vec2(fbm(q2 * 3.0), fbm(q2 * 3.0 + 5.2)) - 0.5);
-  float big = flecks(w * 3.4, 0.85, 0.2);
-  float small = flecks(w2 * 7.5 + 7.0, 0.7, 0.5);
+  float big = flecks(w * 3.4, 0.85, 0.06);
+  float small = flecks(w2 * 7.5 + 7.0, 0.7, 0.2);
   float pools = 1.0 - (1.0 - big * (0.4 + 0.6 * near)) * (1.0 - small * 0.75);
   // the nearest leaves: dark shapes cutting into the light
   float leaves = smoothstep(0.5, 0.7, fbm(q3 * 5.0));
   float light = clamp(pools * (0.3 + 0.7 * gaps) * (0.2 + 1.0 * near) * (1.0 - 0.75 * leaves) * 1.25, 0.0, 1.0);
-  vec3 shade = wall * vec3(0.74, 0.73, 0.7);     // the wall in the tree's shade
+  vec3 shade = wall * 0.97;                      // the wall in the shade: nearly the gray inside, so going in is seamless
   vec3 sun = vec3(1.0, 0.8, 0.5);                // late, golden sun
   light = smoothstep(0.05, 0.85, light);
   // a touch of grain stops smooth gradients banding
