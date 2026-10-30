@@ -579,6 +579,17 @@ p {
 .d-name.proj-name ~ .d-amt {
   font-size: 1.75rem;
 }
+/* side by side, a section's title sits on the same baseline as the page name
+   atop the left column; the bigger the title, the further its letters sit
+   below the top of its line, so it's lifted by that much */
+@media (min-width: 861px) {
+  .d-title {
+    margin-top: -0.836rem;
+  }
+  .d-title:has(.proj-name) {
+    margin-top: -0.445rem;
+  }
+}
 .d-sub {
   display: flex;
   justify-content: flex-end;
