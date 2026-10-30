@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import irisUrl from './assets/iris.png';
+import { DoorLight } from './DoorLight';
 
 // A household gate, not real security: the code and the data both ship in the
 // page's JavaScript. It keeps casual eyes out; see README for the caveat.
@@ -194,43 +195,46 @@ export function Gate({ children }: { children: ReactNode }) {
   const done = opening;
   const lockState: LockState = wrong ? 'wrong' : done ? 'open' : 'locked';
   const card = (
-    <div className="gate">
-      <div className="gate-card">
-        <div className="gate-mast">
-          <img className="gate-iris" src={irisUrl} alt="" />
-          <div className="mast-title">HOME OFFICES</div>
-          <div className="mast-line2">
-            <span className="mast-of">of</span>
-            <span className="mast-title">THE BROWNS</span>
+    <>
+      <DoorLight opening={done} />
+      <div className="gate">
+        <div className="gate-card">
+          <div className="gate-mast">
+            <img className="gate-iris" src={irisUrl} alt="" />
+            <div className="mast-title">HOME OFFICES</div>
+            <div className="mast-line2">
+              <span className="mast-of">of</span>
+              <span className="mast-title">THE BROWNS</span>
+            </div>
+          </div>
+
+          <div className={`gate-label ${wrong ? 'is-wrong' : ''} ${done ? 'is-done' : ''}`} aria-live="polite">
+            {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
+          </div>
+
+          <div
+            className={`gate-lock ${wrong ? 'shake' : ''}`}
+            role="img"
+            aria-label={`${entry.length} of ${LEN} digits entered`}
+          >
+            <GateLock state={lockState} entered={entry.length} />
+          </div>
+
+          <div className="keypad">
+            {KEYS.map((k) => (
+              <button
+                key={k}
+                className={`key ${k === 'clear' || k === 'back' ? 'key-fn' : ''}`}
+                onClick={() => press(k)}
+                aria-label={k === 'clear' ? 'Clear' : k === 'back' ? 'Delete last digit' : k}
+              >
+                {k === 'clear' ? 'CLEAR' : k === 'back' ? '⌫' : k}
+              </button>
+            ))}
           </div>
         </div>
-
-        <div className={`gate-label ${wrong ? 'is-wrong' : ''} ${done ? 'is-done' : ''}`} aria-live="polite">
-          {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
-        </div>
-
-        <div
-          className={`gate-lock ${wrong ? 'shake' : ''}`}
-          role="img"
-          aria-label={`${entry.length} of ${LEN} digits entered`}
-        >
-          <GateLock state={lockState} entered={entry.length} />
-        </div>
-
-        <div className="keypad">
-          {KEYS.map((k) => (
-            <button
-              key={k}
-              className={`key ${k === 'clear' || k === 'back' ? 'key-fn' : ''}`}
-              onClick={() => press(k)}
-              aria-label={k === 'clear' ? 'Clear' : k === 'back' ? 'Delete last digit' : k}
-            >
-              {k === 'clear' ? 'CLEAR' : k === 'back' ? '⌫' : k}
-            </button>
-          ))}
-        </div>
       </div>
-    </div>
+    </>
   );
 
   return unlocked ? <LockContext.Provider value={lock}>{children}</LockContext.Provider> : card;
