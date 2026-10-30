@@ -232,9 +232,12 @@ p {
 }
 
 /* the page names (Investments, Projects, Servicing, Open Items) in the list,
-   the titles and the page menu: the masthead's serif, capitalised, not in caps */
+   the titles and the page menu: the masthead's serif, capitalised, not in caps.
+   A page's top row sets its total in the same serif, so the whole row matches */
 .page-name,
-.d-name.proj-name.page-name {
+.d-name.proj-name.page-name,
+.page-name ~ .side-amt,
+.page-name ~ .d-amt {
   font-family: var(--serif);
   font-weight: 600;
   letter-spacing: 0.01em;
