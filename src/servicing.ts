@@ -1,10 +1,20 @@
 // THE SERVICING SCHEDULE. The house's recurring upkeep: how often each job
-// comes round, and when we last did it. When something's done, add its date to
-// `serviceLog` below (YYYY-MM-DD) and the page works out when it's next due.
+// comes round, and when we last did it. Jobs are logged as done from the page,
+// into the "Servicing log" tab of the projects sheet; the page works out from
+// the latest date when each is next due.
 
 import { isoDay } from './model';
 
 export type Area = 'HVAC' | 'CLEANING' | 'EXTERIOR' | 'KITCHEN' | 'LAUNDRY' | 'PLUMBING' | 'SAFETY' | 'HARDWARE';
+
+/** The page's four groups, by where in the house the work is. */
+export const SERVICE_GROUPS: { key: string; name: string; areas: Area[] }[] = [
+  { key: 'heating', name: 'HEATING & COOLING', areas: ['HVAC'] },
+  { key: 'outside', name: 'OUTSIDE', areas: ['EXTERIOR'] },
+  { key: 'kitchen', name: 'KITCHEN & LAUNDRY', areas: ['KITCHEN', 'LAUNDRY'] },
+  { key: 'house', name: 'AROUND THE HOUSE', areas: ['CLEANING', 'PLUMBING', 'SAFETY', 'HARDWARE'] },
+];
+export const groupOf = (t: ServiceTask) => SERVICE_GROUPS.find((g) => g.areas.includes(t.area))!;
 
 export interface ServiceTask {
   id: string;
@@ -127,8 +137,22 @@ export const serviceTasks: ServiceTask[] = [
   },
 ];
 
-/** When each job was last done (YYYY-MM-DD). Add a line when one's done. */
-export const serviceLog: Record<string, string> = {
+/** Each job's latest date (YYYY-MM-DD), by job id. */
+export type ServiceLog = Record<string, string>;
+
+/** A row of the log: one job done on one day. */
+export interface LogEntry {
+  date: string;
+  id: string;
+  job: string;
+  note: string;
+}
+
+/**
+ * A saved copy of the log, used until the sheet's tab loads (and if it can't).
+ * The sheet is the record now: log jobs from the page, not here.
+ */
+export const serviceLog: ServiceLog = {
   // done in August 2026 (the day wasn't noted; mid-month stands in)
   'hvac-service': '2026-08-15',
   carpets: '2026-08-15',
@@ -143,8 +167,8 @@ const DAY = 86_400_000;
 const at = (iso: string) => new Date(iso + 'T00:00:00');
 
 /** The next due date for a task, or null if it's on an interval and was never logged. */
-export function nextDue(t: ServiceTask, today = new Date()): Date | null {
-  const last = serviceLog[t.id];
+export function nextDue(t: ServiceTask, today = new Date(), log: ServiceLog = serviceLog): Date | null {
+  const last = log[t.id];
   if (t.every) return last ? new Date(at(last).getTime() + t.every * DAY) : null;
   // the first window it hasn't covered: done up to two months ahead counts (a
   // tune-up booked in August covers October). Never logged, a window in the
@@ -162,9 +186,61 @@ export function nextDue(t: ServiceTask, today = new Date()): Date | null {
 export type ServiceStatus = 'overdue' | 'soon' | 'later' | 'unlogged';
 
 /** Where a task stands today: overdue, due within a month, later, or never logged. */
-export function serviceStatus(t: ServiceTask, today = new Date()) {
-  const due = nextDue(t, today);
+export function serviceStatus(t: ServiceTask, today = new Date(), log: ServiceLog = serviceLog) {
+  const due = nextDue(t, today, log);
   if (!due) return { status: 'unlogged' as ServiceStatus, due, days: null };
   const days = Math.round((due.getTime() - at(isoDay(today)).getTime()) / DAY);
   return { status: (days < 0 ? 'overdue' : days <= 30 ? 'soon' : 'later') as ServiceStatus, due, days };
+}
+
+/** "8/15/2026" or "2026-08-15" → "2026-08-15"; anything else → null. */
+function toIso(cell: string) {
+  const v = cell.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const us = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
+  return us ? `${us[3]}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}` : null;
+}
+
+/** The sheet's rows (Done on, Job, Job ID, Note), skipping the header and anything unreadable. */
+export function parseServiceLog(rows: string[][]): LogEntry[] {
+  const ids = new Set(serviceTasks.map((t) => t.id));
+  return rows
+    .map(([date = '', job = '', id = '', note = '']) => ({ date: toIso(date), job: job.trim(), id: id.trim(), note: note.trim() }))
+    .filter((e): e is LogEntry => !!e.date && ids.has(e.id));
+}
+
+/** The saved copy as log rows, for before the sheet arrives. */
+export const savedEntries: LogEntry[] = Object.entries(serviceLog).map(([id, date]) => ({
+  date,
+  id,
+  job: serviceTasks.find((t) => t.id === id)?.name ?? id,
+  note: '',
+}));
+
+/** Each job's latest date across the rows. */
+export function latestByJob(entries: LogEntry[]): ServiceLog {
+  const out: ServiceLog = {};
+  for (const e of entries) if (!out[e.id] || e.date > out[e.id]) out[e.id] = e.date;
+  return out;
+}
+
+/** When a job comes due in the twelve months from the start of this month. */
+export function dueInYear(t: ServiceTask, log: ServiceLog, today = new Date()): Date[] {
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const end = new Date(today.getFullYear() + 1, today.getMonth(), 1);
+  const first = nextDue(t, today, log);
+  if (!first) return [];
+  const out: Date[] = [];
+  if (t.every) {
+    for (let d = first; d < end; d = new Date(d.getTime() + t.every * DAY)) if (d >= start) out.push(d);
+  } else {
+    for (let y = first.getFullYear(); y <= first.getFullYear() + 1; y++)
+      for (const m of t.byMonths ?? []) {
+        const d = new Date(y, m - 1, 1);
+        if (d >= first && d >= start && d < end) out.push(d);
+      }
+  }
+  // an overdue job shows in this month, when it's to be done
+  if (first < start) out.unshift(start);
+  return out.sort((a, b) => a.getTime() - b.getTime());
 }

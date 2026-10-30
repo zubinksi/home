@@ -24,7 +24,7 @@ API, so use it only on your own devices. **FORGET** under the input removes it.
 
 ## On Vercel
 
-Vercel builds the site with `npm run build` and serves `dist/`. The three
+Vercel builds the site with `npm run build` and serves `dist/`. The
 server routes live in `api/` as Vercel functions; the local dev server runs the
 same code from `api/_lib/`.
 
@@ -33,6 +33,7 @@ same code from `api/_lib/`.
 | `/api/stock` | AAPL price and daily closes from Yahoo Finance | nothing |
 | `/api/projects` | the live Projects sheet as CSV | the sheet shared by link |
 | `/api/ask` | Ask the Policy | `ANTHROPIC_API_KEY` in the Vercel project |
+| `/api/service-log` | reads the Servicing log tab; logs a job as done | the sheet shared by link; to log, `SERVICE_LOG_SCRIPT_URL` and `SERVICE_LOG_TOKEN` |
 
 **Ask the Policy on Vercel.** Without `ANTHROPIC_API_KEY` set in Vercel, the
 page asks for a key and keeps it in the browser (see above). If you set the key
@@ -98,6 +99,37 @@ The page relies on these sheet conventions:
   page still sees where one area ends and the next begins.
 - Areas named Moving, Roof, Plumbing, Maintenance/testing, Walls…, Patio or Yard
   are listed under **The House**; everything else under **The Rooms**.
+
+## Servicing
+
+The Servicing tab lists the house's recurring jobs (`src/servicing.ts`) in four
+groups, with a summary of what's next and the year ahead. When each job was
+last done comes from the **Servicing log** tab of the same "Home Projects &
+Vendors" sheet: one row per job done (*Done on* as `YYYY-MM-DD`, *Job*,
+*Job ID*, *Note*). The latest row for each job wins. You can add or fix rows by
+hand; the *Job ID* must match an `id` in `src/servicing.ts`.
+
+### Logging servicing jobs
+
+Each job has a **Log as done** button. Only the sheet's owner can write to it,
+so the site writes through a small Apps Script bound to the sheet. Set it up
+once:
+
+1. Open the sheet, then **Extensions → Apps Script**. Replace the code with
+   `scripts/servicing-log.gs` and save.
+2. **Project Settings (gear) → Script properties → Add script property**: name
+   `TOKEN`, value a long random string (e.g. from a password manager).
+3. **Deploy → New deployment → Web app**. Execute as **Me**; who has access
+   **Anyone**. Deploy, authorize it, and copy the web app URL.
+4. In Vercel (Settings → Environment Variables), add `SERVICE_LOG_SCRIPT_URL`
+   (the URL) and `SERVICE_LOG_TOKEN` (the same token), then redeploy. For
+   `npm run dev`, put them in `.env.local`.
+
+The token stays on the server, so the script's URL alone can't write to the
+sheet. `/api/service-log` itself is open like the site's other routes: anyone
+who finds the site could add a row (the PIN runs only in the browser), so the
+same advice applies: use Vercel's deployment protection to keep it private.
+Until the script is connected, the button says logging isn't set up yet.
 
 ## The quarterly review
 
