@@ -1932,8 +1932,7 @@ p {
   text-align: right;
   min-width: 3.5rem;
 }
-.proj-row .side-name,
-.d-name.proj-name {
+.proj-row .side-name {
   text-transform: uppercase;
 }
 

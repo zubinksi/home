@@ -381,7 +381,7 @@ function TodoDetail({ areas, onArea }: { areas: Area[]; onArea: (key: string) =>
   return (
     <>
       <div className="d-title">
-        <span className="d-name proj-name">TO DO</span>
+        <span className="d-name proj-name">To do</span>
         <span className="d-amt">{needed.length}</span>
       </div>
       <div className="d-sub">

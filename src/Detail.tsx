@@ -13,6 +13,7 @@ import {
   priceFmt,
   RULES,
   STATUS_COLOR,
+  titleName,
   type buildSleeves,
   type KV,
   type Module,
@@ -324,7 +325,7 @@ export function Detail({ sleeve: s, market }: { sleeve: Sleeve; market: MarketSt
   return (
     <>
       <div className="d-title">
-        <span className="d-name">{s.name}</span>
+        <span className="d-name">{titleName(s.name)}</span>
         <span className="d-amt">${compact(s.amount)}</span>
       </div>
       {s.position ? (

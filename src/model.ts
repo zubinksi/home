@@ -110,6 +110,11 @@ export function compact(n: number): string {
   return `${Math.round(n)}`;
 }
 
+/** Names that stay in capitals in a title: the tickers, and HVAC. */
+const KEEP_CAPS = new Set(['HYPE', 'AAPL', 'ZEC', 'HVAC']);
+/** A section's name as its title shows it: "FORTRESS" reads "Fortress", tickers stay as they are. */
+export const titleName = (n: string) => (KEEP_CAPS.has(n) ? n : n.charAt(0).toUpperCase() + n.slice(1).toLowerCase());
+
 export const money = (n: number) => `$${compact(n)}`;
 export const pct = (n: number, dp = 0) => `${(n * 100).toFixed(dp)}%`;
 export const num = (n: number) => n.toLocaleString('en-US');

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { MobileNav } from './MobileNav';
 import { PagedSidebar } from './Nav';
-import { dayMon, isoDay } from './model';
+import { dayMon, isoDay, titleName } from './model';
 import { serviceLog, serviceStatus, serviceTasks, type Area, type ServiceStatus, type ServiceTask } from './servicing';
 import { useDrill } from './useDrill';
 
@@ -102,7 +102,7 @@ export function Servicing(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              <ServiceDetail title={active ?? 'Servicing'} rows={active ? rows.filter((r) => r.t.area === active) : rows} />
+              <ServiceDetail title={active ? titleName(active) : 'Servicing'} rows={active ? rows.filter((r) => r.t.area === active) : rows} />
             </div>
           )}
         </div>
