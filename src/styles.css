@@ -1641,7 +1641,7 @@ p {
 .side-row.static .side-name {
   text-decoration: none;
 }
-/* the left column: completed and to do, each with its two parts beneath */
+/* the left column: what's done (maintenance, furnishing), then what's left (to do, optional) */
 .side-row.proj-view {
   grid-template-columns: var(--caret-col) 1fr auto 3.5rem;
   align-items: baseline;
@@ -1652,14 +1652,11 @@ p {
 .proj-view .side-amt {
   text-align: right;
 }
-.proj-view.is-sub {
+.proj-view {
   font-size: 0.8125rem;
-  padding: 0.3125rem 0;
 }
-.proj-view.is-sub .side-name {
-  padding-left: 1rem;
-}
-.proj-view.is-sub + .proj-view.is-head {
+/* a little room between what's done and what's left */
+.proj-view.is-gap {
   margin-top: 0.875rem;
 }
 .proj-foot {
@@ -1968,6 +1965,14 @@ p {
   font-size: 0.6875rem;
   color: var(--ink2);
 }
+/* this month, marked in the iris's burgundy */
+.svc-month.is-now .svc-month-name {
+  color: var(--iris);
+  font-weight: 600;
+}
+.svc-month.is-now .svc-month-bar {
+  box-shadow: 0 0 0 1px var(--iris);
+}
 .svc-month-count {
   min-height: 0.75rem;
   font-family: var(--mono);
@@ -2022,12 +2027,14 @@ p {
   text-align: left;
   color: var(--accent-ink);
 }
-.todo-tag {
-  font-family: var(--mono);
-  font-size: 0.5625rem;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  text-align: right;
+/* what's left has no cost column */
+.todo-two .todo-row {
+  grid-template-columns: 1fr 11.5rem;
+}
+@media (max-width: 860px) {
+  .todo-two .todo-row {
+    grid-template-columns: 1fr 6.5rem;
+  }
 }
 /* a completed item's cost, right-aligned like the other figures */
 .todo-cost {
@@ -2038,11 +2045,8 @@ p {
   font-size: 0.8125rem;
   color: var(--ink);
 }
-.todo-row.is-optional .todo-item {
-  color: var(--ink3);
-}
 @media (max-width: 860px) {
-  /* on phones the tag drops under the area, so the item keeps its width */
+  /* on phones the cost drops under the area, so the item keeps its width */
   .todo-row {
     grid-template-columns: 1fr 6.5rem;
     grid-template-areas: 'item area' 'item tag';
@@ -2054,7 +2058,6 @@ p {
   .todo-row > :nth-child(2) {
     grid-area: area;
   }
-  .todo-tag,
   .todo-cost {
     grid-area: tag;
     text-align: left;

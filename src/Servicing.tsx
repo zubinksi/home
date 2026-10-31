@@ -38,6 +38,8 @@ const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', '
 
 /** The detail key for the summary, the page's default. */
 const ALL_KEY = 'all';
+/** The detail key for the jobs never logged, at the foot of the list. */
+const UNLOGGED_KEY = 'not-logged';
 
 /** The log tab, read straight from Google (when there's no server). */
 const LOG_DIRECT_URL = `https://docs.google.com/spreadsheets/d/${PROJECTS_SHEET_ID}/gviz/tq?tqx=out:csv&gid=731905&headers=0`;
@@ -117,7 +119,7 @@ export function Servicing(props: {
   const drill = useDrill({
     narrow: props.narrow,
     sub: props.sub,
-    keys: [ALL_KEY, ...sequence],
+    keys: [ALL_KEY, ...sequence, UNLOGGED_KEY],
     sequence,
     defaultKey: ALL_KEY,
     openSub: props.openSub,
@@ -126,6 +128,8 @@ export function Servicing(props: {
     panelRef,
   });
   const active = SERVICE_GROUPS.find((g) => g.key === drill.selKey) ?? null;
+  const unlogged = rows.filter((r) => r.status === 'unlogged');
+  const showUnlogged = drill.selKey === UNLOGGED_KEY && unlogged.length > 0;
   const count = (list: Row[], s: ServiceStatus) => list.filter((r) => r.status === s).length;
   const inGroup = (key: string) => rows.filter((r) => groupOf(r.t).key === key);
 
@@ -153,7 +157,7 @@ export function Servicing(props: {
         <div className={`sleeves-grid ${drill.gridClass}`}>
           {drill.showList && (
             <PagedSidebar className={`sidebar ${drill.listClass}`} tab="servicing">
-              <button className={`side-row total ${!props.narrow && !active ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
+              <button className={`side-row total ${!props.narrow && !active && !showUnlogged ? 'is-sel' : ''}`} onClick={() => drill.select(ALL_KEY)}>
                 <span className="side-caret" aria-hidden />
                 <span className="side-name page-name">Servicing</span>
                 <span />
@@ -165,6 +169,22 @@ export function Servicing(props: {
               <div className="side-rule" />
               <div className="label side-section">THE JOBS</div>
               {SERVICE_GROUPS.map(groupRow)}
+
+              {/* the jobs never logged, set apart at the foot of the list as Open Items is */}
+              {unlogged.length > 0 && (
+                <div className="side-foot">
+                  <div className="side-rule" />
+                  <button
+                    className={`side-row items-row ${!props.narrow && showUnlogged ? 'is-sel' : ''}`}
+                    onClick={() => drill.select(UNLOGGED_KEY)}
+                  >
+                    <span className="side-caret" aria-hidden />
+                    <span className="side-name page-name">Not logged yet</span>
+                    <span />
+                    <span className="items-count">{unlogged.length}</span>
+                  </button>
+                </div>
+              )}
             </PagedSidebar>
           )}
 
@@ -173,8 +193,10 @@ export function Servicing(props: {
               {props.narrow && <MobileNav onBack={drill.back} />}
               {active ? (
                 <ServiceDetail title={titleName(active.name)} rows={inGroup(active.key)} log={log} logJob={logJob} />
+              ) : showUnlogged ? (
+                <UnloggedDetail rows={unlogged} log={log} logJob={logJob} />
               ) : (
-                <ServiceSummary rows={rows} log={log} entries={entries} logJob={logJob} />
+                <ServiceSummary rows={rows} log={log} logJob={logJob} />
               )}
             </div>
           )}
@@ -194,9 +216,10 @@ function standing(overdue: number, soon: number) {
 function when(r: Row) {
   if (!r.due || r.days == null) return 'LOG IT';
   const date = dayMon(isoDay(r.due));
-  if (r.days < 0) return `${date} · ${-r.days} DAYS LATE`;
+  const days = (n: number) => `${n} DAY${n === 1 ? '' : 'S'}`;
+  if (r.days < 0) return `${date} · ${days(-r.days)} LATE`;
   if (r.days === 0) return `${date} · TODAY`;
-  if (r.days <= 30) return `${date} · IN ${r.days} DAYS`;
+  if (r.days <= 30) return `${date} · IN ${days(r.days)}`;
   return date;
 }
 
@@ -301,13 +324,30 @@ function ServiceDetail({ title, rows, log, logJob }: { title: string; rows: Row[
   );
 }
 
-/** The whole schedule at a glance: what's next, the year ahead, what needs a first date, what was done lately. */
-function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: ServiceLog; entries: LogEntry[]; logJob: LogJob }) {
+/** The jobs never logged: until each has a first date, it can't be scheduled. */
+function UnloggedDetail({ rows, log, logJob }: { rows: Row[]; log: ServiceLog; logJob: LogJob }) {
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <>
+      <div className="d-title">
+        <span className="d-name proj-name">Not logged yet</span>
+        <span className="d-amt">{rows.length}</span>
+      </div>
+      <div className="d-sub">
+        <span className="d-alloc">LOG A FIRST DATE TO SCHEDULE THEM</span>
+      </div>
+      <div className="module">
+        <JobList rows={rows} log={log} logJob={logJob} open={open} setOpen={setOpen} />
+      </div>
+    </>
+  );
+}
+
+/** The whole schedule at a glance: the year ahead, then what's next. */
+function ServiceSummary({ rows, log, logJob }: { rows: Row[]; log: ServiceLog; logJob: LogJob }) {
   const today = new Date();
   const count = (s: ServiceStatus) => rows.filter((r) => r.status === s).length;
   const next = rows.filter((r) => r.due).slice(0, 3);
-  const unlogged = rows.filter((r) => r.status === 'unlogged');
-  const recent = [...entries].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
   // the twelve months from this one, and what comes due in each
   const months = Array.from({ length: 12 }, (_, i) => new Date(today.getFullYear(), today.getMonth() + i, 1));
@@ -336,13 +376,6 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
 
       <div className="module">
         <div className="module-head">
-          <span className="label">NEXT UP</span>
-        </div>
-        <JobList rows={next} log={log} logJob={logJob} open={open} setOpen={setOpen} />
-      </div>
-
-      <div className="module">
-        <div className="module-head">
           <span className="label">THE YEAR AHEAD</span>
         </div>
         <div className="svc-year" role="tablist">
@@ -351,7 +384,8 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
               key={i}
               role="tab"
               aria-selected={month === i}
-              className={`svc-month ${month === i ? 'is-sel' : ''}`}
+              className={`svc-month ${month === i ? 'is-sel' : ''} ${i === 0 ? 'is-now' : ''}`}
+              aria-label={i === 0 ? `${MONTHS[m.getMonth()]}, this month` : undefined}
               onClick={() => setMonth(month === i ? null : i)}
             >
               <span className="svc-month-bar">
@@ -380,30 +414,13 @@ function ServiceSummary({ rows, log, entries, logJob }: { rows: Row[]; log: Serv
         )}
       </div>
 
-      {unlogged.length > 0 && (
-        <div className="module">
-          <div className="module-head">
-            <span className="label">NEEDS A FIRST DATE · {unlogged.length}</span>
-          </div>
-          <JobList rows={unlogged} log={log} logJob={logJob} open={open} setOpen={setOpen} />
+      <div className="module">
+        <div className="module-head">
+          <span className="label">NEXT UP</span>
         </div>
-      )}
+        <JobList rows={next} log={log} logJob={logJob} open={open} setOpen={setOpen} />
+      </div>
 
-      {recent.length > 0 && (
-        <div className="module">
-          <div className="module-head">
-            <span className="label">RECENTLY DONE</span>
-          </div>
-          <div className="svc-list">
-            {recent.map((e, i) => (
-              <div key={i} className="svc-month-row">
-                <span className="svc-name">{serviceTasks.find((t) => t.id === e.id)?.name ?? e.job}</span>
-                <span className="svc-when">{dayMon(e.date)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   );
 }
