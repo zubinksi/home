@@ -208,8 +208,9 @@ export function Gate({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className={`gate-label ${wrong ? 'is-wrong' : ''} ${done ? 'is-done' : ''}`} aria-live="polite">
-            {wrong ? 'INCORRECT CODE' : done ? 'OPENING' : 'ENTER CODE'}
+          {/* not shown (the lock says it), but read out to screen readers */}
+          <div className="gate-status" aria-live="polite">
+            {wrong ? 'Incorrect code' : done ? 'Opening' : 'Enter the code'}
           </div>
 
           <div
