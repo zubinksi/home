@@ -1827,6 +1827,10 @@ p {
 .svc {
   border-bottom: 1px solid var(--b1);
 }
+/* a line between jobs, none after the last */
+.svc:last-child {
+  border-bottom: 0;
+}
 .svc-head {
   width: 100%;
   display: grid;
