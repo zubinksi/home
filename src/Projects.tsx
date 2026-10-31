@@ -7,25 +7,43 @@ import { areaStats, parseCsv, parseProjects, totals, type Area, type ProjectItem
 import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
 import { useDrill } from './useDrill';
 
-const SORT_KEY = 'browns.projects.sort.v1';
-
-type SortMode = 'listed' | 'spend';
-
-function loadSort(): SortMode {
-  try {
-    return localStorage.getItem(SORT_KEY) === 'spend' ? 'spend' : 'listed';
-  } catch {
-    return 'listed';
-  }
-}
 const money = (n: number) => `$${compact(n)}`;
 
 const SECTION_NAMES = { house: 'MOVE + MAINTENANCE', rooms: 'FURNISHING' } as const;
 
-/** The detail key for the list of everything still to do. */
-const TODO_KEY = 'to-do';
 /** The detail key for the summary of everything, the page's default. */
 const ALL_KEY = 'all';
+
+/** What's been done, split by which column the cost went in. */
+type DoneView = 'all' | 'maintenance' | 'furnishing';
+/** What's left, split into what's planned and what's optional. */
+type TodoView = 'all' | 'planned' | 'optional';
+
+/** The left column's views: completed and to do, each with its two parts. */
+const VIEWS = [
+  { key: 'done', name: 'COMPLETED', done: 'all' as DoneView },
+  { key: 'done-maintenance', name: 'MAINTENANCE', done: 'maintenance' as DoneView, sub: true },
+  { key: 'done-furnishing', name: 'FURNISHING', done: 'furnishing' as DoneView, sub: true },
+  { key: 'to-do', name: 'TO DO', todo: 'all' as TodoView },
+  { key: 'to-do-planned', name: 'PLANNED', todo: 'planned' as TodoView, sub: true },
+  { key: 'to-do-optional', name: 'OPTIONAL', todo: 'optional' as TodoView, sub: true },
+];
+type ViewDef = (typeof VIEWS)[number];
+const TODO_KEY = 'to-do';
+
+/** The items a view covers (closed ones never count). */
+function viewItems(areas: Area[], v: ViewDef) {
+  return areas.flatMap((area) =>
+    area.items
+      .filter((i) => !i.closed)
+      .filter((i) =>
+        v.done
+          ? i.done && (v.done === 'all' || i.kind === v.done)
+          : !i.done && (v.todo === 'all' || (v.todo === 'optional') === i.optional),
+      )
+      .map((item) => ({ item, area })),
+  );
+}
 
 type Source =
   | { kind: 'saved' }
@@ -111,30 +129,19 @@ export function Projects(props: {
   closeSub: () => void;
 }) {
   const { areas, source } = useProjects();
-  const [sort, setSort] = useState<SortMode>(loadSort);
   const panelRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(SORT_KEY, sort);
-    } catch {
-      /* fine */
-    }
-  }, [sort]);
-
-  // as listed: the sheet's order, house first then rooms; by spend: one list, highest first
+  // the sheet's order, house first then rooms
   const house = areas.filter((a) => a.section === 'house');
   const rooms = areas.filter((a) => a.section === 'rooms');
-  const ordered =
-    sort === 'spend'
-      ? [...areas].sort((x, y) => areaStats(y).spent - areaStats(x).spent)
-      : [...house, ...rooms];
+  const ordered = [...house, ...rooms];
 
-  const sequence = ordered.map((a) => a.key);
+  // the left column steps through the views; an area opens from the lists on the right
+  const sequence = VIEWS.map((v) => v.key);
   const drill = useDrill({
     narrow: props.narrow,
     sub: props.sub,
-    keys: [ALL_KEY, ...sequence, TODO_KEY],
+    keys: [ALL_KEY, ...sequence, ...ordered.map((a) => a.key)],
     sequence,
     defaultKey: ALL_KEY,
     openSub: props.openSub,
@@ -144,38 +151,25 @@ export function Projects(props: {
   });
 
   const t = totals(areas);
-  // on wide screens an area is always showing: the chosen one, else the first in order
-  const showTodo = drill.selKey === TODO_KEY;
-  // on wide screens something always shows: the chosen area, the to-do list, else the summary
-  const activeKey = sequence.includes(drill.selKey) ? drill.selKey : '';
-  const showAll = !showTodo && !activeKey;
-  const area = areas.find((a) => a.key === activeKey) ?? null;
+  // on wide screens something always shows: the chosen view or area, else the summary
+  const view = VIEWS.find((v) => v.key === drill.selKey) ?? null;
+  const area = areas.find((a) => a.key === drill.selKey) ?? null;
+  const showAll = !view && !area;
 
-  // a section's name with what its areas have spent, in the amount column
-  const section = (name: string, list: Area[]) => (
-    <div className="label side-section proj-section">
-      <span>{name}</span>
-      <span>{compact(list.reduce((t, a) => t + areaStats(a).spent, 0))}</span>
-    </div>
-  );
-
-  const row = (a: Area) => {
-    const s = areaStats(a);
+  // a view's line: how many items, and what they cost
+  const row = (v: ViewDef) => {
+    const list = viewItems(ordered, v);
+    const spent = list.reduce((s, r) => s + (r.item.cost ?? 0), 0);
     return (
       <button
-        key={a.key}
-        className={`side-row proj-row ${!props.narrow && activeKey === a.key ? 'is-sel' : ''}`}
-        onClick={() => drill.select(a.key)}
+        key={v.key}
+        className={`side-row proj-view ${v.sub ? 'is-sub' : 'is-head'} ${!props.narrow && view === v ? 'is-sel' : ''}`}
+        onClick={() => drill.select(v.key)}
       >
         <span className="side-caret" aria-hidden />
-        <span className="side-name">{a.name}</span>
-        <span className="side-bar" title={`${s.done} of ${s.total} done`}>
-          <span style={{ width: `${s.total ? (s.done / s.total) * 100 : 0}%` }} />
-        </span>
-        <span className="side-pct">
-          {s.done}/{s.total}
-        </span>
-        <span className="side-amt">{s.spent ? compact(s.spent) : '—'}</span>
+        <span className="side-name">{v.name}</span>
+        <span className="side-pct">{list.length}</span>
+        <span className="side-amt">{v.done ? compact(spent) : ''}</span>
       </button>
     );
   };
@@ -193,37 +187,10 @@ export function Projects(props: {
                 <span className="side-amt">{compact(t.spent)}</span>
               </button>
               <div className="side-sub">
-                {t.done} OF {t.items} DONE ·{' '}
-                <button className="todo-link" onClick={() => drill.select(TODO_KEY)}>
-                  {t.openNeeded} TO DO
-                </button>
+                {t.done} OF {t.items} DONE · {t.items ? Math.round((t.done / t.items) * 100) : 0}%
               </div>
               <div className="side-rule" />
-
-              <div className="proj-sortbar">
-                <span className="label">{sort === 'spend' ? 'BY SPEND' : ''}</span>
-                <button
-                  className={`proj-sort ${sort === 'spend' ? 'on' : ''}`}
-                  onClick={() => setSort(sort === 'spend' ? 'listed' : 'spend')}
-                  aria-label={sort === 'spend' ? 'Sorted by highest spend. Switch to sheet order' : 'In sheet order. Sort by highest spend'}
-                  title={sort === 'spend' ? 'Sorted by highest spend' : 'Sort by highest spend'}
-                >
-                  <svg viewBox="0 0 16 14" width="16" height="14" aria-hidden>
-                    <path d="M1 2h14M1 7h9M1 12h4" />
-                  </svg>
-                  {sort === 'spend' ? 'SPEND' : 'LISTED'}
-                </button>
-              </div>
-              {sort === 'spend' ? (
-                ordered.map(row)
-              ) : (
-                <>
-                  {section(SECTION_NAMES.house, house)}
-                  {house.map(row)}
-                  {section(SECTION_NAMES.rooms, rooms)}
-                  {rooms.map(row)}
-                </>
-              )}
+              {VIEWS.map(row)}
 
               <div className="proj-foot">
                 <div className="proj-foot-row">
@@ -245,8 +212,10 @@ export function Projects(props: {
           {drill.showDetail && (
             <div key={drill.detailKey} className={`detail ${drill.detailClass}`} {...drill.touchHandlers}>
               {props.narrow && <MobileNav onBack={drill.back} />}
-              {showTodo ? (
-                <TodoDetail areas={ordered} onArea={(k) => drill.select(k)} />
+              {view?.done ? (
+                <DoneDetail view={view} areas={ordered} onArea={(k) => drill.select(k)} />
+              ) : view ? (
+                <TodoDetail view={view} areas={ordered} onArea={(k) => drill.select(k)} />
               ) : area ? (
                 <AreaDetail area={area} />
               ) : (
@@ -268,10 +237,10 @@ export function Projects(props: {
 function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: string) => void; onTodo: () => void }) {
   const all = [...props.house, ...props.rooms];
   const t = totals(all);
-  const spent = (list: Area[]) => list.reduce((s, a) => s + areaStats(a).spent, 0);
+  // by which column the cost went in, as the left column splits Completed
   const sections = [
-    { name: SECTION_NAMES.house, spent: spent(props.house) },
-    { name: SECTION_NAMES.rooms, spent: spent(props.rooms) },
+    { name: 'MAINTENANCE', spent: t.maintenance },
+    { name: 'FURNISHING', spent: t.furnishing },
   ];
   const doneShare = t.items ? t.done / t.items : 0;
   const untouched = all.filter((a) => {
@@ -326,7 +295,7 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
             <b>{t.done}</b> DONE
           </span>
           <span>
-            <b>{t.openNeeded}</b> NEEDED
+            <b>{t.openNeeded}</b> PLANNED
           </span>
           <span>
             <b>{t.openOptional}</b> OPTIONAL
@@ -373,20 +342,68 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
   );
 }
 
-/** Every unfinished item across the house in one table: needed first, then optional. */
-function TodoDetail({ areas, onArea }: { areas: Area[]; onArea: (key: string) => void }) {
-  const open = areas.flatMap((a) => a.items.filter((i) => !i.done && !i.closed).map((item) => ({ item, area: a })));
+/** A view's title: "To do", "Planned", "Maintenance". */
+const viewTitle = (v: ViewDef) => (v.key === 'done' ? 'Completed' : v.name.charAt(0) + v.name.slice(1).toLowerCase());
+
+/** Everything done (or one column's share of it) in one table, costliest first. */
+function DoneDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onArea: (key: string) => void }) {
+  const rows = viewItems(areas, view).sort((x, y) => (y.item.cost ?? 0) - (x.item.cost ?? 0));
+  const spent = rows.reduce((s, r) => s + (r.item.cost ?? 0), 0);
+  const free = rows.filter((r) => r.item.cost === 0).length;
+  return (
+    <>
+      <div className="d-title">
+        <span className="d-name proj-name">{viewTitle(view)}</span>
+        <span className="d-amt">{money(spent)}</span>
+      </div>
+      <div className="d-sub">
+        <span className="d-alloc" style={{ color: 'var(--green)' }}>
+          {rows.length} DONE{free ? ` · ${free} FREE` : ''}
+        </span>
+      </div>
+      <div className="todo-table" role="table">
+        <div className="todo-row head" role="row">
+          <span role="columnheader">ITEM</span>
+          <span role="columnheader">AREA</span>
+          <span role="columnheader" className="todo-cost">
+            COST
+          </span>
+        </div>
+        {rows.map(({ item, area }, n) => (
+          <div key={n} className="todo-row" role="row">
+            <span className="todo-item" role="cell">
+              {item.text}
+            </span>
+            <span role="cell">
+              <button className="todo-area" onClick={() => onArea(area.key)}>
+                {area.name}
+              </button>
+            </span>
+            <span className="todo-cost" role="cell">
+              {item.cost === 0 ? 'FREE' : money(item.cost ?? 0)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {rows.length === 0 && <div className="module-note">Nothing done here yet.</div>}
+    </>
+  );
+}
+
+/** What's left (or just the planned or optional part) in one table: planned first, then optional. */
+function TodoDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onArea: (key: string) => void }) {
+  const open = viewItems(areas, view);
   const needed = open.filter((r) => !r.item.optional);
   const optional = open.filter((r) => r.item.optional);
   return (
     <>
       <div className="d-title">
-        <span className="d-name proj-name">To do</span>
-        <span className="d-amt">{needed.length}</span>
+        <span className="d-name proj-name">{viewTitle(view)}</span>
+        <span className="d-amt">{open.length}</span>
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: 'var(--amber)' }}>
-          {needed.length} NEEDED · {optional.length} OPTIONAL · ACROSS THE HOUSE
+          {view.todo === 'all' ? `${needed.length} PLANNED · ${optional.length} OPTIONAL · ` : ''}ACROSS THE HOUSE
         </span>
       </div>
       <div className="todo-table" role="table">
@@ -406,7 +423,7 @@ function TodoDetail({ areas, onArea }: { areas: Area[]; onArea: (key: string) =>
               </button>
             </span>
             <span className="todo-tag" role="cell">
-              {item.optional ? 'OPTIONAL' : ''}
+              {item.optional && view.todo === 'all' ? 'OPTIONAL' : ''}
             </span>
           </div>
         ))}

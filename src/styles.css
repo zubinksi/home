@@ -1641,61 +1641,26 @@ p {
 .side-row.static .side-name {
   text-decoration: none;
 }
-.proj-sortbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: var(--caret-col);
-  margin: 0.125rem 0 0.375rem;
-}
-.proj-sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-  padding: 0.25rem 0 0.25rem 0.5rem;
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  transition: color 0.15s;
-}
-.proj-sort svg {
-  width: 0.875rem;
-  height: 0.75rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.proj-sort:hover,
-.proj-sort.on {
-  color: var(--accent-ink);
-}
-.proj-section {
-  display: flex;
-  justify-content: space-between;
+/* the left column: completed and to do, each with its two parts beneath */
+.side-row.proj-view {
+  grid-template-columns: var(--caret-col) 1fr auto 3.5rem;
   align-items: baseline;
 }
-.proj-section span:last-child {
-  color: var(--ink2);
+.proj-view .side-pct {
+  padding-right: 0;
 }
-.side-row + .side-section {
-  margin-top: 1rem;
-}
-.side-row.proj-row {
-  grid-template-columns: var(--caret-col) 1fr 3.5rem 2.75rem 2.75rem;
-  align-items: center;
-  font-size: 0.8125rem;
-  padding: 0.375rem 0;
-}
-.proj-row .side-name {
-  padding-right: 0.5rem;
-}
-.proj-row .side-bar {
-  margin: 0 0.25rem 0 0;
-}
-.proj-row .side-amt {
+.proj-view .side-amt {
   text-align: right;
+}
+.proj-view.is-sub {
+  font-size: 0.8125rem;
+  padding: 0.3125rem 0;
+}
+.proj-view.is-sub .side-name {
+  padding-left: 1rem;
+}
+.proj-view.is-sub + .proj-view.is-head {
+  margin-top: 0.875rem;
 }
 .proj-foot {
   margin-top: auto;
@@ -2025,17 +1990,6 @@ p {
   padding: 0.5625rem 0;
   border-bottom: 1px solid var(--b1);
 }
-/* the count in the summary opens the to-do table */
-.todo-link {
-  font: inherit;
-  letter-spacing: inherit;
-  color: var(--accent-ink);
-}
-@media (hover: hover) {
-  .todo-link:hover {
-    opacity: 0.75;
-  }
-}
 .todo-table {
   display: flex;
   flex-direction: column;
@@ -2075,6 +2029,15 @@ p {
   color: var(--muted);
   text-align: right;
 }
+/* a completed item's cost, right-aligned like the other figures */
+.todo-cost {
+  text-align: right;
+}
+.todo-row:not(.head) .todo-cost {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
 .todo-row.is-optional .todo-item {
   color: var(--ink3);
 }
@@ -2091,7 +2054,8 @@ p {
   .todo-row > :nth-child(2) {
     grid-area: area;
   }
-  .todo-tag {
+  .todo-tag,
+  .todo-cost {
     grid-area: tag;
     text-align: left;
   }
@@ -2151,9 +2115,6 @@ p {
   color: var(--ink);
   text-align: right;
   min-width: 3.5rem;
-}
-.proj-row .side-name {
-  text-transform: uppercase;
 }
 
 /* ── phone drill-down: list ⇄ detail ─────────────────── */
