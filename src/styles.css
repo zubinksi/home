@@ -503,6 +503,27 @@ p {
   grid-template-columns: 22.5rem 1fr;
   min-height: 37.5rem;
 }
+/* Side by side, the slab keeps one height on every page and section, filling
+   the window below the masthead (within limits); each column scrolls inside it.
+   Phones scroll the page instead. */
+@media (min-width: 861px) {
+  .sleeves-grid {
+    height: clamp(31rem, 100dvh - 10.875rem, 62rem);
+    min-height: 0;
+  }
+  .sleeves-grid > .sidebar,
+  .sleeves-grid > .detail {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--b4) transparent;
+  }  /* their contents keep their own heights and scroll, rather than squeeze */
+  .sleeves-grid > .sidebar > *,
+  .sleeves-grid > .detail > * {
+    flex-shrink: 0;
+  }
+}
 .sidebar {
   background: var(--sidebar);
   padding: 1.625rem 1.375rem 1.5rem;
