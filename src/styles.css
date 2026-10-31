@@ -2370,8 +2370,9 @@ p {
   width: 100%;
 }
 .items-count {
-  font-family: var(--mono);
-  font-weight: 500;
+  /* in the row's serif, at its size, like a page's top row */
+  font-family: var(--serif);
+  font-size: 1rem;
   color: var(--iris);
 }
 @media (max-width: 860px) {
