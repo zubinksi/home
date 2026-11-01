@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       askPolicyPlugin(env.ANTHROPIC_API_KEY),
-      projectsPlugin(),
+      projectsPlugin({ url: env.SERVICE_LOG_SCRIPT_URL, token: env.SERVICE_LOG_TOKEN }),
       stockPlugin(),
       servicingPlugin({ url: env.SERVICE_LOG_SCRIPT_URL, token: env.SERVICE_LOG_TOKEN }),
     ],

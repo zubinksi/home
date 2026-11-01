@@ -3,10 +3,10 @@
 // server (server/servicing.ts).
 //
 // Reading needs only the sheet's "Anyone with the link can view" sharing.
-// Writing goes through a small Apps Script bound to the sheet (see
-// scripts/servicing-log.gs and the README), since only its owner can write to
-// it: set SERVICE_LOG_SCRIPT_URL to the script's web app URL and
-// SERVICE_LOG_TOKEN to the token saved in the script's properties.
+// Writing goes through the Apps Script bound to the sheet (./script.js), since
+// only its owner can write to it.
+
+import { callScript } from './script.js';
 
 const SHEET_ID = '1R_doMt_LPphYMpvX98ruz6jFJzynsiBUEeJUb039G1I';
 export const SERVICE_LOG_GID = 731905;
@@ -56,31 +56,7 @@ export async function logService(input, config) {
   if (t > Date.now() + DAY || t < Date.now() - 3 * 365 * DAY) return [400, { message: 'That date doesn’t look right.' }];
   if (typeof note !== 'string' || note.length > 200) return [400, { message: 'The note is too long.' }];
 
-  if (!config.url || !config.token) {
-    return [501, { error: 'not-set-up', message: 'Logging isn’t set up yet: the sheet’s script isn’t connected.' }];
-  }
-  try {
-    // Apps Script answers a POST with a redirect to its result, which fetch follows
-    const r = await fetch(config.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ token: config.token, id, job: job.trim(), date, note: note.trim() }),
-      redirect: 'follow',
-    });
-    const text = await r.text();
-    let body = null;
-    try {
-      body = JSON.parse(text);
-    } catch {
-      /* not JSON: the script isn't deployed for anyone to call, or errored */
-    }
-    if (!r.ok || !body?.ok) {
-      return [502, { error: 'script', message: body?.message ?? 'The sheet’s script didn’t accept it.' }];
-    }
-    cache = null; // the next read sees the new row
-    return [200, { ok: true }];
-  } catch (err) {
-    console.error('[service-log]', err);
-    return [502, { error: 'network', message: 'Couldn’t reach the sheet’s script.' }];
-  }
+  const [status, body] = await callScript(config, { id, job: job.trim(), date, note: note.trim() });
+  if (status === 200) cache = null; // the next read sees the new row
+  return [status, body];
 }

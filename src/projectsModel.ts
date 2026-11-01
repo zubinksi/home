@@ -3,8 +3,9 @@
 // Sheet conventions this relies on (keep them when editing the sheet):
 //  - Groups are separated by a blank row. A group's first row is its heading,
 //    "Area: condition note" (the note is optional).
-//  - Item rows: A = item, B = moving / maintenance cost, C = furnishing cost.
-//    Any cost (including "FREE") means the item is done.
+//  - Item rows: A = item, B = moving / maintenance cost, C = furnishing cost,
+//    E = a quote while it's still to do. Any cost in B or C (including "FREE"
+//    or $0) means the item is done.
 //  - "Optional:" before an item marks it optional; "Closed:" marks it dropped.
 //  - The totals rows at the bottom are ignored; the page adds things up itself.
 //  - Hidden column D holds each row's number (=ARRAYFORMULA(ROW(…))). Google's
@@ -21,6 +22,12 @@ export interface ProjectItem {
   done: boolean;
   optional: boolean;
   closed: boolean;
+  /** a quote or estimate, from column E, while it's still to do */
+  quote: number | null;
+  /** the sheet row, and column A exactly as written there: what the page
+      sends back when it edits the item, so the sheet can check it's the same row */
+  row: number | null;
+  raw: string;
 }
 
 export interface Area {
@@ -29,6 +36,9 @@ export interface Area {
   note: string;
   section: Section;
   items: ProjectItem[];
+  /** the area's last row in the sheet and its column A, where a new item goes after */
+  lastRow: number | null;
+  lastRaw: string;
 }
 
 const TOTAL_ROWS = /^(moving\s*&\s*maintenance|furniture\s*&\s*decor|total)$/i;
@@ -117,6 +127,8 @@ export function parseProjects(rows: string[][]): Area[] {
         note: i >= 0 ? a.slice(i + 1).replace(/\s+/g, ' ').trim() : '',
         section: HOUSE_AREAS.test(name) ? 'house' : 'rooms',
         items: [],
+        lastRow: rowNo,
+        lastRaw: a,
       };
       areas.push(current);
       if (!b && !c) continue;
@@ -128,6 +140,8 @@ export function parseProjects(rows: string[][]): Area[] {
     const costB = parseCost(b);
     const costC = parseCost(c);
     const cost = costB ?? costC;
+    current.lastRow = rowNo;
+    current.lastRaw = a;
     current.items.push({
       text: text.charAt(0).toUpperCase() + text.slice(1),
       cost,
@@ -136,6 +150,9 @@ export function parseProjects(rows: string[][]): Area[] {
       done: cost !== null,
       optional,
       closed,
+      quote: parseCost(cell(r, 4)) || null,
+      row: rowNo,
+      raw: a,
     });
   }
   return areas.filter((x) => x.items.length > 0);

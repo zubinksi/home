@@ -49,9 +49,9 @@ type Source =
 type Got = { csv: string; at: number } | { problem: string };
 
 /** Ask this site's server, which fetches the sheet on our behalf. */
-async function viaServer(): Promise<Got> {
+async function viaServer(fresh = false): Promise<Got> {
   try {
-    const res = await fetch('/api/projects');
+    const res = await fetch(fresh ? '/api/projects?fresh=1' : '/api/projects');
     if (!(res.headers.get('content-type') ?? '').includes('json')) return { problem: 'no-server' };
     const data = await res.json();
     if (res.ok && data?.csv) return { csv: data.csv, at: data.fetchedAt ?? Date.now() };
@@ -114,7 +114,69 @@ function useProjects() {
     };
   }, []);
 
-  return { areas, source };
+  // a change goes to the sheet through its script; then the page reads the
+  // sheet afresh, since a new row moves the rows below it
+  const reload = async () => {
+    const got = await viaServer(true);
+    if (!('csv' in got)) return;
+    const live = parseProjects(parseCsv(got.csv));
+    if (live.length) {
+      setAreas(live);
+      setSource({ kind: 'live', at: got.at, via: 'server' });
+    }
+  };
+  const edit: Edit = async (change) => {
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(change),
+      });
+      const data = (res.headers.get('content-type') ?? '').includes('json') ? await res.json() : null;
+      if (!res.ok || !data?.ok) return data?.message ?? 'Couldn’t save it to the sheet.';
+      setAreas((list) => applyChange(list, change));
+      await reload();
+      return null;
+    } catch {
+      return 'Couldn’t reach the server.';
+    }
+  };
+
+  return { areas, source, edit };
+}
+
+/** A change to the Projects tab, as the page asks for it. */
+type Change =
+  | { action: 'quote'; row: number; raw: string; quote: number | null }
+  | { action: 'done'; row: number; raw: string; kind: 'maintenance' | 'furnishing'; cost: number }
+  | { action: 'add'; afterRow: number; afterRaw: string; text: string; optional: boolean; quote: number | null };
+/** Sends a change; resolves to a problem to show, or null when it's saved. */
+type Edit = (change: Change) => Promise<string | null>;
+
+/** The change, shown at once while the sheet is read afresh. */
+function applyChange(areas: Area[], c: Change): Area[] {
+  return areas.map((a) => {
+    if (c.action === 'add') {
+      if (a.lastRow !== c.afterRow) return a;
+      const item: ProjectItem = { text: c.text, cost: null, costLabel: '', kind: null, done: false, optional: c.optional, closed: false, quote: c.quote, row: null, raw: '' };
+      return { ...a, items: [...a.items, item] };
+    }
+    if (!a.items.some((i) => i.row === c.row)) return a;
+    return {
+      ...a,
+      items: a.items.map((i) =>
+        i.row !== c.row ? i : c.action === 'quote' ? { ...i, quote: c.quote } : { ...i, done: true, cost: c.cost, kind: c.kind },
+      ),
+    };
+  });
+}
+
+/** "$1,200", "1.2k" or "1200" → 1200; empty → null; anything else → NaN. */
+function parseAmount(v: string): number | null {
+  const t = v.trim().replace(/[$,\s]/g, '');
+  if (!t) return null;
+  const m = /^(\d+(?:\.\d+)?)(k?)$/i.exec(t);
+  return m ? Number(m[1]) * (m[2] ? 1000 : 1) : NaN;
 }
 
 export function Projects(props: {
@@ -124,7 +186,7 @@ export function Projects(props: {
   replaceSub: (k: string) => void;
   closeSub: () => void;
 }) {
-  const { areas, source } = useProjects();
+  const { areas, source, edit } = useProjects();
   const panelRef = useRef<HTMLElement>(null);
 
   // the sheet's order, house first then rooms
@@ -211,9 +273,9 @@ export function Projects(props: {
               {view?.done ? (
                 <DoneDetail view={view} areas={ordered} onArea={(k) => drill.select(k)} />
               ) : view ? (
-                <TodoDetail view={view} areas={ordered} onArea={(k) => drill.select(k)} />
+                <TodoDetail view={view} areas={ordered} onArea={(k) => drill.select(k)} edit={edit} />
               ) : area ? (
-                <AreaDetail area={area} />
+                <AreaDetail area={area} areas={ordered} edit={edit} />
               ) : (
                 <ProjectsSummary house={house} rooms={rooms} onArea={(k) => drill.select(k)} onTodo={() => drill.select(TODO_KEY)} />
               )}
@@ -393,9 +455,10 @@ function DoneDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onA
   );
 }
 
-/** What's left to do, or what's optional, across the house in one table. */
-function TodoDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onArea: (key: string) => void }) {
+/** What's left to do, or what's optional, across the house in one table; tap an item to quote it or mark it done. */
+function TodoDetail({ view, areas, onArea, edit }: { view: ViewDef; areas: Area[]; onArea: (key: string) => void; edit: Edit }) {
   const open = viewItems(areas, view);
+  const [openRow, setOpenRow] = useState<number | null>(null);
   return (
     <>
       <div className="d-title">
@@ -407,41 +470,173 @@ function TodoDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onA
           ACROSS THE HOUSE
         </span>
       </div>
-      <div className="todo-table todo-two" role="table">
+      <div className="todo-table" role="table">
         <div className="todo-row head" role="row">
           <span role="columnheader">ITEM</span>
           <span role="columnheader">AREA</span>
+          <span role="columnheader" className="todo-cost">
+            QUOTE
+          </span>
         </div>
-        {open.map(({ item, area }, n) => (
-          <div key={n} className="todo-row" role="row">
-            <span className="todo-item" role="cell">
-              {item.text}
-            </span>
-            <span role="cell">
-              <button className="todo-area" onClick={() => onArea(area.key)}>
-                {area.name}
-              </button>
-            </span>
-          </div>
-        ))}
+        {open.map(({ item, area }, n) => {
+          const isOpen = item.row != null && openRow === item.row;
+          return (
+            <div key={item.row ?? `new-${n}`} className={`todo-entry ${isOpen ? 'is-open' : ''}`}>
+              <div className="todo-row" role="row">
+                <button className="todo-item todo-open" role="cell" aria-expanded={isOpen} onClick={() => setOpenRow(isOpen ? null : item.row)}>
+                  {item.text}
+                </button>
+                <span role="cell">
+                  <button className="todo-area" onClick={() => onArea(area.key)}>
+                    {area.name}
+                  </button>
+                </span>
+                <span className="todo-cost todo-quote" role="cell">
+                  {item.quote ? money(item.quote) : ''}
+                </span>
+              </div>
+              {isOpen && <ItemEditor item={item} area={area} edit={edit} />}
+            </div>
+          );
+        })}
       </div>
       {open.length === 0 && <div className="module-note">Nothing here.</div>}
+      <AddItem areas={areas} optional={view.todo === 'optional'} edit={edit} />
     </>
   );
 }
 
-function ItemRow({ item }: { item: ProjectItem }) {
+/** An open item's quote, or marking it done with what it cost. */
+function ItemEditor({ item, area, edit }: { item: ProjectItem; area: Area; edit: Edit }) {
+  const [amount, setAmount] = useState(item.quote ? String(item.quote) : '');
+  const [kind, setKind] = useState<'maintenance' | 'furnishing'>(area.section === 'house' ? 'maintenance' : 'furnishing');
+  const [state, setState] = useState<{ kind: 'idle' | 'saving' } | { kind: 'said'; text: string; bad?: boolean }>({ kind: 'idle' });
+  const row = item.row;
+  if (row == null) return <div className="pedit pedit-note">Saving to the sheet…</div>;
+
+  const run = async (change: Change, done: string) => {
+    setState({ kind: 'saving' });
+    const problem = await edit(change);
+    setState(problem ? { kind: 'said', text: problem, bad: true } : { kind: 'said', text: done });
+  };
+  const value = parseAmount(amount);
+  const saveQuote = () => {
+    if (Number.isNaN(value)) return setState({ kind: 'said', text: 'That amount doesn’t look right.', bad: true });
+    run({ action: 'quote', row, raw: item.raw, quote: value }, value === null ? 'Quote cleared.' : `Quote saved: ${money(value as number)}.`);
+  };
+  const markDone = () => {
+    if (value === null || Number.isNaN(value)) return setState({ kind: 'said', text: 'Enter what it cost (0 if it was free).', bad: true });
+    run({ action: 'done', row, raw: item.raw, kind, cost: value }, 'Marked done.');
+  };
+  const busy = state.kind === 'saving';
+
   return (
-    <div className={`pitem ${item.done ? 'is-done' : ''} ${item.closed ? 'is-closed' : ''} ${item.optional ? 'is-optional' : ''}`}>
-      <span className="pitem-mark">{item.closed ? '–' : item.done ? '✓' : '○'}</span>
-      <span className="pitem-text">{item.text}</span>
-      {item.done && <span className="pitem-kind">{item.kind === 'maintenance' ? 'MAINT' : 'FURN'}</span>}
-      {item.done && <span className="pitem-cost">{item.cost === 0 ? 'FREE' : money(item.cost ?? 0)}</span>}
+    <div className="pedit">
+      <input
+        className="pedit-amt"
+        inputMode="decimal"
+        placeholder="$ amount"
+        aria-label="Amount"
+        value={amount}
+        onChange={(e) => {
+          setAmount(e.target.value);
+          setState({ kind: 'idle' });
+        }}
+      />
+      <span className="seg pedit-kind" role="group" aria-label="Which column">
+        <span className="seg-thumb" style={{ width: 'calc((100% - 0.25rem) / 2)', transform: `translateX(${kind === 'maintenance' ? 0 : 100}%)` }} aria-hidden />
+        {(['maintenance', 'furnishing'] as const).map((k) => (
+          <button key={k} className={k === kind ? 'on' : ''} aria-pressed={k === kind} onClick={() => setKind(k)}>
+            {k === 'maintenance' ? 'MAINT' : 'FURN'}
+          </button>
+        ))}
+      </span>
+      <button className="svc-log-btn pedit-quiet" disabled={busy} onClick={saveQuote}>
+        SAVE QUOTE
+      </button>
+      <button className="svc-log-btn" disabled={busy} onClick={markDone}>
+        {busy ? 'SAVING…' : 'MARK DONE'}
+      </button>
+      {state.kind === 'said' && <span className={`pedit-said ${state.bad ? 'is-bad' : ''}`}>{state.text}</span>}
     </div>
   );
 }
 
-function AreaDetail({ area }: { area: Area }) {
+/** A new item at the end of an area: in the area's own page, or with the area chosen here. */
+function AddItem({ areas, area, optional = false, edit }: { areas: Area[]; area?: Area; optional?: boolean; edit: Edit }) {
+  const [text, setText] = useState('');
+  const [where, setWhere] = useState(area?.key ?? '');
+  const [opt, setOpt] = useState(optional);
+  const [quote, setQuote] = useState('');
+  const [state, setState] = useState<{ kind: 'idle' | 'saving' } | { kind: 'said'; text: string; bad?: boolean }>({ kind: 'idle' });
+  const target = area ?? areas.find((a) => a.key === where);
+  const add = async () => {
+    const q = parseAmount(quote);
+    if (!text.trim()) return setState({ kind: 'said', text: 'What’s the item?', bad: true });
+    if (!target) return setState({ kind: 'said', text: 'Which area is it in?', bad: true });
+    if (Number.isNaN(q)) return setState({ kind: 'said', text: 'That quote doesn’t look right.', bad: true });
+    if (target.lastRow == null) return setState({ kind: 'said', text: 'Reload the page first.', bad: true });
+    setState({ kind: 'saving' });
+    const problem = await edit({ action: 'add', afterRow: target.lastRow, afterRaw: target.lastRaw, text: text.trim(), optional: opt, quote: q });
+    if (problem) return setState({ kind: 'said', text: problem, bad: true });
+    setText('');
+    setQuote('');
+    setState({ kind: 'said', text: `Added to ${target.name}.` });
+  };
+  return (
+    <div className="module padd">
+      <div className="module-head">
+        <span className="label">ADD AN ITEM</span>
+      </div>
+      <div className="pedit">
+        <input className="pedit-text" placeholder="What needs doing" aria-label="Item" value={text} onChange={(e) => setText(e.target.value)} />
+        {!area && (
+          <select className="pedit-area" aria-label="Area" value={where} onChange={(e) => setWhere(e.target.value)}>
+            <option value="">Area…</option>
+            {areas.map((a) => (
+              <option key={a.key} value={a.key}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <input className="pedit-amt" inputMode="decimal" placeholder="$ quote" aria-label="Quote (optional)" value={quote} onChange={(e) => setQuote(e.target.value)} />
+        <label className="pedit-opt">
+          <input type="checkbox" checked={opt} onChange={(e) => setOpt(e.target.checked)} /> OPTIONAL
+        </label>
+        <button className="svc-log-btn" disabled={state.kind === 'saving'} onClick={add}>
+          {state.kind === 'saving' ? 'ADDING…' : 'ADD'}
+        </button>
+        {state.kind === 'said' && <span className={`pedit-said ${state.bad ? 'is-bad' : ''}`}>{state.text}</span>}
+      </div>
+    </div>
+  );
+}
+
+function ItemRow({ item, onOpen, isOpen }: { item: ProjectItem; onOpen?: () => void; isOpen?: boolean }) {
+  const cls = `pitem ${item.done ? 'is-done' : ''} ${item.closed ? 'is-closed' : ''} ${item.optional ? 'is-optional' : ''}`;
+  const body = (
+    <>
+      <span className="pitem-mark">{item.closed ? '–' : item.done ? '✓' : '○'}</span>
+      <span className="pitem-text">{item.text}</span>
+      {item.done && <span className="pitem-kind">{item.kind === 'maintenance' ? 'MAINT' : 'FURN'}</span>}
+      {item.done && <span className="pitem-cost">{item.cost === 0 ? 'FREE' : money(item.cost ?? 0)}</span>}
+      {!item.done && item.quote ? <span className="pitem-kind">QUOTE</span> : null}
+      {!item.done && item.quote ? <span className="pitem-cost">{money(item.quote)}</span> : null}
+    </>
+  );
+  // an open item opens to quote it or mark it done
+  return onOpen ? (
+    <button className={`${cls} pitem-open`} aria-expanded={isOpen} onClick={onOpen}>
+      {body}
+    </button>
+  ) : (
+    <div className={cls}>{body}</div>
+  );
+}
+
+function AreaDetail({ area, areas, edit }: { area: Area; areas: Area[]; edit: Edit }) {
+  const [openRow, setOpenRow] = useState<number | null>(null);
   const s = areaStats(area);
   const live = area.items.filter((i) => !i.closed);
   const todo = live.filter((i) => !i.done && !i.optional);
@@ -460,9 +655,16 @@ function AreaDetail({ area }: { area: Area }) {
           {foot && <span className="label">{foot}</span>}
         </div>
         <div className="pitems">
-          {items.map((i, n) => (
-            <ItemRow key={n} item={i} />
-          ))}
+          {items.map((i, n) => {
+            const editable = !i.done && !i.closed && i.row != null;
+            const isOpen = editable && openRow === i.row;
+            return (
+              <div key={i.row ?? `new-${n}`} className={isOpen ? 'pitem-entry is-open' : 'pitem-entry'}>
+                <ItemRow item={i} isOpen={isOpen} onOpen={editable ? () => setOpenRow(isOpen ? null : i.row) : undefined} />
+                {isOpen && <ItemEditor item={i} area={area} edit={edit} />}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -486,6 +688,7 @@ function AreaDetail({ area }: { area: Area }) {
       {todo.length === 0 && optional.length === 0 && done.length === 0 && (
         <div className="module-note">Nothing listed here yet.</div>
       )}
+      <AddItem areas={areas} area={area} edit={edit} />
     </>
   );
 }

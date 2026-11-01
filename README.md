@@ -31,7 +31,7 @@ same code from `api/_lib/`.
 | Route | What it does | Needs |
 | --- | --- | --- |
 | `/api/stock` | AAPL price and daily closes from Yahoo Finance | nothing |
-| `/api/projects` | the live Projects sheet as CSV | the sheet shared by link |
+| `/api/projects` | reads the live Projects sheet; saves a quote, an item done or a new item | the sheet shared by link; to save, the sheet's script (below) |
 | `/api/ask` | Ask the Policy | `ANTHROPIC_API_KEY` in the Vercel project |
 | `/api/service-log` | reads the Servicing log tab; logs a job as done | the sheet shared by link; to log, `SERVICE_LOG_SCRIPT_URL` and `SERVICE_LOG_TOKEN` |
 
@@ -99,6 +99,16 @@ The page relies on these sheet conventions:
   page still sees where one area ends and the next begins.
 - Areas named Moving, Roof, Plumbing, Maintenance/testing, Walls…, Patio or Yard
   are listed under **The House**; everything else under **The Rooms**.
+- Column E holds a quote for an item still to do (label E3 "Quote" if you like;
+  the page reads the column either way).
+
+From the page you can tap a to-do to **save a quote** or **mark it done** with
+what it cost (in the maintenance or furnishing column; 0 for free), and **add
+an item** to an area (it goes in as a new row at the end of the area's group).
+These go through the same sheet script as servicing logging (below). Before
+writing, the script checks the row still holds the item the page saw, so if
+the sheet was edited meanwhile it refuses and asks you to reload, rather than
+writing into the wrong row.
 
 ## Servicing
 
@@ -109,11 +119,11 @@ Vendors" sheet: one row per job done (*Done on* as `YYYY-MM-DD`, *Job*,
 *Job ID*, *Note*). The latest row for each job wins. You can add or fix rows by
 hand; the *Job ID* must match an `id` in `src/servicing.ts`.
 
-### Logging servicing jobs
+### Logging servicing jobs (and editing projects)
 
-Each job has a **Log as done** button. Only the sheet's owner can write to it,
-so the site writes through a small Apps Script bound to the sheet. Set it up
-once:
+Each servicing job has a **Log as done** button, and each project to-do can be
+quoted, marked done or added. Only the sheet's owner can write to it, so the
+site writes through a small Apps Script bound to the sheet. Set it up once:
 
 1. Open the sheet, then **Extensions → Apps Script**. Replace the code with
    `scripts/servicing-log.gs` and save.
@@ -129,7 +139,13 @@ The token stays on the server, so the script's URL alone can't write to the
 sheet. `/api/service-log` itself is open like the site's other routes: anyone
 who finds the site could add a row (the PIN runs only in the browser), so the
 same advice applies: use Vercel's deployment protection to keep it private.
-Until the script is connected, the button says logging isn't set up yet.
+Until the script is connected, the buttons say saving isn't set up yet.
+
+**After the script's code changes** (as it did when project editing arrived),
+paste the new `scripts/servicing-log.gs` over the old code, save, then
+**Deploy → Manage deployments → edit (pencil) → Version: New version →
+Deploy**. The URL stays the same, so nothing changes in Vercel; without a new
+version, Google keeps running the old code.
 
 ## The quarterly review
 
