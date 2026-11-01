@@ -4,7 +4,7 @@ import { MobileNav } from './MobileNav';
 import { PagedSidebar } from './Nav';
 import { compact } from './model';
 import { areaStats, parseCsv, parseProjects, totals, type Area, type ProjectItem } from './projectsModel';
-import { PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
+import { PROJECTS_BUDGET, PROJECTS_SHEET_DIRECT_URL, PROJECTS_SHEET_URL } from './projectsSource';
 import { useDrill } from './useDrill';
 
 const money = (n: number) => `$${compact(n)}`;
@@ -233,11 +233,9 @@ export function Projects(props: {
 function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: string) => void; onTodo: () => void }) {
   const all = [...props.house, ...props.rooms];
   const t = totals(all);
-  // by which column the cost went in, as the left column splits Completed
-  const sections = [
-    { name: 'MAINTENANCE', spent: t.maintenance },
-    { name: 'FURNISHING', spent: t.furnishing },
-  ];
+  // spending against the budget, by which column the cost went in (as the left column splits it)
+  const left = PROJECTS_BUDGET - t.spent;
+  const share = (n: number) => `${Math.min(100, (n / PROJECTS_BUDGET) * 100)}%`;
   const doneShare = t.items ? t.done / t.items : 0;
   const untouched = all.filter((a) => {
     const s = areaStats(a);
@@ -262,18 +260,28 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
 
       <div className="module">
         <div className="module-head">
-          <span className="label">SPENT</span>
+          <span className="label">
+            BUDGET · {money(PROJECTS_BUDGET)} · {Math.round((t.spent / PROJECTS_BUDGET) * 100)}% SPENT
+          </span>
+          <span className="label" style={{ color: left < 0 ? 'var(--red)' : 'var(--green)' }}>
+            {left < 0 ? `${money(-left)} OVER` : `${money(left)} LEFT`}
+          </span>
         </div>
-        {sections.map((x) => (
-          <div key={x.name} className="psum-row">
-            <span className="psum-name">{x.name}</span>
-            <span className="psum-amt">{money(x.spent)}</span>
-            <span className="psum-pct">{t.spent ? Math.round((x.spent / t.spent) * 100) : 0}%</span>
-            <span className="psum-bar">
-              <span style={{ width: `${t.spent ? (x.spent / t.spent) * 100 : 0}%` }} />
-            </span>
-          </div>
-        ))}
+        <div className="psum-budget" title={`${money(t.spent)} of ${money(PROJECTS_BUDGET)}`}>
+          <span className="is-maint" style={{ width: share(t.maintenance) }} />
+          <span className="is-furn" style={{ width: share(t.furnishing) }} />
+        </div>
+        <div className="psum-counts">
+          <span>
+            <b>{money(t.maintenance)}</b> MAINTENANCE
+          </span>
+          <span>
+            <b>{money(t.furnishing)}</b> FURNISHING
+          </span>
+          <span>
+            <b>{money(Math.max(0, left))}</b> LEFT
+          </span>
+        </div>
       </div>
 
       <div className="module">

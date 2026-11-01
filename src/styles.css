@@ -1777,6 +1777,24 @@ p {
 .psum-progress span {
   background: var(--accent);
 }
+/* the budget: what's been spent on each, side by side, against the whole */
+.psum-budget {
+  display: flex;
+  height: 0.625rem;
+  margin-bottom: 0.625rem;
+  background: var(--b1);
+  overflow: hidden;
+}
+.psum-budget span {
+  display: block;
+  height: 100%;
+}
+.psum-budget .is-maint {
+  background: var(--ink2);
+}
+.psum-budget .is-furn {
+  background: var(--stipple);
+}
 .psum-counts {
   display: flex;
   gap: 1.5rem;
