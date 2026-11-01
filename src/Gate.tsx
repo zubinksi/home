@@ -192,8 +192,8 @@ export function Gate({ children }: { children: ReactNode }) {
   }, [unlocked, press]);
 
   // The handover, both ways, with the door laid over the inside. Going in, the
-  // pad's contents fade and its paper grows into the slab, and only then does
-  // the sunlit wall fade to the wall inside; coming out, the same in reverse: the slab's
+  // pad's contents fade and its paper grows into the slab, whose contents then
+  // come up, while the sunlit wall fades slowly to the wall inside throughout; coming out, the same in reverse: the slab's
   // contents fade under the paper, it shrinks back into the pad as the sunlight
   // returns, and the pad's contents come up.
   const layer = useRef<HTMLDivElement>(null);
@@ -230,11 +230,9 @@ export function Gate({ children }: { children: ReactNode }) {
         ? [
             fade(card, 1, 0, 180),
             paper.animate([box(pad), box(inside)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
-            // once it's in place, the sunlight gives way to the wall inside;
-            // then the slab's contents come up on the paper (the paper stays
-            // until the light has gone, or the light would show through it)
-            fade(light, 1, 0, 650, 820, 'ease-in-out'),
-            fade(paper, 1, 0, 260, 1470),
+            // the sunlight fades the whole way through, beginning with the pad
+            // and ending after the slab's contents are up
+            fade(light, 1, 0, 1500, 120, 'ease-in-out'),
           ]
         : [
             fade(card, 0, 1, 220, 980),
@@ -244,16 +242,29 @@ export function Gate({ children }: { children: ReactNode }) {
             fade(light, 0, 1, 900, 200, 'ease-in-out'),
           ];
     let cancelled = false;
-    if (!still) {
-      runs[1].finished
-        .catch(() => undefined)
-        .then(() => {
-          if (cancelled) return;
-          if (going === 'in') delete root.dataset.slabHidden;
-          else root.dataset.slabHidden = '';
-        });
-    }
-    Promise.all(runs.map((a) => a.finished))
+    // Going in, when the paper reaches the slab the real slab takes its place,
+    // raised above the fading light so the light can't show through it, and
+    // its contents come up. Coming out, the slab hides once the paper covers it.
+    const settled = still
+      ? Promise.resolve()
+      : runs[1].finished
+          .catch(() => undefined)
+          .then(() => {
+            if (cancelled) return;
+            if (going === 'out') {
+              root.dataset.slabHidden = '';
+              return;
+            }
+            delete root.dataset.slabHidden;
+            root.dataset.slabOver = '';
+            paper.remove();
+            const contents = slab.firstElementChild as HTMLElement | null;
+            if (!contents) return;
+            const up = fade(contents, 0, 1, 300);
+            runs.push(up);
+            return up.finished.catch(() => undefined).then(() => undefined);
+          });
+    Promise.all([settled, ...runs.map((a) => a.finished)])
       .catch(() => undefined)
       .then(() => {
         if (cancelled) return;
@@ -265,6 +276,7 @@ export function Gate({ children }: { children: ReactNode }) {
       runs.forEach((a) => a.cancel());
       paper.remove();
       delete root.dataset.slabHidden;
+      delete root.dataset.slabOver;
     };
   }, [handover]);
 

@@ -1405,6 +1405,10 @@ p {
 :root[data-slab-hidden] .slab {
   visibility: hidden;
 }
+/* going in, once in place the slab sits above the still-fading sunlight */
+:root[data-slab-over] .slab {
+  z-index: 101;
+}
 .gate-paper {
   position: fixed;
   border-radius: 3px;
