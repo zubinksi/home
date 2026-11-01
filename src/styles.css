@@ -1395,6 +1395,18 @@ p {
     inset 0 0.0625rem 0.0625rem rgba(255, 220, 180, 0.35),
     0 0.0625rem 0.1875rem rgba(10, 5, 2, 0.6);
 }
+/* on the Office theme the knob is a small record: black vinyl with fine
+   grooves, two streaks of light across them, and a burgundy label */
+:root[data-theme='office'] .lock-knob {
+  background:
+    radial-gradient(circle at 50% 50%, #0b0b0b 0 0.05rem, #8d4041 0.06rem 0.3rem, #6b2e2f 0.31rem 0.33rem, transparent 0.34rem),
+    repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0 0.5px, rgba(0, 0, 0, 0.18) 0.5px 1.2px),
+    conic-gradient(from 35deg, #151515 0deg, #4a4a4a 22deg, #151515 48deg, #0c0c0c 120deg, #151515 180deg, #4a4a4a 202deg, #151515 228deg, #0c0c0c 300deg, #151515 360deg);
+  box-shadow:
+    inset 0 0 0 0.0625rem rgba(0, 0, 0, 0.6),
+    inset 0 0.0625rem 0.0625rem rgba(255, 255, 255, 0.18),
+    0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.55);
+}
 .mast-lock.is-locking .lock-knob {
   transform: translateX(1.25rem) rotate(150deg);
 }
