@@ -1405,6 +1405,11 @@ p {
 :root[data-slab-hidden] .slab {
   visibility: hidden;
 }
+/* the header sits above the door while it hands over, so it can lead */
+:root[data-mast-over] .masthead {
+  position: relative;
+  z-index: 101;
+}
 /* going in, once in place the slab sits above the still-fading sunlight */
 :root[data-slab-over] .slab {
   z-index: 101;
