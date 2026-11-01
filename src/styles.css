@@ -2571,38 +2571,31 @@ p {
   vertical-align: middle;
   border-top: 1.25px solid var(--accent);
 }
-/* where the Fortress cash sits: label, share bar, amount, a year's interest */
+/* where the Fortress cash sits: one bar split by place, T-bills in the
+   accent and idle cash in amber, then the amounts and what each earns */
+.cash-split {
+  margin-top: 0.5rem;
+}
 .cash-split .module-head {
   margin-bottom: 0.375rem;
 }
-.cash-split .label.warn,
-.refill .warn {
-  color: var(--amber);
-}
-.cash-split .refill,
-.cash-split .refill:nth-child(n) {
-  grid-template-columns: 5rem 1fr 4rem 6.5rem;
-  align-items: center;
-}
-.cash-split .refill span:nth-child(4) {
-  text-align: right;
-}
-.split-bar {
-  height: 0.3125rem;
-  background: var(--b2);
-  position: relative;
-}
-.split-bar > span {
-  position: absolute;
-  inset: 0 auto 0 0;
+.psum-budget .is-tbills {
   background: var(--accent);
 }
-.split-bar.idle > span {
+.psum-budget .is-idle {
   background: var(--amber);
 }
-@media (max-width: 860px) {
-  .cash-split .refill,
-  .cash-split .refill:nth-child(n) {
-    grid-template-columns: 3.25rem 1fr 3.25rem 4.75rem;
-  }
+/* each part stays on one line; on a narrow phone the two stack */
+.cash-split .psum-counts {
+  flex-wrap: wrap;
+  row-gap: 0.375rem;
+}
+.cash-split .psum-counts > span {
+  white-space: nowrap;
+}
+.cash-split .gain {
+  color: var(--green);
+}
+.cash-split .warn {
+  color: var(--amber);
 }

@@ -437,34 +437,31 @@ function FortressBars({ r }: { r: NonNullable<Sleeve['runway']> }) {
         </div>
       </div>
 
-      {/* where the cash sits, and what it earns: one line per place, the bar
-          showing its share; the rate and what moving idle cash would add sit in
-          the heading */}
-      <div className="refills cash-split">
+      {/* where the cash sits: one bar for the whole Fortress, split by place
+          (as the projects budget is), then each part's amount and what it earns */}
+      <div className="cash-split">
         <div className="module-head">
-          <span className="label">WHERE IT SITS · {(r.yield * 100).toFixed(1)}%</span>
+          <span className="label">WHERE IT SITS · T-BILLS AT {(r.yield * 100).toFixed(1)}%</span>
         </div>
-        <div className="refill">
-          <span>T-BILLS</span>
-          <span className="split-bar">
-            <span style={{ width: `${share * 100}%` }} />
+        <div className="psum-budget" title={`${money(invested)} in T-bills, ${money(r.idle)} idle`}>
+          <span className="is-tbills" style={{ width: `${share * 100}%` }} />
+          <span className="is-idle" style={{ width: `${(1 - share) * 100}%` }} />
+        </div>
+        <div className="psum-counts">
+          <span>
+            <b>
+              {tilde}
+              {money(invested)}
+            </b>{' '}
+            T-BILLS · <span className="gain">{money(invested * r.yield)} / YR</span>
           </span>
           <span>
-            {tilde}
-            {money(invested)}
+            <b>
+              {tilde}
+              {money(r.idle)}
+            </b>{' '}
+            IDLE · <span className="warn">$0 / YR</span>
           </span>
-          <span className="gain">{money(invested * r.yield)} / YR</span>
-        </div>
-        <div className="refill">
-          <span>IDLE</span>
-          <span className="split-bar idle">
-            <span style={{ width: `${(1 - share) * 100}%` }} />
-          </span>
-          <span>
-            {tilde}
-            {money(r.idle)}
-          </span>
-          <span className="warn">$0 / YR</span>
         </div>
       </div>
 
