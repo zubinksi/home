@@ -235,8 +235,8 @@ export function Gate({ children }: { children: ReactNode }) {
             fade(card, 1, 0, 180),
             paper.animate([box(pad), box(inside)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
             // the sunlight fades the whole way through, beginning with the pad
-            // and lingering about a second after the slab's contents are up
-            fade(light, 1, 0, 2000, 120, 'ease-in'),
+            // and lingering a little after the slab's contents are up
+            fade(light, 1, 0, 1600, 120, 'ease-in'),
           ]
         : [
             fade(card, 0, 1, 220, 980),
