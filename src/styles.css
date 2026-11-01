@@ -1390,6 +1390,22 @@ p {
   animation: gate-in 0.3s ease-out;
 }
 
+/* going in: the door lies over the inside while its paper grows into the slab */
+.gate-layer.is-leaving {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+:root[data-arriving] .slab {
+  visibility: hidden;
+}
+.gate-paper {
+  position: fixed;
+  background: var(--slab);
+  box-shadow: var(--shadow);
+}
+
 /* ── the light at the door (DoorLight.tsx) ─────────────── */
 .door-light {
   position: fixed;

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import irisUrl from './assets/iris.png';
 import { DoorLight } from './DoorLight';
 
@@ -144,6 +144,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back']
 export function Gate({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(wasUnlocked);
   const [entry, setEntry] = useState('');
+  const [leaving, setLeaving] = useState(false);
   const [wrong, setWrong] = useState(false);
   const opening = entry === CODE;
 
@@ -163,7 +164,10 @@ export function Gate({ children }: { children: ReactNode }) {
     if (entry === CODE) {
       remember(true);
       // let the knob roll all the way open before the door swings
-      const t = setTimeout(() => setUnlocked(true), 1_500);
+      const t = setTimeout(() => {
+        setUnlocked(true);
+        setLeaving(true);
+      }, 1_500);
       return () => clearTimeout(t);
     }
     setWrong(true);
@@ -185,10 +189,63 @@ export function Gate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [unlocked, press]);
 
+  // going in: the inside renders beneath the door, the pad's paper grows into
+  // the slab, and the sunlit wall fades to the wall inside
+  const layer = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!leaving) return;
+    const el = layer.current;
+    const card = el?.querySelector<HTMLElement>('.gate-card');
+    const slab = document.querySelector<HTMLElement>('.slab');
+    const light = el?.querySelector<HTMLElement>('.door-light');
+    if (!el || !card || !slab || !light) {
+      setLeaving(false);
+      return;
+    }
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const from = card.getBoundingClientRect();
+    const to = slab.getBoundingClientRect();
+    const box = (r: DOMRect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    // the pad's paper, standing in for it as it grows
+    const paper = document.createElement('div');
+    paper.className = 'gate-paper';
+    Object.assign(paper.style, box(from));
+    el.appendChild(paper);
+    const ease = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+    // the real slab waits unseen until the paper has reached it
+    const root = document.documentElement;
+    if (!still) root.dataset.arriving = '';
+    const runs = still
+      ? [el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' })]
+      : [
+          card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }),
+          paper.animate([box(from), box(to)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
+          light.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 150, easing: 'ease-in-out', fill: 'forwards' }),
+          // once it's in place, the slab's contents come up on the paper
+          paper.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 820, fill: 'forwards' }),
+        ];
+    let cancelled = false;
+    (runs[1] ?? runs[0]).finished
+      .catch(() => undefined)
+      .then(() => delete root.dataset.arriving);
+    Promise.all(runs.map((a) => a.finished))
+      .catch(() => undefined)
+      .then(() => {
+        if (!cancelled) setLeaving(false);
+      });
+    return () => {
+      cancelled = true;
+      runs.forEach((a) => a.cancel());
+      paper.remove();
+      delete root.dataset.arriving;
+    };
+  }, [leaving]);
+
   const lock = useCallback(() => {
     remember(false);
     setEntry('');
     setWrong(false);
+    setLeaving(false);
     setUnlocked(false);
   }, []);
 
@@ -238,5 +295,16 @@ export function Gate({ children }: { children: ReactNode }) {
     </>
   );
 
-  return unlocked ? <LockContext.Provider value={lock}>{children}</LockContext.Provider> : card;
+  // the door stays in the same place in the tree while it hands over, so its
+  // light keeps running through the transition
+  return (
+    <LockContext.Provider value={lock}>
+      {unlocked && children}
+      {(!unlocked || leaving) && (
+        <div ref={layer} className={leaving ? 'gate-layer is-leaving' : 'gate-layer'}>
+          {card}
+        </div>
+      )}
+    </LockContext.Provider>
+  );
 }
