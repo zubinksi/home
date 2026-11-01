@@ -100,7 +100,6 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
         <span className="pages-icon" aria-hidden>
           <span />
           <span />
-          <span />
         </span>
       </button>
       {open != null ? (
