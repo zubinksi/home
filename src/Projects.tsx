@@ -183,7 +183,7 @@ export function Projects(props: {
                 <span className="side-amt">{compact(t.spent)}</span>
               </button>
               <div className="side-sub">
-                {t.done} OF {t.items} DONE · {t.items ? Math.round((t.done / t.items) * 100) : 0}%
+                {t.done} COMPLETED
               </div>
               <div className="side-rule" />
               {VIEWS.map(row)}
@@ -254,7 +254,7 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: t.done === t.items ? 'var(--green)' : 'var(--amber)' }}>
-          {t.done} OF {t.items} DONE · {Math.round(doneShare * 100)}%
+          {t.done} COMPLETED
         </span>
       </div>
 
@@ -353,7 +353,6 @@ const viewTitle = (v: ViewDef) => v.name.charAt(0) + v.name.slice(1).toLowerCase
 function DoneDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onArea: (key: string) => void }) {
   const rows = viewItems(areas, view).sort((x, y) => (y.item.cost ?? 0) - (x.item.cost ?? 0));
   const spent = rows.reduce((s, r) => s + (r.item.cost ?? 0), 0);
-  const free = rows.filter((r) => r.item.cost === 0).length;
   return (
     <>
       <div className="d-title">
@@ -362,7 +361,7 @@ function DoneDetail({ view, areas, onArea }: { view: ViewDef; areas: Area[]; onA
       </div>
       <div className="d-sub">
         <span className="d-alloc" style={{ color: 'var(--green)' }}>
-          {rows.length} DONE{free ? ` · ${free} FREE` : ''}
+          {rows.length} COMPLETED
         </span>
       </div>
       <div className="todo-table" role="table">
