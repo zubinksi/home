@@ -1390,14 +1390,14 @@ p {
   animation: gate-in 0.3s ease-out;
 }
 
-/* going in: the door lies over the inside while its paper grows into the slab */
-.gate-layer.is-leaving {
+/* going in or out: the door lies over the inside while the paper changes size */
+.gate-layer.is-handing-over {
   position: fixed;
   inset: 0;
   z-index: 100;
   pointer-events: none;
 }
-:root[data-arriving] .slab {
+:root[data-slab-hidden] .slab {
   visibility: hidden;
 }
 .gate-paper {

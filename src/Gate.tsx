@@ -144,7 +144,9 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back']
 export function Gate({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(wasUnlocked);
   const [entry, setEntry] = useState('');
-  const [leaving, setLeaving] = useState(false);
+  // handing over between the door and the inside: going 'in' after the code,
+  // coming back 'out' to the door when locked
+  const [handover, setHandover] = useState<'in' | 'out' | null>(null);
   const [wrong, setWrong] = useState(false);
   const opening = entry === CODE;
 
@@ -166,7 +168,7 @@ export function Gate({ children }: { children: ReactNode }) {
       // let the knob roll all the way open before the door swings
       const t = setTimeout(() => {
         setUnlocked(true);
-        setLeaving(true);
+        setHandover('in');
       }, 1_500);
       return () => clearTimeout(t);
     }
@@ -189,64 +191,87 @@ export function Gate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [unlocked, press]);
 
-  // going in: the inside renders beneath the door, the pad's paper grows into
-  // the slab, and the sunlit wall fades to the wall inside
+  // The handover, both ways, with the door laid over the inside. Going in, the
+  // pad's contents fade, its paper grows into the slab and the sunlit wall
+  // fades to the wall inside; coming out, the same in reverse: the slab's
+  // contents fade under the paper, it shrinks back into the pad as the sunlight
+  // returns, and the pad's contents come up.
   const layer = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    if (!leaving) return;
+    if (!handover) return;
     const el = layer.current;
     const card = el?.querySelector<HTMLElement>('.gate-card');
     const slab = document.querySelector<HTMLElement>('.slab');
     const light = el?.querySelector<HTMLElement>('.door-light');
     if (!el || !card || !slab || !light) {
-      setLeaving(false);
+      setHandover(null);
       return;
     }
+    const going = handover;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const from = card.getBoundingClientRect();
-    const to = slab.getBoundingClientRect();
+    const pad = card.getBoundingClientRect();
+    const inside = slab.getBoundingClientRect();
     const box = (r: DOMRect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
-    // the pad's paper, standing in for it as it grows
+    // the paper the pad and the slab share, standing in for both as it changes size
     const paper = document.createElement('div');
     paper.className = 'gate-paper';
-    Object.assign(paper.style, box(from));
+    Object.assign(paper.style, box(going === 'in' ? pad : inside));
     el.appendChild(paper);
     const ease = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
-    // the real slab waits unseen until the paper has reached it
+    const fade = (x: HTMLElement, from: number, to: number, duration: number, delay = 0, easing = 'ease') =>
+      x.animate([{ opacity: from }, { opacity: to }], { duration, delay, easing, fill: 'both' });
+    // the real slab stays unseen while the paper stands in for it: going in,
+    // until the paper has reached it; coming out, once the paper has covered it
     const root = document.documentElement;
-    if (!still) root.dataset.arriving = '';
+    if (going === 'in' && !still) root.dataset.slabHidden = '';
     const runs = still
-      ? [el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' })]
-      : [
-          card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }),
-          paper.animate([box(from), box(to)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
-          light.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 150, easing: 'ease-in-out', fill: 'forwards' }),
-          // once it's in place, the slab's contents come up on the paper
-          paper.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, delay: 820, fill: 'forwards' }),
-        ];
+      ? [going === 'in' ? fade(el, 1, 0, 300) : fade(el, 0, 1, 300)]
+      : going === 'in'
+        ? [
+            fade(card, 1, 0, 180),
+            paper.animate([box(pad), box(inside)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
+            fade(light, 1, 0, 900, 150, 'ease-in-out'),
+            // once it's in place, the slab's contents come up on the paper
+            fade(paper, 1, 0, 260, 820),
+          ]
+        : [
+            fade(card, 0, 1, 220, 980),
+            // the slab's contents go under the paper, which then shrinks into the pad
+            fade(paper, 0, 1, 220),
+            paper.animate([box(inside), box(pad)], { duration: 700, delay: 240, easing: ease, fill: 'forwards' }),
+            fade(light, 0, 1, 900, 200, 'ease-in-out'),
+          ];
     let cancelled = false;
-    (runs[1] ?? runs[0]).finished
-      .catch(() => undefined)
-      .then(() => delete root.dataset.arriving);
+    if (!still) {
+      runs[1].finished
+        .catch(() => undefined)
+        .then(() => {
+          if (cancelled) return;
+          if (going === 'in') delete root.dataset.slabHidden;
+          else root.dataset.slabHidden = '';
+        });
+    }
     Promise.all(runs.map((a) => a.finished))
       .catch(() => undefined)
       .then(() => {
-        if (!cancelled) setLeaving(false);
+        if (cancelled) return;
+        if (going === 'out') window.scrollTo(0, 0);
+        setHandover(null);
       });
     return () => {
       cancelled = true;
       runs.forEach((a) => a.cancel());
       paper.remove();
-      delete root.dataset.arriving;
+      delete root.dataset.slabHidden;
     };
-  }, [leaving]);
+  }, [handover]);
 
   const lock = useCallback(() => {
     remember(false);
     setEntry('');
     setWrong(false);
-    setLeaving(false);
     setUnlocked(false);
+    setHandover('out');
   }, []);
 
   const done = opening;
@@ -299,9 +324,9 @@ export function Gate({ children }: { children: ReactNode }) {
   // light keeps running through the transition
   return (
     <LockContext.Provider value={lock}>
-      {unlocked && children}
-      {(!unlocked || leaving) && (
-        <div ref={layer} className={leaving ? 'gate-layer is-leaving' : 'gate-layer'}>
+      {(unlocked || handover === 'out') && children}
+      {(!unlocked || handover === 'in') && (
+        <div ref={layer} className={handover ? 'gate-layer is-handing-over' : 'gate-layer'}>
           {card}
         </div>
       )}
