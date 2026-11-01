@@ -2571,7 +2571,7 @@ p {
   border-top: 1.25px solid var(--accent);
 }
 /* where the Fortress cash sits: one bar split by place, T-bills in the
-   accent and idle cash in amber, then the amounts and what each earns */
+   accent and idle cash in a pale shade of it, then the amounts and what each earns */
 .cash-split {
   margin-top: 0.5rem;
 }
@@ -2582,7 +2582,8 @@ p {
   background: var(--accent);
 }
 .psum-budget .is-idle {
-  background: var(--amber);
+  /* a pale shade of the same indigo: one fortress, part earning and part idle */
+  background: color-mix(in srgb, var(--accent) 28%, var(--slab));
 }
 /* each part stays on one line; on a narrow phone the two stack */
 .cash-split .psum-counts {
@@ -2596,5 +2597,5 @@ p {
   color: var(--green);
 }
 .cash-split .warn {
-  color: var(--amber);
+  color: var(--muted);
 }
