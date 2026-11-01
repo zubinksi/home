@@ -296,7 +296,7 @@ function ProjectsSummary(props: { house: Area[]; rooms: Area[]; onArea: (key: st
         </div>
         <div className="psum-counts">
           <span>
-            <b>{t.done}</b> DONE
+            <b>{t.done}</b> COMPLETED
           </span>
           <span>
             <b>{t.openNeeded}</b> TO DO
