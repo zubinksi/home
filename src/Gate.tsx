@@ -192,8 +192,8 @@ export function Gate({ children }: { children: ReactNode }) {
   }, [unlocked, press]);
 
   // The handover, both ways, with the door laid over the inside. Going in, the
-  // pad's contents fade, its paper grows into the slab and the sunlit wall
-  // fades to the wall inside; coming out, the same in reverse: the slab's
+  // pad's contents fade and its paper grows into the slab, and only then does
+  // the sunlit wall fade to the wall inside; coming out, the same in reverse: the slab's
   // contents fade under the paper, it shrinks back into the pad as the sunlight
   // returns, and the pad's contents come up.
   const layer = useRef<HTMLDivElement>(null);
@@ -230,9 +230,11 @@ export function Gate({ children }: { children: ReactNode }) {
         ? [
             fade(card, 1, 0, 180),
             paper.animate([box(pad), box(inside)], { duration: 700, delay: 120, easing: ease, fill: 'forwards' }),
-            fade(light, 1, 0, 900, 150, 'ease-in-out'),
-            // once it's in place, the slab's contents come up on the paper
-            fade(paper, 1, 0, 260, 820),
+            // once it's in place, the sunlight gives way to the wall inside;
+            // then the slab's contents come up on the paper (the paper stays
+            // until the light has gone, or the light would show through it)
+            fade(light, 1, 0, 650, 820, 'ease-in-out'),
+            fade(paper, 1, 0, 260, 1470),
           ]
         : [
             fade(card, 0, 1, 220, 980),
