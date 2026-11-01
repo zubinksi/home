@@ -278,7 +278,7 @@ export function Gate({ children }: { children: ReactNode }) {
   const lockState: LockState = wrong ? 'wrong' : done ? 'open' : 'locked';
   const card = (
     <>
-      <DoorLight opening={done} />
+      <DoorLight />
       <div className="gate">
         <div className="gate-card">
           <div className="gate-mast">

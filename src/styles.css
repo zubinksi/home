@@ -1425,18 +1425,6 @@ p {
   filter: blur(6px);
   transform: scale(1.04);
 }
-/* the right code: light floods the wall as the door swings open */
-.door-flood {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 240, 210, 0.85), rgba(255, 228, 180, 0.35) 60%, transparent);
-  mix-blend-mode: screen;
-  opacity: 0;
-  transition: opacity 1.4s ease-in;
-}
-.door-light.is-opening .door-flood {
-  opacity: 0.7;
-}
 @keyframes gate-in {
   from { opacity: 0; }
 }

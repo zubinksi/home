@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
 // a gap in the leaves, gathered where the canopy is thin and shimmering as the
 // branches move. Nearer the tree (the top left) the flecks are bigger and
 // denser. It's a small WebGL shader drawn at half resolution, which also gives
-// the light its softness; without WebGL the wall simply stays plain. When the
-// code's right, the light floods in as the door opens.
+// the light its softness; without WebGL the wall simply stays plain. Going in,
+// the Gate fades it straight to the wall inside.
 
 const FRAG = `#version 300 es
 precision highp float;
@@ -143,13 +143,12 @@ function dapple(canvas: HTMLCanvasElement): (() => void) | undefined {
   };
 }
 
-export function DoorLight({ opening }: { opening: boolean }) {
+export function DoorLight() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => (ref.current ? dapple(ref.current) : undefined), []);
   return (
-    <div className={`door-light ${opening ? "is-opening" : ""}`} aria-hidden>
+    <div className="door-light" aria-hidden>
       <canvas ref={ref} className="door-dapple" />
-      <div className="door-flood" />
     </div>
   );
 }
