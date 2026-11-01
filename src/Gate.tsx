@@ -224,8 +224,8 @@ export function Gate({ children }: { children: ReactNode }) {
     // until the paper has reached it; coming out, once the paper has covered it
     const root = document.documentElement;
     if (going === 'in' && !still) root.dataset.slabHidden = '';
-    // the header leads both ways: lifted above the door, it is the first thing
-    // to appear going in and the first to go coming out
+    // the header moves with the paper both ways: lifted above the door, it
+    // starts as the paper starts and changes over the same span
     const mast = document.querySelector<HTMLElement>('.masthead');
     if (mast && !still) root.dataset.mastOver = '';
     const runs = still
@@ -239,13 +239,13 @@ export function Gate({ children }: { children: ReactNode }) {
             fade(light, 1, 0, 2000, 120, 'ease-in'),
           ]
         : [
-            fade(card, 0, 1, 220, 1130),
+            fade(card, 0, 1, 220, 980),
             // the slab's contents go under the paper, which then shrinks into the pad
-            fade(paper, 0, 1, 220, 150),
-            paper.animate([box(inside), box(pad)], { duration: 700, delay: 390, easing: ease, fill: 'forwards' }),
-            fade(light, 0, 1, 900, 350, 'ease-in-out'),
+            fade(paper, 0, 1, 220),
+            paper.animate([box(inside), box(pad)], { duration: 700, delay: 240, easing: ease, fill: 'forwards' }),
+            fade(light, 0, 1, 900, 200, 'ease-in-out'),
           ];
-    if (mast && !still) runs.push(going === 'in' ? fade(mast, 0, 1, 350) : fade(mast, 1, 0, 220));
+    if (mast && !still) runs.push(going === 'in' ? fade(mast, 0, 1, 700, 120, ease) : fade(mast, 1, 0, 700, 0, ease));
     let cancelled = false;
     // Going in, when the paper reaches the slab the real slab takes its place,
     // raised above the fading light so the light can't show through it, and
