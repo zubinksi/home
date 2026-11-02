@@ -1,15 +1,14 @@
 // THE THEME. One look for the whole site, chosen by tapping the iris in the
-// masthead: Light (the soft gray wall), Dark (the dark brown wall) or Office
-// (our Black Watch plaid). Remembered on this device; ?theme=dark in the URL
+// masthead: Light (the soft gray wall) or Office (our Black Watch plaid).
+// Remembered on this device; ?theme=office in the URL
 // previews one without changing it.
 
 import { useEffect, useState } from 'react';
 
-export type Theme = 'light' | 'dark' | 'office';
+export type Theme = 'light' | 'office';
 
 export const THEMES: { id: Theme; name: string; ground: string }[] = [
   { id: 'light', name: 'LIGHT', ground: '#8f9186' },
-  { id: 'dark', name: 'DARK', ground: '#29231b' },
   { id: 'office', name: 'OFFICE', ground: '#2c4d3e' },
 ];
 

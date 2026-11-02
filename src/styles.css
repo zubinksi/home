@@ -66,16 +66,7 @@
   --mono: 'Geist Mono', ui-monospace, monospace;
 }
 /* The themes, chosen by tapping the iris (theme.ts sets data-theme). Light is
-   the default above: the soft gray wall. Dark: the dark brown wall. */
-:root[data-theme='dark'] {
-  --ground: #29231b;
-  --mast-ink: #eadcc0;
-  --mast-ink2: #c9b99a;
-  --mast-accent: #c9b99a;
-  --lock-channel: #1f1a14;
-  --lock-engrave: #3b3228;
-  --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
-}
+   the default above: the soft gray wall. */
 /* Office: our Black Watch blanket on the wall (green ground, navy bands, fine
    black lines, crossed both ways), kept quiet so the bands and lines are faint
    over the deep green. */
@@ -106,29 +97,6 @@
   --lock-channel: #213b2f;
   --lock-engrave: #3d5a4b;
   --shadow: 0 0.375rem 1.75rem rgba(0, 0, 0, 0.5);
-}
-/* the charts' linen over the wall (linen.ts) */
-:root[data-linen] {
-  --linen: var(--linen-dark);
-  --linen-alpha: 0.24;
-}
-:root[data-linen][data-theme='dark'],
-:root[data-linen][data-theme='office'] {
-  --linen: var(--linen-light);
-  --linen-alpha: 0.07;
-}
-:root[data-linen] body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: var(--linen) 0 0 / 10rem 10rem repeat;
-  opacity: var(--linen-alpha);
-}
-:root[data-linen] #root {
-  position: relative;
-  z-index: 1;
 }
 * {
   box-sizing: border-box;
