@@ -33,17 +33,35 @@ export function LockButton() {
   const [locking, setLocking] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
+  const start = useCallback(() => {
+    setLocking((was) => {
+      if (!was) timer.current = setTimeout(lock, 560);
+      return true;
+    });
+  }, [lock]);
+
+  // on a keyboard, L locks the site, as the button does; not while typing in a
+  // field, nor with a modifier held (Cmd+L is the browser's address bar)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'l' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      start();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [start]);
 
   return (
     <button
       className={`mast-lock ${locking ? 'is-locking' : ''}`}
       aria-label="Lock the site"
-      title="Lock"
+      aria-keyshortcuts="L"
+      title="Lock (L)"
       disabled={locking}
-      onClick={() => {
-        setLocking(true);
-        timer.current = setTimeout(lock, 560);
-      }}
+      onClick={start}
     >
       {/* a bronze toggle: the knob slides across to lock */}
       <span className="lock-track" aria-hidden>
