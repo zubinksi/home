@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import irisUrl from './assets/iris.png';
 import { DoorLight } from './DoorLight';
+import { useNow, useWeather, type Weather } from './weather';
 
 // A household gate, not real security: the code and the data both ship in the
 // page's JavaScript. It keeps casual eyes out; see README for the caveat.
@@ -88,6 +89,21 @@ type LockState = 'locked' | 'wrong' | 'open';
  * a long channel; the knob rests locked at the right end and, on the right
  * code, rolls back across them to open.
  */
+/** In the corner of the wall, on a computer: the time to the second, and DC's weather beneath. */
+function DoorSign({ now, weather }: { now: Date; weather: Weather | null }) {
+  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  return (
+    <div className="door-sign">
+      <span className="door-time">{time}</span>
+      {weather?.temp != null && (
+        <span className="door-weather">
+          {weather.temp}° · {weather.word}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function GateLock({ state, entered }: { state: LockState; entered: number }) {
   // while locked, the knob can be pushed left with a thumb; let go and it rolls home
   const [drag, setDrag] = useState<number | null>(null); // knob position, 0 (left) … 1 (home)
@@ -219,6 +235,7 @@ export function Gate({ children }: { children: ReactNode }) {
     if (!handover) return;
     const el = layer.current;
     const card = el?.querySelector<HTMLElement>('.gate-card');
+    const sign = el?.querySelector<HTMLElement>('.door-sign') ?? null;
     const slab = document.querySelector<HTMLElement>('.slab');
     const light = el?.querySelector<HTMLElement>('.door-light');
     if (!el || !card || !slab || !light) {
@@ -263,6 +280,8 @@ export function Gate({ children }: { children: ReactNode }) {
             paper.animate([box(inside), box(pad)], { duration: 700, delay: 240, easing: ease, fill: 'forwards' }),
             fade(light, 0, 1, 900, 200, 'ease-in-out'),
           ];
+    // the line on the wall goes and comes with the card
+    if (sign && !still) runs.push(going === 'in' ? fade(sign, 1, 0, 180) : fade(sign, 0, 1, 220, 980));
     if (mast && !still) runs.push(going === 'in' ? fade(mast, 0, 1, 700, 120, ease) : fade(mast, 1, 0, 700, 0, ease));
     let cancelled = false;
     // Going in, when the paper reaches the slab the real slab takes its place,
@@ -314,10 +333,16 @@ export function Gate({ children }: { children: ReactNode }) {
 
   const done = opening;
   const lockState: LockState = wrong ? 'wrong' : done ? 'open' : 'locked';
+  const weather = useWeather();
+  const now = useNow();
+  // until the weather's known, the sun goes by the clock
+  const hour = now.getHours();
+  const sky = weather?.sky ?? (hour >= 7 && hour < 18 ? 'clear' : 'night');
   const card = (
     <>
-      <DoorLight />
+      <DoorLight sky={sky} />
       <div className="gate">
+        <DoorSign now={now} weather={weather} />
         <div className="gate-card">
           <div className="gate-mast">
             <img className="gate-iris" src={irisUrl} alt="" />

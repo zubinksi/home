@@ -1386,6 +1386,35 @@ p {
   animation: gate-in 0.3s ease-out;
 }
 
+/* in the wall's bottom left corner, on a computer: the time to the second,
+   and DC's weather beneath it */
+.door-sign {
+  position: fixed;
+  left: 2rem;
+  bottom: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--serif);
+  color: var(--mast-ink);
+  text-shadow: 0 1px 2px rgba(30, 24, 16, 0.25);
+  pointer-events: none;
+}
+.door-time {
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.door-weather {
+  font-size: 0.9375rem;
+  color: var(--mast-ink2);
+}
+@media (max-width: 860px) {
+  .door-sign {
+    display: none;
+  }
+}
+
 /* going in or out: the door lies over the inside while the paper changes size */
 .gate-layer.is-handing-over {
   position: fixed;

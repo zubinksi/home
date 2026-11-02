@@ -1,18 +1,24 @@
 import { useEffect, useRef } from "react";
+import type { Sky } from "./weather";
 
 // THE LIGHT AT THE DOOR. Behind the PIN pad, sun comes through the leaves of a
 // tree onto the wall: soft golden flecks, each a little image of the sun through
 // a gap in the leaves, gathered where the canopy is thin and shimmering as the
 // branches move. Nearer the tree (the top left) the flecks are bigger and
 // denser. It's a small WebGL shader drawn at half resolution, which also gives
-// the light its softness; without WebGL the wall simply stays plain. Going in,
-// the Gate fades it straight to the wall inside.
+// the light its softness; without WebGL the wall simply stays plain. It follows
+// DC's weather: full and golden in sun, clouds drifting over it when it's partly
+// cloudy, faint and grey when overcast or raining, cool and dim at night. Going
+// in, the Gate fades it straight to the wall inside.
 
 const FRAG = `#version 300 es
 precision highp float;
 uniform vec2 res;
 uniform float t;
 uniform vec3 wall;
+uniform float strength; // how much sun gets through: 1 in full sun
+uniform float clouds;   // clouds drifting across it, 0 to 1
+uniform vec3 tint;      // the light's colour: golden sun, cool moon
 out vec4 colour;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -69,8 +75,11 @@ void main() {
   float leaves = smoothstep(0.5, 0.7, fbm(q3 * 5.0));
   float light = clamp(pools * (0.3 + 0.7 * gaps) * (0.2 + 1.0 * near) * (1.0 - 0.75 * leaves) * 1.25, 0.0, 1.0);
   vec3 shade = wall * 0.97;                      // the wall in the shade: nearly the gray inside, so going in is seamless
-  vec3 sun = vec3(1.0, 0.8, 0.5);                // late, golden sun
+  vec3 sun = tint;
   light = smoothstep(0.05, 0.85, light);
+  // clouds: broad soft shadows drifting slowly across the whole wall
+  float drift = smoothstep(0.35, 0.75, fbm(vec2(p.x * 0.9 - t * 0.035, p.y * 0.6 + t * 0.008)));
+  light *= strength * (1.0 - clouds * drift);
   // a touch of grain stops smooth gradients banding
   float grain = (hash(gl_FragCoord.xy + fract(t)) - 0.5) / 128.0;
   colour = vec4(mix(shade, sun * 0.95, light) + grain, 1.0);
@@ -80,8 +89,19 @@ const VERT = `#version 300 es
 in vec2 at;
 void main() { gl_Position = vec4(at, 0.0, 1.0); }`;
 
+/** How each sky lights the wall: sun strength, drifting clouds, the light's colour. */
+const SKIES: Record<Sky, { strength: number; clouds: number; tint: [number, number, number] }> = {
+  clear: { strength: 1, clouds: 0, tint: [1.0, 0.8, 0.5] },
+  partly: { strength: 0.95, clouds: 0.75, tint: [1.0, 0.82, 0.55] },
+  overcast: { strength: 0.32, clouds: 0.3, tint: [0.92, 0.88, 0.8] },
+  rain: { strength: 0.2, clouds: 0.4, tint: [0.82, 0.86, 0.9] },
+  snow: { strength: 0.42, clouds: 0.25, tint: [0.95, 0.97, 1.0] },
+  storm: { strength: 0.14, clouds: 0.6, tint: [0.78, 0.8, 0.86] },
+  night: { strength: 0.38, clouds: 0.1, tint: [0.62, 0.7, 0.86] },
+};
+
 /** Draws the dappled light into the canvas; returns a cleanup. */
-function dapple(canvas: HTMLCanvasElement): (() => void) | undefined {
+function dapple(canvas: HTMLCanvasElement, sky: { current: Sky }): (() => void) | undefined {
   const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
   if (!gl) return;
   const shader = (type: number, src: string) => {
@@ -107,6 +127,9 @@ function dapple(canvas: HTMLCanvasElement): (() => void) | undefined {
   gl.vertexAttribPointer(at, 2, gl.FLOAT, false, 0, 0);
   const uRes = gl.getUniformLocation(prog, "res");
   const uT = gl.getUniformLocation(prog, "t");
+  const uStrength = gl.getUniformLocation(prog, "strength");
+  const uClouds = gl.getUniformLocation(prog, "clouds");
+  const uTint = gl.getUniformLocation(prog, "tint");
 
   // the wall's own colour, so the light falls on the page's ground
   const ground = getComputedStyle(document.documentElement)
@@ -131,7 +154,20 @@ function dapple(canvas: HTMLCanvasElement): (() => void) | undefined {
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const start = performance.now() - 20_000; // start mid-shimmer, not from a tidy t = 0
   let frame = 0;
+  // the light eases toward the sky's settings, so a change in the weather
+  // comes in over a few seconds rather than at once
+  const cur = { ...SKIES[sky.current], tint: [...SKIES[sky.current].tint] as [number, number, number] };
+  let last = performance.now();
   const draw = (now: number) => {
+    const goal = SKIES[sky.current];
+    const k = Math.min(1, (now - last) / 2500);
+    last = now;
+    cur.strength += (goal.strength - cur.strength) * k;
+    cur.clouds += (goal.clouds - cur.clouds) * k;
+    cur.tint = cur.tint.map((v, i) => v + (goal.tint[i] - v) * k) as [number, number, number];
+    gl.uniform1f(uStrength, cur.strength);
+    gl.uniform1f(uClouds, cur.clouds);
+    gl.uniform3f(uTint, cur.tint[0], cur.tint[1], cur.tint[2]);
     gl.uniform1f(uT, (now - start) / 1000);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     if (!still) frame = requestAnimationFrame(draw);
@@ -143,9 +179,11 @@ function dapple(canvas: HTMLCanvasElement): (() => void) | undefined {
   };
 }
 
-export function DoorLight() {
+export function DoorLight({ sky }: { sky: Sky }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => (ref.current ? dapple(ref.current) : undefined), []);
+  const skyRef = useRef(sky);
+  skyRef.current = sky;
+  useEffect(() => (ref.current ? dapple(ref.current, skyRef) : undefined), []);
   return (
     <div className="door-light" aria-hidden>
       <canvas ref={ref} className="door-dapple" />
