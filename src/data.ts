@@ -33,7 +33,7 @@ export const reviews: Review[] = [
     hype: { tokens: 6_400, price: 67 },
     zec: { tokens: 100, price: 450 },
     aapl: { shares: 927, price: 300 },
-    equities: 30_000,
+    equities: 24_545, // the positions: 8 LLY, 300 FIG, 24 CRWD
     cash: 200_000,
     diversified: { voo: 0, vxus: 0, avuv: 0 },
   },
@@ -42,8 +42,8 @@ export const reviews: Review[] = [
     hype: { tokens: 6_400, price: 82 },
     zec: { tokens: 100, price: 1_200 },
     aapl: { shares: 927, price: 340 },
-    equities: 30_000,
-    cash: 200_000,
+    equities: 24_545, // the positions: 8 LLY, 300 FIG, 24 CRWD
+    cash: 190_000,
     diversified: { voo: 0, vxus: 0, avuv: 0 },
   },
 ];
@@ -60,7 +60,7 @@ export const basis = {
 export const hypeRungsSold = 0;
 
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
-export const fortressIdleCash: number | null = 80_000; // $120K of the $200K is in T-bills; the rest isn't earning yet (Oct 2026)
+export const fortressIdleCash: number | null = 70_000; // $120K of the $190K is in T-bills; the rest isn't earning yet (Nov 2026)
 
 /** Evergreen distributions received, as they arrive. Add one line each time. */
 export const evergreenReceived: { date: string; amount: number }[] = [];
@@ -110,7 +110,7 @@ export const equityPositions: EquityPosition[] = [
   {
     ticker: 'CRWD',
     name: 'CrowdStrike',
-    shares: 44,
+    shares: 24,
     price: 272.73,
     thesis:
       'Cyber security is increasingly necessary with AI-enabled hacks. The pace at which security compromises are occurring is speeding up and getting more concerning.',
