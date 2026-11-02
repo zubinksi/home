@@ -1,6 +1,6 @@
 // THE WEATHER AT THE DOOR. Washington, DC's current temperature and sky, from
 // Open-Meteo (free, no key), refreshed every quarter hour and kept for the
-// visit. The PIN pad shows it in the corner and the sunlight follows it.
+// visit. The PIN pad shows it under the pad and the sunlight follows it.
 // ?weather=clear|partly|overcast|rain|snow|night previews a sky.
 
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ export type Sky = 'clear' | 'partly' | 'overcast' | 'rain' | 'snow' | 'storm' | 
 export interface Weather {
   temp: number | null; // °F
   sky: Sky;
-  word: string; // as the corner says it: "Clear", "Overcast"…
+  word: string; // as the PIN pad says it: "Clear", "Overcast"…
 }
 
 const URL_ =

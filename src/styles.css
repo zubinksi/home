@@ -1386,15 +1386,24 @@ p {
   animation: gate-in 0.3s ease-out;
 }
 
-/* in the wall's bottom left corner, on a computer: the time to the second,
-   and DC's weather beneath it */
-.door-sign {
-  position: fixed;
-  left: 2rem;
-  bottom: 1.75rem;
-  display: flex;
+/* just under the pad, on a computer: the time to the second on the left,
+   DC's weather on the right, as wide as the card */
+.gate {
   flex-direction: column;
-  gap: 0.125rem;
+}
+.gate-card {
+  order: 1;
+}
+.door-sign {
+  order: 2;
+  width: 100%;
+  max-width: 21rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-top: 0.875rem;
+  padding: 0 0.25rem;
   font-family: var(--serif);
   font-size: 1.1875rem;
   line-height: 1.2;

@@ -89,7 +89,7 @@ type LockState = 'locked' | 'wrong' | 'open';
  * a long channel; the knob rests locked at the right end and, on the right
  * code, rolls back across them to open.
  */
-/** In the corner of the wall, on a computer: the time to the second, and DC's weather beneath. */
+/** Under the pad, on a computer: the time to the second, and DC's weather beside it. */
 function DoorSign({ now, weather }: { now: Date; weather: Weather | null }) {
   const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
   return (
