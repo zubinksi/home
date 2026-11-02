@@ -1,6 +1,6 @@
 // THE WEATHER AT THE DOOR. Washington, DC's current temperature and sky, from
 // Open-Meteo (free, no key), refreshed every quarter hour and kept for the
-// visit. The PIN pad shows it under the pad and the sunlight follows it.
+// visit. The sunlight at the door follows it.
 // ?weather=clear|partly|overcast|rain|snow|night previews a sky.
 
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ export type Sky = 'clear' | 'partly' | 'overcast' | 'rain' | 'snow' | 'storm' | 
 export interface Weather {
   temp: number | null; // °F
   sky: Sky;
-  word: string; // as the PIN pad says it: "Clear", "Overcast"…
+  word: string; // "Clear", "Overcast"…
 }
 
 const URL_ =
@@ -89,19 +89,4 @@ export function useWeather(): Weather | null {
     };
   }, []);
   return w;
-}
-
-/** The time now, ticking each second, on the second. */
-export function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    let id: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      setNow(new Date());
-      id = setTimeout(tick, 1000 - (Date.now() % 1000));
-    };
-    id = setTimeout(tick, 1000 - (Date.now() % 1000));
-    return () => clearTimeout(id);
-  }, []);
-  return now;
 }

@@ -1386,39 +1386,6 @@ p {
   animation: gate-in 0.3s ease-out;
 }
 
-/* just under the pad, on a computer: the time to the second on the left,
-   DC's weather on the right, as wide as the card */
-.gate {
-  flex-direction: column;
-}
-.gate-card {
-  order: 1;
-}
-.door-sign {
-  order: 2;
-  width: 100%;
-  max-width: 21rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-  margin-top: 0.875rem;
-  padding: 0 0.25rem;
-  font-family: var(--serif);
-  font-size: 1.1875rem;
-  line-height: 1.2;
-  color: var(--mast-ink);
-  pointer-events: none;
-}
-.door-time {
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 860px) {
-  .door-sign {
-    display: none;
-  }
-}
-
 /* going in or out: the door lies over the inside while the paper changes size */
 .gate-layer.is-handing-over {
   position: fixed;
