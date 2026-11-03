@@ -1632,9 +1632,52 @@ p {
 }
 /* while the pages are showing, the page beside them waits, dimmed */
 .sleeves-grid:has(.pages-open) > .detail {
-  opacity: 0.3;
+  opacity: 0.32;
+  filter: blur(5px);
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition:
+    opacity 0.25s,
+    filter 0.25s;
+}
+/* the iris pressed blind into the paper over the page set aside: the paper's
+   own colour, a highlight above and a soft shade below, fading in */
+.pages-seal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 22.5rem;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(-0.75px -0.75px 0 rgba(255, 252, 244, 0.95)) drop-shadow(1px 1px 1px rgba(80, 60, 30, 0.22));
+  animation: seal-press 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.pages-seal span {
+  width: 9rem;
+  aspect-ratio: 256 / 233;
+  background: var(--slab);
+  -webkit-mask: url('./assets/iris-white.png') center / contain no-repeat;
+  mask: url('./assets/iris-white.png') center / contain no-repeat;
+}
+@keyframes seal-press {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+@media (max-width: 860px) {
+  /* on a phone the menu fills the slab; nothing sits beside it */
+  .pages-seal {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pages-seal {
+    animation: none;
+  }
 }
 
 /* ── projects ───────────────────────────────────────── */

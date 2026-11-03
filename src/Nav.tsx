@@ -102,6 +102,12 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
           <span />
         </span>
       </button>
+      {/* while the menu is open, the iris is pressed into the page set aside beside it */}
+      {open != null && (
+        <span className="pages-seal" aria-hidden>
+          <span />
+        </span>
+      )}
       {open != null ? (
         <div className="pages-list" role="menu" aria-label="Pages">
           {TABS.map((t) => (
