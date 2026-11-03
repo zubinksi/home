@@ -429,6 +429,12 @@ p {
   letter-spacing: 0.12em;
   color: var(--muted);
 }
+.items-problem {
+  padding: 0.75rem 0.75rem 0;
+  font-family: var(--serif);
+  font-size: 0.875rem;
+  color: var(--red);
+}
 .items-empty {
   /* a sentence, so in the serif */
   font-family: var(--serif);

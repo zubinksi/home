@@ -33,6 +33,7 @@ same code from `api/_lib/`.
 | `/api/stock` | AAPL price and daily closes from Yahoo Finance | nothing |
 | `/api/projects` | reads the live Projects sheet; saves a quote, an item done or a new item | the sheet shared by link; to save, the sheet's script (below) |
 | `/api/ask` | Ask the Policy | `ANTHROPIC_API_KEY` in the Vercel project |
+| `/api/open-items` | reads which open items are done; saves a tick | the sheet shared by link; to save, the sheet's script (below) |
 | `/api/service-log` | reads the Servicing log tab; logs a job as done | the sheet shared by link; to log, `SERVICE_LOG_SCRIPT_URL` and `SERVICE_LOG_TOKEN` |
 
 **Ask the Policy on Vercel.** Without `ANTHROPIC_API_KEY` set in Vercel, the
@@ -119,10 +120,11 @@ Vendors" sheet: one row per job done (*Done on* as `YYYY-MM-DD`, *Job*,
 *Job ID*, *Note*). The latest row for each job wins. You can add or fix rows by
 hand; the *Job ID* must match an `id` in `src/servicing.ts`.
 
-### Logging servicing jobs (and editing projects)
+### Logging servicing jobs (and editing projects, ticking open items)
 
-Each servicing job has a **Log as done** button, and each project to-do can be
-quoted, marked done or added. Only the sheet's owner can write to it, so the
+Each servicing job has a **Log as done** button, each project to-do can be
+quoted, marked done or added, and ticking an open item saves it for every
+device (to an **Open items** tab the script makes the first time). Only the sheet's owner can write to it, so the
 site writes through a small Apps Script bound to the sheet. Set it up once:
 
 1. Open the sheet, then **Extensions → Apps Script**. Replace the code with

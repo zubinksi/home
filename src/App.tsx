@@ -9,21 +9,12 @@ import { Projects } from './Projects';
 import { Servicing } from './Servicing';
 import { purchaseCosts, useMarket } from './prices';
 import { nextTheme, THEMES, useTheme } from './theme';
+import { useDoneItems } from './openItems';
 import { useDrill } from './useDrill';
 import { buildItems, buildSleeves, compact, pct, PORTFOLIO_RULES, STATUS_COLOR, WHEN_RANK, type Item } from './model';
 
 const SEL_TOTAL = -1;
 const SEL_ITEMS = -2;
-const DONE_KEY = 'browns.done.v1';
-
-function loadDone(): string[] {
-  try {
-    const raw = localStorage.getItem(DONE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
 
 export function App() {
   const market = useMarket();
@@ -47,7 +38,8 @@ export function App() {
   };
   const narrow = useNarrow();
   const [expanded, setExpanded] = useState<string[]>([]);
-  const [done, setDone] = useState<string[]>(loadDone);
+  // which items are done: shared across devices through the projects sheet
+  const { done, toggle: setItemDone, problem: itemProblem } = useDoneItems(allItems);
   const sleevesRef = useRef<HTMLElement>(null);
 
   // ── phones: the list is the home view; a row opens its detail as its own page
@@ -73,14 +65,6 @@ export function App() {
   const sel = selOf(drill.selKey);
   const select = (i: number) => drill.select(subOf(i));
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(DONE_KEY, JSON.stringify(done));
-    } catch {
-      /* private mode: state just won't persist */
-    }
-  }, [done]);
-
   const open = allItems.filter((i) => !done.includes(i.id)).sort((a, b) => WHEN_RANK[a.when] - WHEN_RANK[b.when]);
   const closed = allItems.filter((i) => done.includes(i.id));
 
@@ -94,6 +78,7 @@ export function App() {
 
   const itemsList = (
     <div className="items-body">
+      {itemProblem && <div className="items-problem">{itemProblem}</div>}
       {open.length === 0 && <div className="items-empty">Nothing open. The policy stands as written until the Q1 review.</div>}
 
       {open.map((item) => {
@@ -107,7 +92,7 @@ export function App() {
                 aria-label="Mark done"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDone([...done, item.id]);
+                  setItemDone(item, true);
                   setExpanded(expanded.filter((x) => x !== item.id));
                 }}
               />
@@ -142,7 +127,7 @@ export function App() {
           <div className="label closed-label">[{closed.length}] RECENTLY CLOSED · CLICK TO REOPEN</div>
           {closed.map((item) => (
             <div key={item.id} className="item is-closed">
-              <div className="item-row" onClick={() => setDone(done.filter((x) => x !== item.id))}>
+              <div className="item-row" onClick={() => setItemDone(item, false)}>
                 <span className="tick">✓</span>
                 <span className="item-text">{item.text}</span>
                 <span className="item-sleeve">{item.sleeve}</span>

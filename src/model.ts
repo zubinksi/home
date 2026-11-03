@@ -93,7 +93,10 @@ export interface PlanStep {
 }
 
 export interface Item {
+  /** stable across edits to the list: the sleeve and the item's words */
   id: string;
+  /** the id it had when ids were list positions, to carry old ticks over */
+  oldId?: string;
   sleeve: SleeveKey | 'POLICY';
   text: string;
   when: When;
@@ -601,10 +604,18 @@ export function dayMon(d: string) {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
+/** "Move the idle USAA cash…" → "move-the-idle-usaa-cash…", kept short. */
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60);
+
 export function buildItems(live: LivePrices = {}): Item[] {
   const out: Item[] = [];
   for (const [sleeve, list] of Object.entries(items)) {
-    list.forEach((it, i) => out.push({ id: `${sleeve}:${i}`, sleeve: sleeve as Item['sleeve'], ...it }));
+    list.forEach((it, i) => out.push({ id: `${sleeve}:${slug(it.text)}`, oldId: `${sleeve}:${i}`, sleeve: sleeve as Item['sleeve'], ...it }));
   }
 
   // Items the policy itself calls for at this review. Ids carry the review
