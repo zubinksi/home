@@ -2767,3 +2767,54 @@ p {
     box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.65);
   }
 }
+
+/* ── light on the paper ───────────────────────────────── */
+/* one light, from the upper left, as on the fold, the letterpress and the iris */
+:root {
+  --catch: rgba(255, 255, 255, 0.65);
+  --press: rgba(70, 52, 24, 0.09);
+}
+
+/* rules are cut into the sheet: a catch of light just under each line */
+.side-rule,
+.side-row.pages-row,
+.gate-mast,
+.svc,
+.svc-month-row,
+.todo-row,
+.todo-entry.is-open,
+.pitem,
+.periods.is-soft {
+  box-shadow: 0 1px 0 var(--catch);
+}
+.svc:last-child,
+.pitem:last-child,
+.pitem-entry:last-child .pitem,
+.pitem-entry.is-open .pitem,
+.todo-entry.is-open .todo-row {
+  box-shadow: none;
+}
+
+/* the slab's top edge, and the PIN pad's, catch the light */
+.slab::after,
+.gate-card::after,
+.gate-paper::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  border-radius: 3px 3px 0 0;
+  background: var(--catch);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* boxes sit pressed into the sheet: shade inside the top and left, light
+   outside the bottom and right */
+.card,
+.periods:not(.is-soft),
+.psum-chip {
+  box-shadow:
+    inset 1px 1px 1px var(--press),
+    1px 1px 0 var(--catch);
+}
