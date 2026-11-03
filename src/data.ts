@@ -41,9 +41,9 @@ export const reviews: Review[] = [
     date: '2026-11-01',
     hype: { tokens: 6_400, price: 82 },
     zec: { tokens: 100, price: 1_200 },
-    aapl: { shares: 927, price: 340 },
+    aapl: { shares: 852, price: 340 }, // 75 sold in Nov 2026, against the year's realized losses
     equities: 24_545, // the positions: 8 LLY, 300 FIG, 24 CRWD
-    cash: 190_000,
+    cash: 215_000, // +$25K from the AAPL sale
     diversified: { voo: 0, vxus: 0, avuv: 0 },
   },
 ];
@@ -52,7 +52,7 @@ export const reviews: Review[] = [
 export const basis = {
   hype: 225_000,
   zec: 50_000,
-  aapl: 10_000,
+  aapl: 9_191, // $10,000 across 927 shares, less the 75 sold (average cost)
   equities: 30_000,
 };
 
@@ -60,7 +60,7 @@ export const basis = {
 export const hypeRungsSold = 0;
 
 /** USAA cash in the Fortress not yet in T-bills / SGOV. */
-export const fortressIdleCash: number | null = 70_000; // $120K of the $190K is in T-bills; the rest isn't earning yet (Nov 2026)
+export const fortressIdleCash: number | null = 95_000; // $120K of the $215K is in T-bills; the rest isn't earning yet (Nov 2026)
 
 /** Evergreen distributions received, as they arrive. Add one line each time. */
 export const evergreenReceived: { date: string; amount: number }[] = [];
