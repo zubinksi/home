@@ -2747,3 +2747,16 @@ p {
 .cash-split .warn {
   color: var(--muted);
 }
+
+/* ── texture: press ───────────────────────────────────── */
+/* the headline type is printed, pressed into the sheet: a hairline of shade
+   above, a catch of light below, and ink a touch uneven at the edge */
+.d-title,
+.gauge-now,
+.side-row.total .side-name,
+.side-row.total .side-amt {
+  text-shadow:
+    0 -0.5px 0 rgba(60, 40, 20, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.55);
+  filter: url(#ink);
+}
