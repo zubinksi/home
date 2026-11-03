@@ -2759,3 +2759,11 @@ p {
     0 -0.5px 0 rgba(60, 40, 20, 0.18),
     0 1px 0 rgba(255, 255, 255, 0.55);
 }
+
+/* the page beside the left column meets it with a catch of light along the
+   fold, as the menu's sheet does */
+@media (min-width: 861px) {
+  .sleeves-grid > .detail {
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.65);
+  }
+}
