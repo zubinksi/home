@@ -86,16 +86,32 @@ export function useNarrow(query = '(max-width: 860px)') {
  * height the column had, the page you're in marked with the room's dot;
  * picking one goes there. More pages are just more entries in TABS.
  */
+/** When a page was last picked from the menu, for the next page's sidebar. */
+let pickedAt = 0;
+
 export function PagedSidebar({ className, tab, children }: { className: string; tab: TabId; children: React.ReactNode }) {
   const [open, setOpen] = useState<number | null>(null); // the column's height when the menu opened
+  // the sheet lifting away after the menu closes; a page picked from the menu
+  // is a new sidebar, so it carries the lifting sheet over
+  const [leaving, setLeaving] = useState(() => performance.now() - pickedAt < 200);
   const nav = useRef<HTMLElement>(null);
+  const close = () => {
+    setOpen(null);
+    setLeaving(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  };
   return (
     <nav ref={nav} className={`${className} ${open != null ? 'pages-open' : ''}`} style={open != null ? { height: open } : undefined}>
       <button
         className="pages-toggle"
         aria-expanded={open != null}
         aria-label={open != null ? 'Close the menu' : 'Menu'}
-        onClick={() => setOpen(open != null ? null : nav.current?.offsetHeight ?? null)}
+        onClick={() => {
+          if (open != null) close();
+          else {
+            setLeaving(false);
+            setOpen(nav.current?.offsetHeight ?? null);
+          }
+        }}
       >
         <span className="pages-icon" aria-hidden>
           <span />
@@ -104,8 +120,14 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
       </button>
       {/* while the menu is open, a sheet of vellum is laid over the page beside
           it, the iris pressed into the sheet */}
-      {open != null && (
-        <span className="pages-sheet" aria-hidden>
+      {(open != null || leaving) && (
+        <span
+          className={`pages-sheet ${open == null ? 'is-leaving' : ''}`}
+          aria-hidden
+          onAnimationEnd={(e) => {
+            if (e.animationName === 'sheet-lift') setLeaving(false);
+          }}
+        >
           <span className="pages-seal">
             <span />
           </span>
@@ -120,8 +142,9 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
               className={`side-row pages-row ${t.id === tab ? 'is-sel' : ''}`}
               aria-current={t.id === tab ? 'page' : undefined}
               onClick={() => {
-                setOpen(null);
+                close();
                 if (t.id !== tab) {
+                  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) pickedAt = performance.now();
                   location.hash = `/${t.id}`;
                   window.scrollTo(0, 0);
                 }

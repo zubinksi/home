@@ -1663,6 +1663,14 @@ p {
     transform: translateX(-0.75rem);
   }
 }
+.pages-sheet.is-leaving {
+  animation: sheet-lift 0.35s cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+@keyframes sheet-lift {
+  to {
+    opacity: 0;
+  }
+}
 /* the iris pressed blind into the sheet: the sheet's own colour, a highlight
    above and a soft shade below, pressing in a beat after the sheet lands */
 .pages-seal {
