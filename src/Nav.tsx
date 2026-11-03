@@ -109,7 +109,7 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
           if (open != null) close();
           else {
             setLeaving(false);
-            setOpen(nav.current?.offsetHeight ?? null);
+            setOpen(nav.current?.getBoundingClientRect().height ?? null);
           }
         }}
       >
