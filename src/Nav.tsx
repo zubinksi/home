@@ -102,10 +102,13 @@ export function PagedSidebar({ className, tab, children }: { className: string; 
           <span />
         </span>
       </button>
-      {/* while the menu is open, the iris is pressed into the page set aside beside it */}
+      {/* while the menu is open, a sheet of vellum is laid over the page beside
+          it, the iris pressed into the sheet */}
       {open != null && (
-        <span className="pages-seal" aria-hidden>
-          <span />
+        <span className="pages-sheet" aria-hidden>
+          <span className="pages-seal">
+            <span />
+          </span>
         </span>
       )}
       {open != null ? (

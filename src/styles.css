@@ -1632,16 +1632,12 @@ p {
 }
 /* while the pages are showing, the page beside them waits, dimmed */
 .sleeves-grid:has(.pages-open) > .detail {
-  opacity: 0.32;
-  filter: blur(5px);
   pointer-events: none;
-  transition:
-    opacity 0.25s,
-    filter 0.25s;
 }
-/* the iris pressed blind into the paper over the page set aside: the paper's
-   own colour, a highlight above and a soft shade below, fading in */
-.pages-seal {
+/* a sheet of vellum laid over the page set aside, filling its column: a little
+   whiter and cooler than the cream, the page showing softly through it, a fine
+   paper tooth, and a crisp edge along the divider */
+.pages-sheet {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1652,13 +1648,32 @@ p {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  filter: drop-shadow(-0.75px -0.75px 0 rgba(255, 252, 244, 0.95)) drop-shadow(1px 1px 1px rgba(80, 60, 30, 0.22));
-  animation: seal-press 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  border-radius: 0 3px 3px 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.22 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23t)'/%3E%3C/svg%3E"),
+    rgba(250, 248, 242, 0.7);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.65);
+  animation: sheet-lay 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes sheet-lay {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+}
+/* the iris pressed blind into the sheet: the sheet's own colour, a highlight
+   above and a soft shade below, pressing in a beat after the sheet lands */
+.pages-seal {
+  display: flex;
+  filter: drop-shadow(-0.75px -0.75px 0 rgba(255, 255, 255, 0.95)) drop-shadow(1px 1px 1px rgba(80, 60, 30, 0.22));
+  animation: seal-press 0.45s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .pages-seal span {
   width: 9rem;
   aspect-ratio: 256 / 233;
-  background: var(--slab);
+  background: rgba(250, 248, 242, 0.85);
   -webkit-mask: url('./assets/iris-white.png') center / contain no-repeat;
   mask: url('./assets/iris-white.png') center / contain no-repeat;
 }
@@ -1670,11 +1685,12 @@ p {
 }
 @media (max-width: 860px) {
   /* on a phone the menu fills the slab; nothing sits beside it */
-  .pages-seal {
+  .pages-sheet {
     display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .pages-sheet,
   .pages-seal {
     animation: none;
   }
