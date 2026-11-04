@@ -210,8 +210,13 @@ export function Gate({ children }: { children: ReactNode }) {
         pressDent(e.key);
         press(e.key);
       }
-      else if (e.key === 'Backspace') press('back');
-      else if (e.key === 'Escape') press('clear');
+      else if (e.key === 'Backspace') {
+        pressDent('back');
+        press('back');
+      } else if (e.key === 'Escape') {
+        pressDent('clear');
+        press('clear');
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -358,7 +363,7 @@ export function Gate({ children }: { children: ReactNode }) {
               <button
                 key={k}
                 className={`key ${k === 'clear' || k === 'back' ? 'key-fn' : ''}`}
-                onPointerDown={() => /^[0-9]$/.test(k) && pressDent(k)}
+                onPointerDown={() => pressDent(k)}
                 onClick={() => press(k)}
                 aria-label={k === 'clear' ? 'Clear' : k === 'back' ? 'Delete last digit' : k}
               >

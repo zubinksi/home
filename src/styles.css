@@ -2824,8 +2824,20 @@ p {
   border-color: transparent;
   color: var(--accent-ink);
 }
-.key:not(.key-fn):active .key-label {
+.key:active .key-label {
   transform: translateY(1px);
+}
+/* CLEAR and ⌫ press the same way */
+.key-fn:hover,
+.key-fn:active {
+  background: transparent;
+  border-color: transparent;
+}
+.key-fn:hover {
+  color: var(--ink2);
+}
+.key-fn:active {
+  color: var(--accent-ink);
 }
 /* a press leaves a shallow round dent in the paper under the digit, which
    eases back out */
