@@ -169,6 +169,10 @@ export function Gate({ children }: { children: ReactNode }) {
   const [wrong, setWrong] = useState(false);
   const opening = entry === CODE;
 
+  // the digit last pressed, for the dent it leaves in the paper (n restarts it)
+  const [dent, setDent] = useState<{ k: string; n: number } | null>(null);
+  const pressDent = useCallback((k: string) => setDent((d) => ({ k, n: (d?.n ?? 0) + 1 })), []);
+
   const press = useCallback(
     (k: string) => {
       if (wrong || opening) return;
@@ -202,13 +206,16 @@ export function Gate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (unlocked) return;
     const onKey = (e: KeyboardEvent) => {
-      if (/^[0-9]$/.test(e.key)) press(e.key);
+      if (/^[0-9]$/.test(e.key)) {
+        pressDent(e.key);
+        press(e.key);
+      }
       else if (e.key === 'Backspace') press('back');
       else if (e.key === 'Escape') press('clear');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [unlocked, press]);
+  }, [unlocked, press, pressDent]);
 
   // The handover, both ways, with the door laid over the inside. Going in, the
   // pad's contents fade and its paper grows into the slab, whose contents then
@@ -351,10 +358,12 @@ export function Gate({ children }: { children: ReactNode }) {
               <button
                 key={k}
                 className={`key ${k === 'clear' || k === 'back' ? 'key-fn' : ''}`}
+                onPointerDown={() => /^[0-9]$/.test(k) && pressDent(k)}
                 onClick={() => press(k)}
                 aria-label={k === 'clear' ? 'Clear' : k === 'back' ? 'Delete last digit' : k}
               >
-                {k === 'clear' ? 'CLEAR' : k === 'back' ? '⌫' : k}
+                {dent?.k === k && <span key={dent.n} className="key-dent" aria-hidden />}
+                <span className="key-label">{k === 'clear' ? 'CLEAR' : k === 'back' ? '⌫' : k}</span>
               </button>
             ))}
           </div>
